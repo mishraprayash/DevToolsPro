@@ -15,33 +15,25 @@ interface AppState {
   setCommandPaletteOpen: (open: boolean) => void;
 }
 
+function applyTheme(theme: Theme) {
+  const root = document.documentElement;
+  root.classList.remove('dark', 'light');
+  root.classList.add(theme);
+}
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       theme: 'dark',
       setTheme: (theme) => {
         localStorage.setItem('devtools-theme', theme);
-        const root = document.documentElement;
-        if (theme === 'dark') {
-          root.classList.add('dark');
-          root.classList.remove('light');
-        } else {
-          root.classList.remove('dark');
-          root.classList.add('light');
-        }
+        applyTheme(theme);
         set({ theme });
       },
       toggleTheme: () => {
         const newTheme = get().theme === 'dark' ? 'light' : 'dark';
         localStorage.setItem('devtools-theme', newTheme);
-        const root = document.documentElement;
-        if (newTheme === 'dark') {
-          root.classList.add('dark');
-          root.classList.remove('light');
-        } else {
-          root.classList.remove('dark');
-          root.classList.add('light');
-        }
+        applyTheme(newTheme);
         set({ theme: newTheme });
       },
       recentTools: [],

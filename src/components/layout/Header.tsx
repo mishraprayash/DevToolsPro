@@ -2,13 +2,10 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search, Sun, Moon, Menu, X, Command } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { useAppStore } from '@/lib/store/useStore';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
 
 const tools = [
   { id: 'json', name: 'JSON Beautifier', category: 'formatting' },
@@ -32,22 +29,9 @@ const categories = [
 ];
 
 export function Header() {
-  const pathname = usePathname();
   const { theme, toggleTheme, setCommandPaletteOpen } = useAppStore();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [categoriesOpen, setCategoriesOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    const saved = localStorage.getItem('devtools-theme') as 'dark' | 'light' | null;
-    const root = document.documentElement;
-    if (saved === 'light') {
-      root.classList.remove('dark');
-      root.classList.add('light');
-    } else {
-      root.classList.add('dark');
-      root.classList.remove('light');
-    }
-  }, []);
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

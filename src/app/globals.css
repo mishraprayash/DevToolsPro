@@ -34,35 +34,43 @@
   body {
     @apply bg-bg-primary text-text-primary font-plex antialiased;
   }
-  
-  :root {
-    --bg-primary: #0a0a0b;
-    --bg-secondary: #111113;
-    --bg-tertiary: #18181b;
-    --bg-hover: #1f1f23;
-    --text-primary: #fafafa;
-    --text-secondary: #a1a1aa;
-    --text-muted: #71717a;
-    --border: #27272a;
-    --border-hover: #3f3f46;
-    --accent: #22d3ee;
-    --accent-hover: #06b6d4;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --error: #ef4444;
-  }
-  
-  .light {
-    --bg-primary: #ffffff;
-    --bg-secondary: #fafafa;
-    --bg-tertiary: #f4f4f5;
-    --bg-hover: #e4e4e7;
-    --text-primary: #18181b;
-    --text-secondary: #52525b;
-    --text-muted: #71717a;
-    --border: #e4e4e7;
-    --border-hover: #d4d4d8;
-  }
+}
+
+.light body {
+  background-color: #ffffff;
+  color: #18181b;
+}
+
+.light .bg-bg-primary { background-color: #ffffff; }
+.light .bg-bg-primary\/80 { background-color: #ffffffcc; }
+.light .bg-bg-primary\/95 { background-color: #fffffff2; }
+.light .bg-bg-secondary { background-color: #fafafa; }
+.light .bg-bg-tertiary { background-color: #f4f4f5; }
+.light .bg-bg-hover { background-color: #e4e4e7; }
+
+.light .text-text-primary { color: #18181b; }
+.light .text-text-secondary { color: #52525b; }
+.light .text-text-muted { color: #71717a; }
+.light .text-text-muted\/70 { color: #71717ab3; }
+
+.light .border-border { border-color: #e4e4e7; }
+.light .border-border-hover { border-color: #d4d4d8; }
+
+.light .placeholder\:text-text-muted::placeholder { color: #71717a; }
+
+.light .from-bg-tertiary { --tw-gradient-from: #f4f4f5; }
+.light .to-bg-tertiary { --tw-gradient-to: #f4f4f5; }
+.light .via-bg-secondary { --tw-gradient-via: #fafafa; }
+
+.light .glass {
+  background-color: #fafafacc;
+}
+
+@media (hover: hover) {
+  .light .hover\:bg-bg-hover:hover { background-color: #e4e4e7; }
+  .light .hover\:bg-bg-tertiary:hover { background-color: #f4f4f5; }
+  .light .hover\:border-border-hover:hover { border-color: #d4d4d8; }
+  .light .hover\:text-text-primary:hover { color: #18181b; }
 }
 
 @layer utilities {
