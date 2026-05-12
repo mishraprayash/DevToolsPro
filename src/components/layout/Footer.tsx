@@ -13,7 +13,7 @@ const footerLinks = [
   {
     title: 'Resources',
     links: [
-      { name: 'GitHub', href: 'https://github.com' },
+      { name: 'GitHub', href: 'https://github.com/mishraprayash/web-tools' },
       { name: 'Changelog', href: '#' },
       { name: 'Privacy Policy', href: '#' },
     ],
@@ -60,14 +60,17 @@ export function Footer() {
           <p className="text-sm text-text-muted">
             © {new Date().getFullYear()} DevTools Pro. All rights reserved.
           </p>
-          <div className="flex items-center gap-4">
-            <a href="#" className="text-sm text-text-muted hover:text-text-primary transition-colors">
-              Terms
+          <p className="text-sm text-text-muted">
+            Crafted with ❤️ by{' '}
+            <a
+              href="https://github.com/mishraprayash"
+              className="text-accent hover:text-accent-hover transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Prayash Mishra
             </a>
-            <a href="#" className="text-sm text-text-muted hover:text-text-primary transition-colors">
-              Privacy
-            </a>
-          </div>
+          </p>
         </div>
       </div>
     </footer>

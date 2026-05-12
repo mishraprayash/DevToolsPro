@@ -116,7 +116,7 @@ export function Header() {
             </button>
 
             <a
-              href="https://github.com"
+              href="https://github.com/mishraprayash/web-tools"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 text-text-secondary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-hover"
