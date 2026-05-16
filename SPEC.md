@@ -4,22 +4,22 @@
 
 **Project Name:** DevTools Pro  
 **Type:** Web Application (Next.js App Router)  
-**Core Functionality:** A premium, production-grade developer utilities platform featuring 20+ interactive tools for encoding, decoding, formatting, hashing, and API testing.  
+**Core Functionality:** A premium, production-grade developer utilities platform featuring 16 interactive tools for encoding, decoding, formatting, hashing, and testing.  
 **Target Users:** Backend engineers, frontend developers, DevOps engineers, security engineers, and computer science students.
 
 ---
 
 ## Technical Stack
 
-- **Framework:** Next.js 14+ (App Router)
-- **Language:** TypeScript (strict mode)
-- **Styling:** Tailwind CSS
-- **Animations:** Framer Motion
-- **State Management:** Zustand
-- **Validation:** Zod
-- **Code Editor:** Monaco Editor (@monaco-editor/react)
-- **Icons:** Lucide React
-- **UI Components:** Custom (shadcn/ui inspired)
+- **Framework:** Next.js 16 (App Router)
+- **Language:** TypeScript 5 (strict mode)
+- **Styling:** Tailwind CSS v4 (no `tailwind.config.*`; all tokens in `globals.css` via `@theme`)
+- **Animations:** Framer Motion ^12
+- **State Management:** Zustand ^5 with `persist` middleware
+- **Validation:** Zod ^4
+- **Icons:** Lucide React ^1.14 (primary), React Icons ^5 (GitHub icon only)
+- **Linting:** ESLint v9 flat config (`eslint.config.mjs`)
+- **UI Components:** Custom (Button, Card, Input, Select, Modal, Toast, CopyButton, ExamplePills, JsonViewer, TextViewer)
 
 ---
 
@@ -28,34 +28,28 @@
 ### Color Palette
 
 ```css
-/* Dark Theme (Default) */
---bg-primary: #0a0a0b;        /* Main background */
---bg-secondary: #111113;        /* Card backgrounds */
---bg-tertiary: #18181b;        /* Elevated surfaces */
---bg-hover: #1f1f23;          /* Hover states */
+/* Dark Theme (Default) — :root */
+--bg-primary: #0a0a0b;
+--bg-secondary: #111113;
+--bg-tertiary: #18181b;
+--bg-hover: #1f1f23;
 
---text-primary: #fafafa;        /* Primary text */
---text-secondary: #a1a1aa;     /* Secondary text */
---text-muted: #71717a;          /* Muted text */
+--text-primary: #fafafa;
+--text-secondary: #a1a1aa;
+--text-muted: #71717a;
 
---border: #27272a;              /* Borders */
---border-hover: #3f3f46;        /* Hover borders */
+--border: #27272a;
+--border-hover: #3f3f46;
 
---accent: #22d3ee;             /* Cyan accent */
---accent-hover: #06b6d4;       /* Hover accent */
+--accent: #22d3ee;
+--accent-hover: #06b6d4;
 --accent-muted: rgba(34, 211, 238, 0.1);
 
---success: #10b981;            /* Green */
---warning: #f59e0b;           /* Amber */
---error: #ef4444;               /* Red */
+--success: #10b981;
+--warning: #f59e0b;
+--error: #ef4444;
 
-/* Light Theme */
---light-bg-primary: #ffffff;
---light-bg-secondary: #fafafa;
---light-bg-tertiary: #f4f4f5;
---light-text-primary: #18181b;
---light-text-secondary: #52525b;
---light-border: #e4e4e7;
+/* Light Theme — .light overrides in globals.css */
 ```
 
 ### Typography
@@ -89,23 +83,9 @@
 - 2xl: 24px
 - full: 9999px
 
-### Shadows & Effects
+### Layout
 
-```css
---shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
---shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
---shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
---shadow-glow: 0 0 40px rgba(34, 211, 238, 0.15);
-
-/* Glassmorphism */
---glass: rgba(17, 17, 19, 0.8);
---glass-border: rgba(255, 255, 255, 0.08);
-```
-
-### Layout Structure
-
-- **Max Content Width:** 1440px
-- **Grid:** 12-column for desktop, 6-column for tablet, 4-column for mobile
+- **Max Content Width:** 1280px (max-w-7xl)
 - **Responsive Breakpoints:**
   - Mobile: < 640px
   - Tablet: 640px - 1024px
@@ -117,34 +97,29 @@
 
 ### 1. Navigation Bar (Fixed)
 - Logo (left)
-- Tool categories dropdown
-- Search trigger button (Cmd+K)
+- Search + filter bar with category pills
+- Command palette trigger (Cmd+K)
 - Theme toggle
 - GitHub link
 
-### 2. Hero Section
-- **Headline:** "DevTools Pro" with gradient text
-- **Subheadline:** "20+ production-grade developer utilities in one beautiful platform"
-- **CTA Buttons:** "Start Building" (primary), "Browse Tools" (secondary)
-- **Animated background:** Floating geometric shapes with blur
+### 2. Popular Tools Grid (ToolGrid)
+- 16 tool cards in a responsive grid (1→2→3→4 columns)
+- Search input with `/` shortcut
+- Category filter pills
+- Each card: icon, name, description, category badge, hover animation
 
-### 3. Popular Tools Grid
-- 6 tool cards displayed in a responsive grid
-- Each card: Icon, title, description, hover animation
-- Tools: JSON Beautifier, Base64 Encoder, JWT Decoder, Hash Generator, Timestamp Converter, Regex Tester
+### 3. Categories Section
+- 6 category cards: Encoding, Security, Formatting, Text, Date & Time, API Utilities
+- Shows tool count per category
 
-### 4. Categories Section
-- 6 category cards: Encoding, Security, Formatting, Text, API, Date/Time
-- Each shows tool count and icons
-
-### 5. Features Section
+### 4. Features Section
 - 4 feature highlights with icons:
-  - "Instant Processing" - All tools run locally in your browser
-  - "Privacy First" - Your data never leaves your device
-  - "Keyboard Driven" - Cmd+K search, keyboard shortcuts
-  - "Open Source" - Free forever, no registration
+  - "Instant Processing" — All tools run locally in your browser
+  - "Privacy First" — Your data never leaves your device
+  - "Keyboard Driven" — Cmd+K search, keyboard shortcuts
+  - "Open Source" — Free forever, no registration
 
-### 6. Footer
+### 5. Footer
 - Links: GitHub, Changelog, Privacy, Categories
 - Copyright
 
@@ -153,11 +128,14 @@
 ## Tool Page Architecture
 
 ### Layout
+
 ```
 ┌─────────────────────────────────────────────┐
-│ Header (Tool name + category breadcrumb)       │
+│ Breadcrumb (Home > Category > Tool Name)      │
 ├─────────────────────────────────────────────┤
-│ Description + Use Cases                  │
+│ Tool Name + Description                      │
+├─────────────────────────────────────────────┤
+│ Example Pills (interactive presets)           │
 ├─────────────────────────────────────────────┤
 │ ┌─────────────┐ ┌─────────────────────────┐ │
 │ │ Input      │ │ Output                  │ │
@@ -165,86 +143,96 @@
 │ │           │ │                         │ │
 │ └─────────────┘ └─────────────────────────┘ │
 ├─────────────────────────────────────────────┤
-│ Action Buttons: Copy | Clear | Download    │
-├─────────────────────────────────────────────┤
-│ Examples (Collapsible)                     │
+│ Copy | Clear | Download buttons             │
 └─────────────────────────────────────────────┘
 ```
 
 ### Features Per Tool
-- Monaco Editor for input/output
-- Copy to clipboard button
-- Download as file button
+- Example pills for quick preset loading
+- Copy to clipboard button (with inline "Copied" feedback)
 - Clear/reset button
-- Keyboard shortcuts
-- URL state persistence
-- Error display with highlighting
+- Error display with styled status banners
+- Reactive processing (debounced via `useEffect` with cleanup timer)
 
 ---
 
 ## Tools Specification
 
 ### 1. JSON Beautifier & Validator
-- **Input:** Text area / file upload
-- **Actions:**
-  - Beautify (2/4 space indent)
-  - Minify
-  - Validate JSON
-  - Sort keys
-- **Output:** Formatted JSON with syntax highlighting
-- **Features:** Error line highlighting
+- **Actions:** Beautify, Minify, Sort keys
+- **Indent:** 2 or 4 spaces
+- **Output:** Syntax-highlighted JSON with search & navigation
+- **Features:** Search with match counter, Enter/Shift+Enter navigation, parent-context filtering
 
 ### 2. Base64 Encoder/Decoder
-- **Input:** Text / file
-- **Actions:**
-  - Encode (Standard + URL-safe)
-  - Decode
-- **Output:** Encoded/decoded string
+- **Actions:** Encode (Standard + URL-safe), Decode
+- **Output:** Plain text or auto-detected JSON → switches to JsonViewer
+- **Features:** Auto-detect JSON output, format detection badges
 
 ### 3. JWT Decoder
-- **Input:** JWT token
-- **Output:**
-  - Header (JSON)
-  - Payload (JSON)
-  - Signature
-- **Features:**
-  - Expiry status (valid/expired)
-  - Issued-at timestamp
-  - Human-readable timestamps
+- **Input:** JWT token string
+- **Output:** Color-coded Header / Payload / Signature panels
+- **Features:** Expiry status (valid/expired), timestamp annotations on `exp`/`iat`, per-panel search with match counter, scrollable JSON
 
 ### 4. Hash Generator
-- **Input:** Text / file
-- **Algorithms:** MD5, SHA1, SHA256, SHA512
+- **Algorithms:** SHA-256, SHA-512 (Web Crypto API)
 - **Output:** Hash in lowercase hex
 
 ### 5. Unix Timestamp Converter
-- **Input:** Timestamp or date string
-- **Output:** Both formats with timezone
-- **Features:**
-  - Current timestamp (live)
-  - Relative time display
+- **Input:** Numeric timestamp
+- **Output:** Locale date, ISO string, relative time
+- **Features:** Live current-time clock, example presets
 
 ### 6. Regex Tester
-- **Input:** Pattern + Test string
-- **Output:** Highlighted matches
-- **Features:**
-  - Flags (g, i, m, s)
-  - Match groups
+- **Input:** Pattern + flags + test string
+- **Output:** Live highlighted matches
+- **Features:** Toggle flags (g, i, m, s), match list with groups
 
 ### 7. UUID Generator
-- **Versions:** v1, v4, v7
-- **Actions:** Generate (bulk support)
-- **Output:** UUID(s)
+- **Version:** v4 only
+- **Actions:** Bulk generate (1–100)
+- **Output:** List of UUIDs with per-item copy
 
 ### 8. URL Encoder/Decoder
-- **Input:** URL string
-- **Actions:** Encode / Decode
-- **Output:** Encoded/decoded URL
+- **Actions:** `encodeURIComponent` / `decodeURIComponent`
+- **Features:** Toast error on invalid encoding
 
 ### 9. Cron Expression Parser
-- **Input:** Cron expression
+- **Input:** 6-field cron expression
 - **Output:** Human-readable description
-- **Features:** Next 5 execution times
+- **Features:** Format reference table, step value (e.g. `*/15`) support
+
+### 10. Color Converter
+- **Input:** HEX, HEXA, RGB, RGBA, HSL, HSLA strings
+- **Output:** All 6 formats
+- **Features:** Native color picker, WCAG luminance/contrast ratios, accessibility rating (AAA/AA/Fail), 7 color harmonies (complementary, analogous, triadic, etc.)
+
+### 11. Password Generator
+- **Options:** Length, uppercase, lowercase, numbers, symbols
+- **Output:** Generated password with strength indicator
+- **Features:** Configurable character sets, regenerate
+
+### 12. YAML ↔ JSON
+- **Actions:** JSON → YAML, YAML → JSON
+- **Features:** Bidirectional conversion, swap button
+
+### 13. HTML Preview
+- **Input:** Raw HTML
+- **Output:** Live rendered preview in sandboxed iframe
+- **Features:** Tab key support in textarea, Format button (indent by nesting), syntax-highlighted source view toggle
+
+### 14. Lorem Ipsum Generator
+- **Modes:** Paragraphs, sentences, words
+- **Features:** Configurable count, regenerate, character count display
+
+### 15. Number Base Converter
+- **Bases:** Decimal, Hexadecimal, Binary, Octal
+- **Features:** 4-way conversion, per-format copy, color-coded result labels
+
+### 16. Image to Base64
+- **Input:** Image file upload
+- **Output:** Base64 data URL
+- **Features:** Preview thumbnail, copy to clipboard
 
 ---
 
@@ -253,24 +241,37 @@
 ### Button
 - Variants: primary, secondary, ghost, danger
 - Sizes: sm, md, lg
-- States: default, hover, active, disabled, loading
-- Keyboard shortcut badge support
+- Icon support (`icon` prop)
 
-### Input/TextArea
-- Monospace font for code areas
-- Line numbers for code
-- Syntax highlighting where applicable
-- Auto-resize option
+### Input / Textarea
+- Monospace font option
+- No line numbers
+- No auto-resize
 
 ### Card
-- Glassmorphism background option
 - Hover lift animation
-- Gradient border on hover
+- Gradient accent border on hover
 
 ### Tool Card (Homepage)
 - Icon with gradient background
 - Title + description
-- Hover: scale(1.02), shadow increase, border glow
+- Hover: scale(1.02), y(-4px), shadow, border glow
+
+### ExamplePills
+- Displays an interactive row of pill-shaped preset buttons
+- Props: `examples: { label: string }[]`, `activeIndex: number`, `onSelect: (index: number) => void`
+- Selected pill: accent background, border, and text
+- Unselected pills: tertiary background, secondary text, hover effects
+
+### JsonViewer
+- Syntax-highlighted JSON output (colored keys, strings, numbers, booleans)
+- Per-keyword search with match counter
+- Enter/Shift+Enter to navigate matches
+- Parent-context filtering
+
+### TextViewer
+- Plain text display with search
+- Auto-detect JSON → switches to JsonViewer
 
 ### Modal/Dialog
 - Backdrop blur
@@ -284,33 +285,25 @@
 
 ### Command Palette
 - Trigger: Cmd+K / Ctrl+K
-- Search tools and categories
-- Keyboard navigation
-- Recent tools section
+- Search tools by name, description, or category
+- Arrow key navigation, Enter to select
 
 ---
 
 ## Animation Specifications
-
-### Page Transitions
-- Fade + slide (150ms ease-out)
 
 ### Tool Cards
 - Hover: scale(1.02) + translateY(-4px)
 - Transition: 200ms ease-out
 
 ### Buttons
-- Hover: brightness increase + scale(0.98)
+- Hover: brightness increase
 - Click: scale(0.95)
 - Transition: 100ms
 
 ### Input Focus
 - Border color transition: 150ms
-- Glow effect: 200ms
-
-### Loading States
-- Skeleton pulse animation
-- Spinner rotation
+- Glow effect (ring): 200ms
 
 ---
 
@@ -318,31 +311,17 @@
 
 ### Mobile (< 640px)
 - Single column layout
-- Stacked tool panels
-- Bottom navigation
+- Stacked input/output panels
 - Full-width buttons
-- Collapsible sections
 
 ### Tablet (640px - 1024px)
-- 2-column grid
-- Side-by-side panels (if space allows)
-- Condensed navigation
+- 2-column tool card grid
+- Side-by-side panels where possible
 
 ### Desktop (> 1024px)
-- Full grid layout
-- Side-by-side tool panels
-- Keyboard shortcuts enabled
-- Command palette
-
----
-
-## Performance Targets
-
-- **First Contentful Paint:** < 1s
-- **Time to Interactive:** < 2s
-- **Lighthouse Score:** > 95
-- **Bundle Size:** < 500KB (initial)
-- **Memory:** < 100MB (idle)
+- 3–4 column tool card grid
+- Side-by-side input/output panels
+- Command palette (Cmd+K)
 
 ---
 
@@ -350,22 +329,15 @@
 
 ```typescript
 interface AppStore {
-  // Theme
   theme: 'dark' | 'light';
   setTheme: (theme: 'dark' | 'light') => void;
-  
-  // Tools
+  toggleTheme: () => void;
+  commandPaletteOpen: boolean;
+  setCommandPaletteOpen: (open: boolean) => void;
   recentTools: string[];
   addRecentTool: (toolId: string) => void;
-  
-  // Favorites
   favorites: string[];
   toggleFavorite: (toolId: string) => void;
-  
-  // History (per tool)
-  history: Record<string, string[]>;
-  addToHistory: (toolId: string, value: string) => void;
-  clearHistory: (toolId: string) => void;
 }
 ```
 
@@ -374,60 +346,28 @@ interface AppStore {
 ## File Structure
 
 ```
-/app
-  /layout.tsx              # Root layout
-  /page.tsx               # Homepage
-  /globals.css            # Global styles
-  /tools
-    /[toolId]
-      /page.tsx           # Tool page
-  /api
-    /health               # Health check
-/components
-  /ui
-    /Button.tsx
-    /Input.tsx
-    /Card.tsx
-    /Toast.tsx
-    /Modal.tsx
-    /Skeleton.tsx
-  /layout
-    /Header.tsx
-    /Footer.tsx
-    /CommandPalette.tsx
-  /homepage
-    /Hero.tsx
-    /ToolGrid.tsx
-    /Categories.tsx
-    /Features.tsx
-  /tool
-    /ToolLayout.tsx
-    /Editor.tsx
-    /ActionBar.tsx
-    /Examples.tsx
-/lib
-  /hooks
-    /useTheme.ts
-    /useKeyboard.ts
-    /useLocalStorage.ts
-  /utils
-    /cn.ts
-    /theme.ts
-  /store
-    /useStore.ts
-/tools
-  /json
-    /schema.ts            # Zod schemas
-    /utils.ts            # Tool logic
-  /base64
-  /jwt
-  /hash
-  ... (each tool in its own folder)
-/public
-  /fonts
-/types
-  /index.d.ts
-
+src/
+  app/
+    globals.css              # Tailwind v4 @theme tokens + global styles
+    layout.tsx               # Root layout (Header, Footer, CommandPalette, Toaster)
+    page.tsx                 # Homepage (Hero, ToolGrid, Categories, Features)
+    tools/
+      page.tsx               # All tools listing
+      <tool-name>/
+        page.tsx             # One directory per tool — no dynamic [toolId] routing
+  components/
+    homepage/                # Hero, ToolGrid, Categories, Features
+    layout/                  # Header, Footer, CommandPalette, ThemeSync
+    tool/                    # ToolLayout (shared wrapper)
+    ui/                      # Button, Card, CopyButton, ExamplePills, GradientBox,
+                             # Input, JsonViewer, Modal, Select, TextViewer, Toast
+  lib/
+    hooks/useTheme.tsx       # ThemeProvider + useTheme context
+    store/useStore.ts        # Zustand global store
+    utils/index.ts           # cn, formatDate, formatTime, debounce, throttle
+  tools/                     # Pure utility logic — one dir per tool
+    <tool-name>/utils.ts
+  types/index.ts
 ```
 
 ---
@@ -443,4 +383,4 @@ interface AppStore {
 7. ✅ No console errors
 8. ✅ Build passes without errors
 9. ✅ TypeScript strict mode passes
-10. ✅ Keyboard shortcuts functional
+10. ✅ Keyboard shortcuts (Cmd+K, / to focus search)

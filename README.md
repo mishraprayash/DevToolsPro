@@ -1,26 +1,26 @@
 # DevTools Pro
 
-A collection of production-grade developer utilities in one beautiful platform.
+A collection of 16 production-grade developer utilities in one beautiful platform.
 
 ## Tools
 
 | Category | Tools |
 |---|---|
-| Formatting | JSON Beautifier, YAML ↔ JSON |
-| Encoding | Base64 Encoder, URL Encoder/Decoder |
+| Formatting | JSON Beautifier, YAML ↔ JSON, Color Converter, HTML Preview |
+| Encoding | Base64 Encoder, URL Encoder/Decoder, Number Base Converter, Image to Base64 |
 | Security | JWT Decoder, Hash Generator, Password Generator |
-| Text | Regex Tester, UUID Generator, Text Case Converter, Lorem Ipsum |
+| Text | Regex Tester, UUID Generator, Lorem Ipsum Generator |
 | Date & Time | Timestamp Converter, Cron Parser |
-| Other | Color Converter, Number Base Converter, HTML Preview |
 
 ## Tech Stack
 
 - **Framework:** Next.js 16 (App Router)
-- **Language:** TypeScript (strict)
+- **Language:** TypeScript 5 (strict)
 - **Styling:** Tailwind CSS v4
-- **State:** Zustand v5
+- **State:** Zustand v5 with persist middleware
 - **Animations:** Framer Motion v12
 - **Validation:** Zod v4
+- **Icons:** Lucide React
 
 ## Getting Started
 
