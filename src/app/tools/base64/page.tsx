@@ -1,15 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import { Copy, RotateCcw } from 'lucide-react';
+import { RotateCcw, Braces, Code } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
-import { GradientBox } from '@/components/ui/GradientBox';
+import { JsonViewer } from '@/components/ui/JsonViewer';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+import { TextViewer } from '@/components/ui/TextViewer';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { processBase64, Base64Action } from '@/tools/base64/utils';
-import { toast } from '@/components/ui/Toast';
-import { cn } from '@/lib/utils';
-
+import { processBase64, isValidBase64, type Base64Action } from '@/tools/base64/utils';
 interface Example { label: string; action: Base64Action; urlSafe: boolean; input: string; }
 
 const examples: Example[] = [
@@ -44,24 +44,15 @@ export default function Page() {
   };
 
   const handleClear = () => { setInput(''); setOutput(''); };
-  const handleCopy = async () => { await navigator.clipboard.writeText(output); toast({ type: 'success', message: 'Copied!' }); };
+
+  const isJsonOutput = React.useMemo(() => {
+    if (!output || action !== 'decode') return false;
+    try { JSON.parse(output); return true; } catch { return false; }
+  }, [output, action]);
 
   return (
-    <ToolLayout toolId="base64" name="Base64 Encoder / Decoder" description="Encode and decode Base64 strings, including URL-safe variants" category="Encoding">
-      {/* Example pills */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-text-muted">Examples:</span>
-        {examples.map((ex, i) => (
-          <button key={ex.label} onClick={() => applyExample(i)}
-            className={cn('px-3 py-1 rounded-full text-xs font-medium border transition-all',
-              activeExample === i
-                ? 'bg-accent text-bg-primary border-accent'
-                : 'bg-bg-tertiary text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
-            )}>
-            {ex.label}
-          </button>
-        ))}
-      </div>
+    <ToolLayout name="Base64 Encoder / Decoder" description="Encode and decode Base64 strings, including URL-safe variants" category="Encoding">
+      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
@@ -93,10 +84,26 @@ export default function Page() {
             <h2 className="text-base font-medium text-text-secondary">
               <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">Output</span>
             </h2>
-            <Button variant="ghost" size="sm" onClick={handleCopy} disabled={!output} icon={<Copy className="h-4 w-4" />}>Copy</Button>
+            <CopyButton value={output} disabled={!output} />
           </div>
-          <GradientBox value={output} />
-          <span className="text-xs text-text-muted">{output.length.toLocaleString()} characters</span>
+          {isJsonOutput ? (
+            <JsonViewer value={output} maxHeight="480px" minHeight="240px" />
+          ) : (
+            <TextViewer value={output} maxHeight="480px" minHeight="240px" />
+          )}
+          <div className="flex items-center gap-3">
+            {isJsonOutput && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">
+                <Braces className="h-3 w-3" /> JSON
+              </span>
+            )}
+            {output && action === 'encode' && isValidBase64(output) && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+                <Code className="h-3 w-3" /> Valid Base64
+              </span>
+            )}
+            <span className="text-xs text-text-muted">{output.length.toLocaleString()} characters</span>
+          </div>
         </div>
       </div>
     </ToolLayout>

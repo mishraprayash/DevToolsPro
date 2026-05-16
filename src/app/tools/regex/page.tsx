@@ -4,6 +4,7 @@ import * as React from 'react';
 import { RotateCcw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { testRegex, RegexMatch } from '@/tools/regex/utils';
 import { cn } from '@/lib/utils';
@@ -71,21 +72,8 @@ export default function Page() {
   const toggleFlag = (f: string) => setFlags(flags.includes(f) ? flags.replace(f, '') : flags + f);
 
   return (
-    <ToolLayout toolId="regex" name="Regex Tester" description="Test regular expressions with live match highlighting and group capture" category="Text">
-      {/* Example pills */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-text-muted">Examples:</span>
-        {examples.map((ex, i) => (
-          <button key={ex.label} onClick={() => applyExample(i)}
-            className={cn('px-3 py-1 rounded-full text-xs font-medium border transition-all',
-              activeExample === i
-                ? 'bg-accent text-bg-primary border-accent'
-                : 'bg-bg-tertiary text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
-            )}>
-            {ex.label}
-          </button>
-        ))}
-      </div>
+    <ToolLayout name="Regex Tester" description="Test regular expressions with live match highlighting and group capture" category="Text">
+      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">

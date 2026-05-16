@@ -1,11 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { Copy, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
+import { CopyButton } from '@/components/ui/CopyButton';
+import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { generatePassword, estimateStrength, PasswordOptions } from '@/tools/password/utils';
-import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 
 const examples = [
@@ -50,16 +51,8 @@ export default function Page() {
   const strength = estimateStrength(options.length, charsetSize);
 
   return (
-    <ToolLayout toolId="password" name="Password Generator" description="Generate strong, customisable passwords with configurable length and character sets" category="Security">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-text-muted">Examples:</span>
-        {examples.map((ex, i) => (
-          <button key={ex.label} onClick={() => applyExample(i)}
-            className={cn('px-3 py-1 rounded-full text-xs font-medium border transition-all',
-              activeExample === i ? 'bg-accent text-bg-primary border-accent' : 'bg-bg-tertiary text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
-            )}>{ex.label}</button>
-        ))}
-      </div>
+    <ToolLayout name="Password Generator" description="Generate strong, customisable passwords with configurable length and character sets" category="Security">
+      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
       <div className="space-y-6 max-w-xl">
         {/* Generated password */}
@@ -71,10 +64,7 @@ export default function Page() {
                 <button onClick={generate} className="p-1.5 text-text-muted hover:text-text-primary transition-colors" title="Regenerate">
                   <RefreshCw className="h-4 w-4" />
                 </button>
-                <button onClick={async () => { await navigator.clipboard.writeText(input); toast({ type: 'success', message: 'Copied!' }); }}
-                  className="p-1.5 text-text-muted hover:text-text-primary transition-colors" title="Copy">
-                  <Copy className="h-4 w-4" />
-                </button>
+                <CopyButton value={input} variant="ghost" size="sm" className="p-1.5" title="Copy" />
               </div>
             </div>
           </div>

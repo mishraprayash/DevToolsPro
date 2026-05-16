@@ -1,10 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Copy } from 'lucide-react';
+import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { CopyButton } from '@/components/ui/CopyButton';
 import { generateWords, generateSentences, generateParagraphs } from '@/tools/lorem-ipsum/utils';
-import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 
 const examples = [
@@ -37,16 +37,8 @@ export default function Page() {
   };
 
   return (
-    <ToolLayout toolId="lorem-ipsum" name="Lorem Ipsum Generator" description="Generate placeholder text in paragraphs, sentences or words" category="Text">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-text-muted">Examples:</span>
-        {examples.map((ex, i) => (
-          <button key={ex.label} onClick={() => applyExample(i)}
-            className={cn('px-3 py-1 rounded-full text-xs font-medium border transition-all',
-              activeExample === i ? 'bg-accent text-bg-primary border-accent' : 'bg-bg-tertiary text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
-            )}>{ex.label}</button>
-        ))}
-      </div>
+    <ToolLayout name="Lorem Ipsum Generator" description="Generate placeholder text in paragraphs, sentences or words" category="Text">
+      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
       <div className="space-y-4 max-w-3xl">
         <div className="flex flex-wrap items-center gap-3">
@@ -74,10 +66,7 @@ export default function Page() {
           <textarea value={output} readOnly
             className="w-full min-h-[250px] p-4 rounded-xl bg-bg-tertiary border border-border text-sm text-text-primary font-serif leading-relaxed resize-y focus:outline-none focus:border-accent"
             spellCheck={false} />
-          <button onClick={async () => { await navigator.clipboard.writeText(output); toast({ type: 'success', message: 'Copied!' }); }}
-            className="absolute top-3 right-3 p-2 rounded-lg bg-bg-hover border border-border text-text-muted hover:text-text-primary hover:border-border-hover transition-all">
-            <Copy className="h-4 w-4" />
-          </button>
+          <CopyButton value={output} label="Copy" variant="secondary" className="absolute top-3 right-3" />
         </div>
 
         <span className="text-xs text-text-muted">{output.length.toLocaleString()} characters</span>

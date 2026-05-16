@@ -1,10 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Copy } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { toast } from '@/components/ui/Toast';
+import { CopyButton } from '@/components/ui/CopyButton';
 import { cn } from '@/lib/utils';
 
 const defaultCount = 5;
@@ -33,7 +31,7 @@ export default function Page() {
   React.useEffect(() => { generate(); }, [generate]);
 
   return (
-    <ToolLayout toolId="uuid" name="UUID Generator" description="Bulk generate cryptographically random UUID v4 identifiers (1–100)" category="Text">
+    <ToolLayout name="UUID Generator" description="Bulk generate cryptographically random UUID v4 identifiers (1–100)" category="Text">
       <div className="space-y-4">
         {/* Example pills + count control */}
         <div className="flex flex-wrap items-center gap-4">
@@ -63,11 +61,7 @@ export default function Page() {
           {uuids.map((u, i) => (
             <div key={i} className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-bg-tertiary group hover:bg-bg-hover transition-colors">
               <span className="font-mono text-sm tabular-nums tracking-tight">{u}</span>
-              <Button variant="ghost" size="sm"
-                onClick={async () => { await navigator.clipboard.writeText(u); toast({ type: 'success', message: 'Copied!' }); }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                icon={<Copy className="h-3.5 w-3.5" />}
-              />
+              <CopyButton value={u} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           ))}
         </div>

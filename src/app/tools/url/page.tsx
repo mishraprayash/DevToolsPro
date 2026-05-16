@@ -2,11 +2,11 @@
 
 import * as React from 'react';
 import { Button } from '@/components/ui/Button';
+import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
+import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { toast } from '@/components/ui/Toast';
-import { cn } from '@/lib/utils';
-
 const examples = [
   { label: 'URL w/ spaces', value: 'https://example.com/search?q=hello world&lang=en' },
   { label: 'Encoded URL', value: 'https%3A%2F%2Fexample.com%2Fpath%3Fkey%3Dhello%20world' },
@@ -29,21 +29,8 @@ export default function Page() {
   const applyExample = (i: number) => { setActiveExample(i); setInput(examples[i].value); };
 
   return (
-    <ToolLayout toolId="url" name="URL Encoder / Decoder" description="Encode and decode URL components and query strings" category="Encoding">
-      {/* Example pills */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-text-muted">Examples:</span>
-        {examples.map((ex, i) => (
-          <button key={ex.label} onClick={() => applyExample(i)}
-            className={cn('px-3 py-1 rounded-full text-xs font-medium border transition-all',
-              activeExample === i
-                ? 'bg-accent text-bg-primary border-accent'
-                : 'bg-bg-tertiary text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
-            )}>
-            {ex.label}
-          </button>
-        ))}
-      </div>
+    <ToolLayout name="URL Encoder / Decoder" description="Encode and decode URL components and query strings" category="Encoding">
+      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
@@ -57,9 +44,7 @@ export default function Page() {
         <div className="space-y-4">
           <h2 className="text-base font-medium text-text-secondary">Output</h2>
           <Input value={output} readOnly />
-          <Button variant="ghost" onClick={async () => { await navigator.clipboard.writeText(output); toast({ type: 'success', message: 'Copied!' }); }}>
-            Copy
-          </Button>
+          <CopyButton value={output} label="Copy" />
         </div>
       </div>
     </ToolLayout>

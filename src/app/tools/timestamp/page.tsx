@@ -3,10 +3,9 @@
 import * as React from 'react';
 import { Clock } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
+import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { fromTimestamp, getRelativeTime } from '@/tools/timestamp/utils';
-import { cn } from '@/lib/utils';
-
 const examples = [
   { label: 'Epoch (s)', value: '1716239022' },
   { label: 'Milliseconds', value: '1716239022000' },
@@ -32,21 +31,8 @@ export default function Page() {
   };
 
   return (
-    <ToolLayout toolId="timestamp" name="Unix Timestamp Converter" description="Convert between Unix timestamps and human-readable dates" category="Date & Time">
-      {/* Example pills */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-text-muted">Examples:</span>
-        {examples.map((ex, i) => (
-          <button key={ex.label} onClick={() => applyExample(i)}
-            className={cn('px-3 py-1 rounded-full text-xs font-medium border transition-all',
-              activeExample === i
-                ? 'bg-accent text-bg-primary border-accent'
-                : 'bg-bg-tertiary text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
-            )}>
-            {ex.label}
-          </button>
-        ))}
-      </div>
+    <ToolLayout name="Unix Timestamp Converter" description="Convert between Unix timestamps and human-readable dates" category="Date & Time">
+      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">

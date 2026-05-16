@@ -3,12 +3,11 @@
 import * as React from 'react';
 import { RotateCcw, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { CopyButton } from '@/components/ui/CopyButton';
+import { ExamplePills } from '@/components/ui/ExamplePills';
 import { Input } from '@/components/ui/Input';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { hashString, hashAlgorithms, HashAlgorithm } from '@/tools/hash/utils';
-import { toast } from '@/components/ui/Toast';
-import { cn } from '@/lib/utils';
-
 interface Example { label: string; algo: HashAlgorithm; input: string; }
 
 const examples: Example[] = [
@@ -38,21 +37,8 @@ export default function Page() {
   };
 
   return (
-    <ToolLayout toolId="hash" name="Hash Generator" description="Generate SHA-256 & SHA-512 hashes securely via the Web Crypto API" category="Security">
-      {/* Example pills */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-text-muted">Examples:</span>
-        {examples.map((ex, i) => (
-          <button key={ex.label} onClick={() => applyExample(i)}
-            className={cn('px-3 py-1 rounded-full text-xs font-medium border transition-all',
-              activeExample === i
-                ? 'bg-accent text-bg-primary border-accent'
-                : 'bg-bg-tertiary text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
-            )}>
-            {ex.label}
-          </button>
-        ))}
-      </div>
+    <ToolLayout name="Hash Generator" description="Generate SHA-256 & SHA-512 hashes securely via the Web Crypto API" category="Security">
+      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -88,10 +74,7 @@ export default function Page() {
             <h2 className="text-base font-medium text-text-secondary">Hash Output</h2>
             <div className="relative">
               <Input value={hash} readOnly className="font-mono text-sm pr-20" />
-              <Button variant="ghost" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2"
-                onClick={async () => { await navigator.clipboard.writeText(hash); toast({ type: 'success', message: 'Hash copied!' }); }}>
-                Copy
-              </Button>
+              <CopyButton value={hash} label="Copy" className="absolute right-2 top-1/2 -translate-y-1/2" />
             </div>
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-success" />

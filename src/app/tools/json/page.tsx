@@ -1,21 +1,21 @@
 'use client';
 
 import * as React from 'react';
-import { Copy, Download, RotateCcw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Download, RotateCcw, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
-import { GradientBox } from '@/components/ui/GradientBox';
+import { JsonViewer } from '@/components/ui/JsonViewer';
+import { ExamplePills } from '@/components/ui/ExamplePills';
 import { Select } from '@/components/ui/Select';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { processJson, validateJson, JsonAction } from '@/tools/json/utils';
-import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 
 const actions: { value: JsonAction; label: string }[] = [
   { value: 'beautify', label: 'Beautify' },
   { value: 'minify', label: 'Minify' },
-  { value: 'sort', label: 'Sort Keys' },
-  { value: 'validate', label: 'Validate' },
+  { value: 'sort', label: 'Sort Keys' }
 ];
 
 const indentOptions = [
@@ -44,12 +44,7 @@ const examples: Example[] = [
     label: 'Minify',
     action: 'minify',
     input: '{\n  "id": 1,\n  "product": "Widget",\n  "price": 9.99,\n  "inStock": true\n}',
-  },
-  {
-    label: 'Invalid JSON',
-    action: 'validate',
-    input: '{"name": "Bob", "active": true,}',
-  },
+  }
 ];
 
 export default function Page() {
@@ -85,11 +80,6 @@ export default function Page() {
 
   const handleClear = () => { setInput(''); setOutput(''); setError(null); };
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(output);
-    toast({ type: 'success', message: 'Copied to clipboard' });
-  };
-
   const handleDownload = () => {
     const blob = new Blob([output], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -101,25 +91,8 @@ export default function Page() {
   const validation = input.trim() ? validateJson(input) : null;
 
   return (
-    <ToolLayout toolId="json" name="JSON Beautifier & Validator" description="Format, minify, sort keys, and validate JSON data" category="Formatting">
-      {/* Example pills */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-text-muted">Examples:</span>
-        {examples.map((ex, i) => (
-          <button
-            key={ex.label}
-            onClick={() => applyExample(i)}
-            className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium border transition-all',
-              activeExample === i
-                ? 'bg-accent text-bg-primary border-accent'
-                : 'bg-bg-tertiary text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
-            )}
-          >
-            {ex.label}
-          </button>
-        ))}
-      </div>
+    <ToolLayout name="JSON Beautifier & Validator" description="Format, minify, sort keys, and validate JSON data" category="Formatting">
+      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
@@ -128,7 +101,7 @@ export default function Page() {
             <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>Clear</Button>
           </div>
 
-          <Input value={input} onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }} placeholder='{"key": "value"}' monospace />
+          <Input value={input} onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }} placeholder='{"key": "value"}' className='min-h-[280px]' monospace />
 
           <div className="flex items-center gap-4">
             <Select label="Action" options={actions} value={action} onChange={(e) => setAction(e.target.value as JsonAction)} />
@@ -154,11 +127,11 @@ export default function Page() {
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">Output</h2>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleCopy} disabled={!output} icon={<Copy className="h-4 w-4" />}>Copy</Button>
+              <CopyButton value={output} label="Copy" disabled={!output} />
               <Button variant="ghost" size="sm" onClick={handleDownload} disabled={!output} icon={<Download className="h-4 w-4" />}>Download</Button>
             </div>
           </div>
-          <GradientBox value={output} />
+          <JsonViewer value={output} maxHeight="480px" minHeight="240px" />
           <div className="flex items-center gap-2 text-xs text-text-muted">
             <span>{output.length.toLocaleString()} chars</span>
             <span>·</span>
