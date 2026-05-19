@@ -7,7 +7,7 @@ import {
   FileJson, Lock, Hash, Clock, Regex, Type, Link2,
   CalendarClock, Palette, KeyRound, FileCode,
   Globe, AlignLeft, Binary, ImageUp, Search, ArrowRight, Command,
-  Earth, QrCode,
+  Earth, QrCode, Braces, Code, GitCompare, Ruler, CalendarPlus, SunMoon, Fingerprint,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
@@ -43,7 +43,14 @@ const tools: ToolDef[] = [
   { id: 'number-base', name: 'Base Converter', description: 'Convert between decimal, hex, binary & octal', category: 'Encoding', icon: Binary, color: 'from-violet-500 to-blue-500' },
   { id: 'image-base64', name: 'Image to Base64', description: 'Convert images to base64 data URLs', category: 'Encoding', icon: ImageUp, color: 'from-sky-500 to-teal-500' },
   { id: 'timezone', name: 'Time Zone Converter', description: 'Convert time across timezones worldwide', category: 'Date & Time', icon: Earth, color: 'from-emerald-500 to-teal-500' },
-  { id: 'qr-code', name: 'QR Code Generator', description: 'Generate QR codes from text, URLs & more', category: 'Encoding', icon: QrCode, color: 'from-fuchsia-500 to-pink-500' }
+  { id: 'qr-code', name: 'QR Code Generator', description: 'Generate QR codes from text, URLs & more', category: 'Encoding', icon: QrCode, color: 'from-fuchsia-500 to-pink-500' },
+  { id: 'json-to-ts', name: 'JSON to TypeScript', description: 'Convert raw JSON into typed TypeScript interfaces', category: 'Formatting', icon: Braces, color: 'from-blue-500 to-indigo-500' },
+  { id: 'svg-to-jsx', name: 'SVG to JSX/React', description: 'Convert raw SVG into optimized React components', category: 'Formatting', icon: Code, color: 'from-teal-400 to-emerald-500' },
+  { id: 'diff-checker', name: 'Diff Checker', description: 'Compare texts and highlight line-by-line differences', category: 'Text', icon: GitCompare, color: 'from-red-400 to-rose-600' },
+  { id: 'css-unit-converter', name: 'CSS Unit & Fluid Typography', description: 'Convert CSS sizing values or generate fluid responsive clamp layouts', category: 'Formatting', icon: Ruler, color: 'from-fuchsia-500 to-purple-600' },
+  { id: 'date-calculator', name: 'Date Calculator', description: 'Add/subtract time offsets or calculate business and working days', category: 'Date & Time', icon: CalendarPlus, color: 'from-orange-500 to-amber-500' },
+  { id: 'nepali-calendar', name: 'Nepali BS ↔ AD Calendar', description: 'Convert dates bidirectionally between Bikram Sambat and Gregorian calendars', category: 'Date & Time', icon: SunMoon, color: 'from-red-500 to-rose-500' },
+  { id: 'rsa-generator', name: 'RSA Keypair Generator', description: 'Generate public and private RSA encryption keys in PEM format', category: 'Security', icon: Fingerprint, color: 'from-indigo-500 to-purple-500' }
 ];
 
 const categories = ['All', 'Formatting', 'Encoding', 'Security', 'Text', 'Date & Time'];

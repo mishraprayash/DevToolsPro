@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, FileJson, Lock, Hash, Clock, Regex, FileCode, Link2, CalendarClock, Type, Palette, KeyRound, Globe, AlignLeft, Binary, ImageUp, Earth, QrCode } from 'lucide-react';
+import { Search, X, FileJson, Lock, Hash, Clock, Regex, FileCode, Link2, CalendarClock, Type, Palette, KeyRound, Globe, AlignLeft, Binary, ImageUp, Earth, QrCode, Braces, Code, GitCompare, Ruler, CalendarPlus, SunMoon, Fingerprint } from 'lucide-react';
 import { useAppStore } from '@/lib/store/useStore';
 import { Modal } from '@/components/ui/Modal';
 
@@ -29,6 +29,13 @@ const tools = [
   { id: 'html-entities', name: 'HTML Entities', description: 'Encode or decode HTML entities', icon: FileCode, category: 'Formatting' },
   { id: 'timezone', name: 'Time Zone Converter', description: 'Convert time across timezones', icon: Earth, category: 'Date & Time' },
   { id: 'qr-code', name: 'QR Code Generator', description: 'Generate QR codes from text & URLs', icon: QrCode, category: 'Encoding' },
+  { id: 'json-to-ts', name: 'JSON to TypeScript', description: 'Convert JSON into TypeScript interfaces & types', icon: Braces, category: 'Formatting' },
+  { id: 'svg-to-jsx', name: 'SVG to JSX/React', description: 'Convert SVG into React/JSX components', icon: Code, category: 'Formatting' },
+  { id: 'diff-checker', name: 'Diff Checker', description: 'Compare texts and highlight line-by-line differences', icon: GitCompare, category: 'Text' },
+  { id: 'css-unit-converter', name: 'CSS Unit & Fluid Typography', description: 'Convert CSS sizing values or generate fluid responsive clamp layouts', icon: Ruler, category: 'Formatting' },
+  { id: 'date-calculator', name: 'Date Calculator', description: 'Add/subtract time offsets or calculate business and working days', icon: CalendarPlus, category: 'Date & Time' },
+  { id: 'nepali-calendar', name: 'Nepali BS ↔ AD Calendar', description: 'Convert dates bidirectionally between Bikram Sambat and Gregorian calendars', icon: SunMoon, category: 'Date & Time' },
+  { id: 'rsa-generator', name: 'RSA Keypair Generator', description: 'Generate public and private RSA encryption keys in PEM format', icon: Fingerprint, category: 'Security' },
 ];
 
 export function CommandPalette() {

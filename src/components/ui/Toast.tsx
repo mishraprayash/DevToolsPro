@@ -62,10 +62,23 @@ export function Toaster() {
   React.useEffect(() => {
     toastFn = (toast) => {
       const id = Math.random().toString(36).slice(2);
-      setToasts((prev) => [...prev, { ...toast, id }]);
+      
+      setToasts((prev) => {
+        // Deduplicate identical active toast messages to prevent spamming
+        const isDuplicate = prev.some((t) => t.message === toast.message);
+        if (isDuplicate) return prev;
+
+        const next = [...prev, { ...toast, id }];
+        // Cap the maximum number of simultaneous visible toasts to 3
+        if (next.length > 3) {
+          return next.slice(next.length - 3);
+        }
+        return next;
+      });
+
       setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, 5000);
+      }, 3500); //snappy 3.5s duration
     };
     return () => {
       toastFn = null;

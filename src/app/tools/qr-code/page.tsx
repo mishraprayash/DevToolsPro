@@ -113,8 +113,10 @@ export default function Page() {
               </div>
             ) : result?.success ? (
               <>
-                <img src={result.dataUrl} alt="QR Code" width={size} height={size}
-                  className="max-w-full h-auto rounded-lg" style={{ imageRendering: 'pixelated' }} />
+                <div className="bg-white p-4 rounded-xl border border-border/40 shadow-sm">
+                  <img src={result.dataUrl} alt="QR Code" width={size} height={size}
+                    className="max-w-full h-auto rounded-lg" style={{ imageRendering: 'pixelated' }} />
+                </div>
                 <p className="text-xs text-text-muted mt-3 break-all max-w-full text-center">
                   {input.slice(0, 60)}{input.length > 60 ? '…' : ''}
                 </p>

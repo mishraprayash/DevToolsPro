@@ -19,8 +19,8 @@ export async function generateQrCode(
 
   const {
     size = 400,
-    colorDark = '#ffffff',
-    colorLight = '#00000000',
+    colorDark = '#000000', // Standard black for maximum compatibility
+    colorLight = '#ffffff', // Solid white background (quiet zone)
     errorCorrectionLevel = 'M',
   } = options;
 
@@ -52,8 +52,8 @@ export async function generateQrToCanvas(
 
   const {
     size = 400,
-    colorDark = '#ffffff',
-    colorLight = '#00000000',
+    colorDark = '#000000',
+    colorLight = '#ffffff',
     errorCorrectionLevel = 'M',
   } = options;
 
