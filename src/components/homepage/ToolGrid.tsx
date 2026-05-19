@@ -7,7 +7,7 @@ import {
   FileJson, Lock, Hash, Clock, Regex, Type, Link2,
   CalendarClock, Palette, KeyRound, FileCode,
   Globe, AlignLeft, Binary, ImageUp, Search, ArrowRight, Command,
-  Earth, QrCode, Braces, Code, GitCompare, Ruler, CalendarPlus, SunMoon, Fingerprint,
+  Earth, QrCode, Braces, Code, GitCompare, Ruler, CalendarPlus, SunMoon, Fingerprint, Shield, Laptop, Layers, Grid,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
@@ -50,7 +50,11 @@ const tools: ToolDef[] = [
   { id: 'css-unit-converter', name: 'CSS Unit & Fluid Typography', description: 'Convert CSS sizing values or generate fluid responsive clamp layouts', category: 'Formatting', icon: Ruler, color: 'from-fuchsia-500 to-purple-600' },
   { id: 'date-calculator', name: 'Date Calculator', description: 'Add/subtract time offsets or calculate business and working days', category: 'Date & Time', icon: CalendarPlus, color: 'from-orange-500 to-amber-500' },
   { id: 'nepali-calendar', name: 'Nepali BS ↔ AD Calendar', description: 'Convert dates bidirectionally between Bikram Sambat and Gregorian calendars', category: 'Date & Time', icon: SunMoon, color: 'from-red-500 to-rose-500' },
-  { id: 'rsa-generator', name: 'RSA Keypair Generator', description: 'Generate public and private RSA encryption keys in PEM format', category: 'Security', icon: Fingerprint, color: 'from-indigo-500 to-purple-500' }
+  { id: 'rsa-generator', name: 'RSA Keypair Generator', description: 'Generate public and private RSA encryption keys in PEM format', category: 'Security', icon: Fingerprint, color: 'from-indigo-500 to-purple-500' },
+  { id: 'rsa-signer', name: 'RSA Signer & Verifier', description: 'Digitally sign payloads and verify signature integrity using RSA keys', category: 'Security', icon: Shield, color: 'from-blue-500 to-sky-500' },
+  { id: 'user-agent', name: 'User-Agent Parser', description: 'Deconstruct browser User-Agent strings and inspect client metrics', category: 'Date & Time', icon: Laptop, color: 'from-teal-500 to-emerald-500' },
+  { id: 'json-schema', name: 'JSON Schema Generator', description: 'Generate standard draft validation schemas from raw JSON payloads', category: 'Formatting', icon: Layers, color: 'from-amber-500 to-orange-500' },
+  { id: 'css-sandbox', name: 'CSS Flexbox & Grid visual sandbox', description: 'Prototype CSS Flex and Grid structures visually with Tailwind and CSS code outputs', category: 'Formatting', icon: Grid, color: 'from-fuchsia-500 to-pink-500' }
 ];
 
 const categories = ['All', 'Formatting', 'Encoding', 'Security', 'Text', 'Date & Time'];
