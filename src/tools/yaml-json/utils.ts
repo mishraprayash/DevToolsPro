@@ -1,114 +1,77 @@
-type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+import yaml from 'js-yaml';
 
-export function jsonToYaml(json: string): string {
-  let obj: JsonValue;
-  try { obj = JSON.parse(json); }
-  catch { return 'Invalid JSON'; }
-
-  const serialize = (val: JsonValue, indent: number): string => {
-    const pad = '  '.repeat(indent);
-    if (val === null) return 'null';
-    if (typeof val === 'string') {
-      return val.includes(': ') || val.includes('#') ? `"${val}"` : val;
-    }
-    if (typeof val === 'number' || typeof val === 'boolean') return String(val);
-    if (Array.isArray(val)) {
-      if (val.length === 0) return '[]';
-      return '\n' + val.map((item) => {
-        if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
-          return pad + '- ' + serialize(item, indent + 1).trimStart();
-        }
-        return pad + '- ' + serialize(item, indent + 1).trim();
-      }).join('\n');
-    }
-    const keys = Object.keys(val);
-    if (keys.length === 0) return '{}';
-    return '\n' + keys.map((k) => {
-      const v = val[k];
-      if (typeof v === 'object' && v !== null) {
-        return pad + k + ':' + serialize(v, indent + 1);
-      }
-      return pad + k + ': ' + serialize(v, indent + 1);
-    }).join('\n');
-  };
-
-  return serialize(obj, 0).trim();
+export interface YamlJsonOptions {
+  indent: number;
+  skipInvalid: boolean;
+  flowLevel: number;
 }
 
-function yamlParseLines(lines: string[], start: number, indent: number): { result: JsonValue; consumed: number } {
-  let i = start;
-  const obj: { [key: string]: JsonValue } = {};
-  const arr: JsonValue[] = [];
-  let isArray = false;
-
-  while (i < lines.length) {
-    const line = lines[i];
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) { i++; continue; }
-
-    const currentIndent = line.search(/\S/);
-    if (currentIndent < indent) break;
-    if (currentIndent > indent) { i++; continue; }
-
-    // Array item
-    const arrMatch = trimmed.match(/^-\s+(.*)/);
-    if (arrMatch) {
-      isArray = true;
-      const rest = arrMatch[1];
-      if (!rest || rest === '|' || rest === '>') {
-        const nested = yamlParseLines(lines, i + 1, currentIndent + 2);
-        arr.push(nested.result);
-        i = nested.consumed;
-      } else if (rest === '{}') { arr.push({}); i++; }
-      else if (rest === '[]') { arr.push([]); i++; }
-      else if (rest === 'null' || rest === '~') { arr.push(null); i++; }
-      else if (rest === 'true') { arr.push(true); i++; }
-      else if (rest === 'false') { arr.push(false); i++; }
-      else if (/^-?\d+\.\d+$/.test(rest)) { arr.push(parseFloat(rest)); i++; }
-      else if (/^-?\d+$/.test(rest)) { arr.push(parseInt(rest, 10)); i++; }
-      else {
-        const str = rest.startsWith('"') && rest.endsWith('"') ? rest.slice(1, -1) : rest;
-        arr.push(str);
-        i++;
-      }
-      continue;
-    }
-
-    // Key-value pair
-    const kvMatch = trimmed.match(/^([^:]+):\s*(.*)/);
-    if (kvMatch) {
-      const key = kvMatch[1].trim();
-      const value = kvMatch[2].trim();
-
-      if (value === '' || value === '|' || value === '>') {
-        const nested = yamlParseLines(lines, i + 1, currentIndent + 2);
-        obj[key] = nested.result;
-        i = nested.consumed;
-      } else if (value === 'null' || value === '~') { obj[key] = null; i++; }
-      else if (value === 'true') { obj[key] = true; i++; }
-      else if (value === 'false') { obj[key] = false; i++; }
-      else if (/^-?\d+\.\d+$/.test(value)) { obj[key] = parseFloat(value); i++; }
-      else if (/^-?\d+$/.test(value)) { obj[key] = parseInt(value, 10); i++; }
-      else {
-        const str = (value.startsWith('"') && value.endsWith('"')) ? value.slice(1, -1) : value;
-        obj[key] = str;
-        i++;
-      }
-      continue;
-    }
-
-    i++;
-  }
-
-  return { result: isArray ? arr : obj, consumed: i };
+export interface ValidationResult {
+  valid: boolean;
+  error?: string;
+  line?: number;
 }
 
-export function yamlToJson(yaml: string): string {
+export function validateJson(input: string): ValidationResult {
   try {
-    const lines = yaml.split('\n');
-    const { result } = yamlParseLines(lines, 0, 0);
-    return JSON.stringify(result, null, 2);
-  } catch {
-    return 'Invalid YAML';
+    JSON.parse(input);
+    return { valid: true };
+  } catch (e) {
+    const msg = (e as Error).message;
+    const match = msg.match(/position\s+(\d+)/i);
+    let line: number | undefined;
+    if (match) {
+      const pos = parseInt(match[1], 10);
+      line = input.slice(0, pos).split('\n').length;
+    }
+    return { valid: false, error: msg, line };
+  }
+}
+
+export function validateYaml(input: string): ValidationResult {
+  try {
+    yaml.load(input);
+    return { valid: true };
+  } catch (e) {
+    const err = e as any;
+    return {
+      valid: false,
+      error: err.reason || err.message,
+      line: err.mark ? err.mark.line + 1 : undefined
+    };
+  }
+}
+
+export function jsonToYaml(jsonStr: string, options: Partial<YamlJsonOptions> = {}): string {
+  try {
+    const parsed = JSON.parse(jsonStr);
+    const opts = {
+      indent: 2,
+      skipInvalid: true,
+      flowLevel: -1, // disable flow styles, force block styles
+      ...options
+    };
+    return yaml.dump(parsed, {
+      indent: opts.indent,
+      skipInvalid: opts.skipInvalid,
+      flowLevel: opts.flowLevel
+    });
+  } catch (e) {
+    return `Invalid JSON: ${(e as Error).message}`;
+  }
+}
+
+export function yamlToJson(yamlStr: string): string {
+  try {
+    // Support multi-document YAML strings (separated by ---)
+    const docs = yaml.loadAll(yamlStr);
+    if (docs.length === 0) return '';
+    if (docs.length === 1) {
+      return JSON.stringify(docs[0], null, 2);
+    }
+    // Return list of documents if there are multiple documents
+    return JSON.stringify(docs, null, 2);
+  } catch (e) {
+    return `Invalid YAML: ${(e as Error).message}`;
   }
 }
