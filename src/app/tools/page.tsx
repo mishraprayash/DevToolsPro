@@ -13,6 +13,7 @@ const tools = [
   { id: 'json', name: 'JSON Beautifier', description: 'Format, minify, sort & validate JSON', icon: FileJson, color: 'from-amber-500 to-orange-500', category: 'Formatting' },
   { id: 'color', name: 'Color Converter', description: 'Convert hex, RGB & HSL colours', icon: Palette, color: 'from-pink-500 to-purple-500', category: 'Formatting' },
   { id: 'yaml-json', name: 'YAML ↔ JSON', description: 'Convert between YAML and JSON', icon: FileCode, color: 'from-teal-500 to-emerald-500', category: 'Formatting' },
+  { id: 'xml-json', name: 'XML ↔ JSON', description: 'Convert between XML and JSON', icon: FileCode, color: 'from-emerald-500 to-teal-500', category: 'Formatting' },
   { id: 'html-preview', name: 'HTML Preview', description: 'Live render HTML with preview', icon: Globe, color: 'from-orange-500 to-red-500', category: 'Formatting' },
   { id: 'base64', name: 'Base64 Encoder', description: 'Encode and decode Base64 strings', icon: Lock, color: 'from-blue-500 to-cyan-500', category: 'Encoding' },
   { id: 'url', name: 'URL Encoder', description: 'Encode and decode URLs', icon: Link2, color: 'from-orange-500 to-amber-500', category: 'Encoding' },
@@ -30,7 +31,7 @@ const tools = [
 ];
 
 const categories = [
-  { name: 'Formatting', tools: ['json', 'color', 'yaml-json', 'html-preview'] },
+  { name: 'Formatting', tools: ['json', 'color', 'yaml-json', 'xml-json', 'html-preview'] },
   { name: 'Encoding', tools: ['base64', 'url', 'number-base', 'qr-code'] },
   { name: 'Security', tools: ['jwt', 'hash', 'password'] },
   { name: 'Text', tools: ['regex', 'uuid', 'lorem-ipsum'] },

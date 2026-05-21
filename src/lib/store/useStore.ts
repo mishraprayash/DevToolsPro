@@ -13,6 +13,8 @@ interface AppState {
   toggleFavorite: (toolId: string) => void;
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
+  feedbackOpen: boolean;
+  setFeedbackOpen: (open: boolean) => void;
 }
 
 function applyTheme(theme: Theme) {
@@ -53,6 +55,8 @@ export const useAppStore = create<AppState>()(
       },
       commandPaletteOpen: false,
       setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+      feedbackOpen: false,
+      setFeedbackOpen: (open) => set({ feedbackOpen: open }),
     }),
     {
       name: 'devtools-storage',

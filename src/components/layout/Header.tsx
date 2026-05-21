@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Search, Sun, Moon, Menu, X, Command } from 'lucide-react';
+import { Search, Sun, Moon, Menu, X, Command, MessageSquare } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { useAppStore } from '@/lib/store/useStore';
 
@@ -30,7 +30,7 @@ const categories = [
 ];
 
 export function Header() {
-  const { theme, toggleTheme, setCommandPaletteOpen } = useAppStore();
+  const { theme, toggleTheme, setCommandPaletteOpen, setFeedbackOpen } = useAppStore();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -74,6 +74,15 @@ export function Header() {
               className="sm:hidden p-2 text-text-secondary hover:text-text-primary transition-colors"
             >
               {/* <Search className="h-5 w-5" /> */}
+            </button>
+
+            <button
+              onClick={() => setFeedbackOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors border border-transparent"
+              title="Send Feedback"
+            >
+              <MessageSquare className="h-4 w-4 text-accent" />
+              <span className="font-outfit font-medium">Feedback</span>
             </button>
 
             <a
@@ -129,6 +138,19 @@ export function Header() {
                 </div>
               </div>
             ))}
+            
+            <div className="pt-2 border-t border-border mt-2 space-y-1">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setFeedbackOpen(true);
+                }}
+                className="flex items-center gap-2 w-full text-left py-2 px-3 text-sm text-accent hover:text-accent-hover hover:bg-bg-hover rounded-lg transition-colors font-medium cursor-pointer"
+              >
+                <MessageSquare className="h-4 w-4" />
+                <span>Send Feedback</span>
+              </button>
+            </div>
           </div>
         </motion.div>
       )}

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useAppStore } from '@/lib/store/useStore';
 
 const footerLinks = [
   {
@@ -16,6 +17,7 @@ const footerLinks = [
     title: 'Resources',
     links: [
       { name: 'GitHub', href: 'https://github.com/mishraprayash/web-tools' },
+      { name: 'Feedback', href: '#feedback' },
       { name: 'Changelog', href: '#' },
       { name: 'Privacy Policy', href: '#' },
     ],
@@ -23,6 +25,8 @@ const footerLinks = [
 ];
 
 export function Footer() {
+  const { setFeedbackOpen } = useAppStore();
+
   return (
     <footer className="border-t border-border bg-bg-secondary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
@@ -45,12 +49,21 @@ export function Footer() {
               <ul className="space-y-2">
                 {section.links.map((link) => (
                   <li key={link.name}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-                    >
-                      {link.name}
-                    </a>
+                    {link.href === '#feedback' ? (
+                      <button
+                        onClick={() => setFeedbackOpen(true)}
+                        className="text-sm text-text-secondary hover:text-text-primary transition-colors cursor-pointer text-left w-full"
+                      >
+                        {link.name}
+                      </button>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+                      >
+                        {link.name}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>

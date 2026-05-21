@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { CommandPalette } from '@/components/layout/CommandPalette';
+import { FeedbackModal } from '@/components/layout/FeedbackModal';
 import { Toaster } from '@/components/ui/Toast';
 import { ThemeSync } from "@/components/layout/ThemeSync";
 
@@ -48,6 +49,7 @@ export default function RootLayout({
         {children}
         <Footer />
         <CommandPalette />
+        <FeedbackModal />
         <Toaster />
       </body>
     </html>

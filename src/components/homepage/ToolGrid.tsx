@@ -7,11 +7,12 @@ import {
   FileJson, Lock, Hash, Clock, Regex, Type, Link2,
   CalendarClock, Palette, KeyRound, FileCode,
   Globe, AlignLeft, Binary, ImageUp, Search, ArrowRight, Command,
-  Earth, QrCode, Braces, Code, GitCompare, Ruler, CalendarPlus, SunMoon, Fingerprint, Shield, Laptop, Layers, Grid,
+  Earth, QrCode, Braces, Code, GitCompare, Ruler, CalendarPlus, SunMoon, Fingerprint, Shield, Laptop, Layers, Grid, Star
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store/useStore';
+import { toast } from '@/components/ui/Toast';
 
 interface ToolDef {
   id: string;
@@ -35,6 +36,7 @@ const tools: ToolDef[] = [
   { id: 'color', name: 'Color Converter', description: 'Convert between hex, RGB & HSL colour formats', category: 'Formatting', icon: Palette, color: 'from-pink-500 to-purple-500' },
   { id: 'password', name: 'Password Generator', description: 'Generate strong, customisable passwords', category: 'Security', icon: KeyRound, color: 'from-red-500 to-rose-500' },
   { id: 'yaml-json', name: 'YAML ↔ JSON', description: 'Convert between YAML and JSON formats', category: 'Formatting', icon: FileCode, color: 'from-teal-500 to-emerald-500' },
+  { id: 'xml-json', name: 'XML ↔ JSON', description: 'Convert between XML and JSON formats', category: 'Formatting', icon: FileCode, color: 'from-emerald-500 to-teal-500' },
   { id: 'html-preview', name: 'HTML Preview', description: 'Live render HTML with instant preview', category: 'Formatting', icon: Globe, color: 'from-orange-500 to-red-500' },
   { id: 'lorem-ipsum', name: 'Lorem Ipsum', description: 'Generate placeholder text in various lengths', category: 'Text', icon: AlignLeft, color: 'from-sky-500 to-indigo-500' },
   { id: 'text-statistics', name: 'Text Statistics', description: 'Words, chars, lines & read time', category: 'Text', icon: Search, color: 'from-amber-400 to-yellow-500' },
@@ -75,6 +77,21 @@ interface ToolCardProps { tool: ToolDef }
 
 const ToolCard = React.memo(function ToolCard({ tool }: ToolCardProps) {
   const Icon = tool.icon;
+  const { favorites, toggleFavorite } = useAppStore();
+  const isFavorite = React.useMemo(() => favorites.includes(tool.id), [favorites, tool.id]);
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(tool.id);
+    toast({
+      type: 'success',
+      message: isFavorite 
+        ? `${tool.name} removed from favorites.` 
+        : `${tool.name} added to favorites!`,
+    });
+  };
+
   return (
     <motion.div variants={cardVariant}>
       <Link href={`/tools/${tool.id}`} className="block h-full">
@@ -83,9 +100,30 @@ const ToolCard = React.memo(function ToolCard({ tool }: ToolCardProps) {
             <div className={cn('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110', tool.color)}>
               <Icon className="h-5 w-5 text-white" />
             </div>
-            <span className="text-[10px] text-text-muted bg-bg-hover border border-border px-2 py-0.5 rounded-full whitespace-nowrap leading-relaxed">
-              {tool.category}
-            </span>
+            
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleFavoriteClick}
+                className={cn(
+                  "p-1.5 rounded-lg border border-transparent bg-transparent cursor-pointer",
+                  "hover:border-border hover:bg-bg-hover transition-all duration-150 active:scale-95 shrink-0",
+                  isFavorite && "border-border bg-bg-hover"
+                )}
+                title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              >
+                <Star
+                  className={cn(
+                    "h-4 w-4 stroke-1.5 transition-all duration-150",
+                    isFavorite 
+                      ? "fill-accent stroke-accent scale-110" 
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                />
+              </button>
+              <span className="text-[10px] text-text-muted bg-bg-hover border border-border px-2 py-0.5 rounded-full whitespace-nowrap leading-relaxed">
+                {tool.category}
+              </span>
+            </div>
           </div>
           <div className="mt-3 flex-1">
             <h3 className="font-semibold font-outfit text-sm text-text-primary group-hover:text-accent transition-colors duration-150 leading-snug">
@@ -110,8 +148,12 @@ const ToolCard = React.memo(function ToolCard({ tool }: ToolCardProps) {
 export function ToolGrid() {
   const [query, setQuery] = React.useState('');
   const [activeCategory, setActiveCategory] = React.useState('All');
-  const { setCommandPaletteOpen } = useAppStore();
+  const { setCommandPaletteOpen, favorites } = useAppStore();
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const favoriteTools = React.useMemo(() => {
+    return tools.filter((t) => favorites.includes(t.id));
+  }, [favorites]);
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -191,6 +233,30 @@ export function ToolGrid() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* Favorite Tools Collection */}
+        {favoriteTools.length > 0 && activeCategory === 'All' && !query && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-10 pb-8 border-b border-border/60"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold font-outfit text-accent uppercase tracking-wider flex items-center gap-2">
+                <Star className="h-4.5 w-4.5 fill-accent stroke-accent" />
+                <span>Favorite Collection</span>
+              </h2>
+              <span className="text-[10px] text-text-muted font-mono bg-bg-hover px-2 py-0.5 rounded-md border border-border">
+                {favoriteTools.length} {favoriteTools.length === 1 ? 'tool' : 'tools'}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {favoriteTools.map((tool) => (
+                <ToolCard key={`fav-${tool.id}`} tool={tool} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         <AnimatePresence mode="wait">
           {filtered.length === 0 ? (
             <motion.div key="empty" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}

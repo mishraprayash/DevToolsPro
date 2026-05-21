@@ -11,6 +11,7 @@ const tools = [
   { id: 'json', name: 'JSON Beautifier', description: 'Format, minify, sort & validate JSON', icon: FileJson, category: 'Formatting' },
   { id: 'color', name: 'Color Converter', description: 'Convert hex, RGB & HSL colours', icon: Palette, category: 'Formatting' },
   { id: 'yaml-json', name: 'YAML ↔ JSON', description: 'Convert between YAML and JSON', icon: FileCode, category: 'Formatting' },
+  { id: 'xml-json', name: 'XML ↔ JSON', description: 'Convert between XML and JSON', icon: FileCode, category: 'Formatting' },
   { id: 'html-preview', name: 'HTML Preview', description: 'Live render HTML with preview', icon: Globe, category: 'Formatting' },
   { id: 'base64', name: 'Base64 Encoder', description: 'Encode and decode Base64', icon: Lock, category: 'Encoding' },
   { id: 'url', name: 'URL Encoder', description: 'Encode and decode URLs', icon: Link2, category: 'Encoding' },
