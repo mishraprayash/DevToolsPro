@@ -19,21 +19,29 @@ function textToUint8Array(str: string): Uint8Array {
 }
 
 function base64ToUint8Array(base64: string): Uint8Array {
-  const binary_string = window.atob(base64);
-  const len = binary_string.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binary_string.charCodeAt(i);
+  if (typeof window !== 'undefined' && window.atob) {
+    const binary_string = window.atob(base64);
+    const len = binary_string.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes;
   }
-  return bytes;
+  // Fallback for Node (tests/SSR)
+  return new Uint8Array(Buffer.from(base64, 'base64'));
 }
 
 function uint8ArrayToBase64(arr: Uint8Array): string {
-  let binary = '';
-  for (let i = 0; i < arr.length; i++) {
-    binary += String.fromCharCode(arr[i]);
+  if (typeof window !== 'undefined' && window.btoa) {
+    let binary = '';
+    for (let i = 0; i < arr.length; i++) {
+      binary += String.fromCharCode(arr[i]);
+    }
+    return window.btoa(binary);
   }
-  return window.btoa(binary);
+  // Fallback for Node
+  return Buffer.from(arr).toString('base64');
 }
 
 function padOrTruncate(arr: Uint8Array, length: number): Uint8Array {
@@ -126,6 +134,6 @@ export async function processAES(
       return { success: true, data: out };
     }
   } catch (e: any) {
-    return { success: false, error: "Crypto operation failed. Bad key, IV, or corrupted data." };
+    return { success: false, error: e.message || String(e) || "Crypto operation failed. Bad key, IV, or corrupted data." };
   }
 }

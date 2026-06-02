@@ -1,4 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+
+export const viewport: Viewport = {
+  themeColor: "#09090b",
+};
 import { Outfit, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from '@/components/layout/Header';
@@ -29,6 +33,11 @@ export const metadata: Metadata = {
   description: "20+ production-grade developer utilities in one beautiful platform. JSON beautifier, Base64 encoder, JWT decoder, hash generator, and more.",
   keywords: ["developer tools", "json beautifier", "base64 encoder", "jwt decoder", "hash generator", "regex tester", "devtools"],
   authors: [{ name: "DevTools Pro" }],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    title: "DevTools Pro",
+    statusBarStyle: "black-translucent",
+  },
   openGraph: {
     title: "DevTools Pro | Developer Utilities Platform",
     description: "20+ production-grade developer utilities in one beautiful platform.",

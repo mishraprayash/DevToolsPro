@@ -70,13 +70,21 @@ export default function Page() {
   const [error, setError] = React.useState<string | null>(null);
   const { addHistoryItem } = useAppStore();
 
-  // Live validation
-  const validation = React.useMemo(() => {
-    if (!input.trim() || mode !== 'yaml') return null;
-    return validateYaml(input);
+  const [validation, setValidation] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    let active = true;
+    if (!input.trim() || mode !== 'yaml') {
+      setValidation(null);
+      return;
+    }
+    validateYaml(input).then(res => {
+      if (active) setValidation(res);
+    });
+    return () => { active = false; };
   }, [input, mode]);
 
-  const handleProcess = React.useCallback(() => {
+  const handleProcess = React.useCallback(async () => {
     if (!input.trim()) {
       setOutput('');
       setError(null);
@@ -85,8 +93,8 @@ export default function Page() {
 
     try {
       const result = mode === 'json' 
-        ? jsonToYaml(input, { indent: parseInt(indent, 10) }) 
-        : yamlToJson(input);
+        ? await jsonToYaml(input, { indent: parseInt(indent, 10) }) 
+        : await yamlToJson(input);
       
       setOutput(result);
       setError(result.startsWith('Invalid') ? result : null);

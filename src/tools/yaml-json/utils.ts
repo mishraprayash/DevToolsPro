@@ -1,5 +1,3 @@
-import yaml from 'js-yaml';
-
 export interface YamlJsonOptions {
   indent: number;
   skipInvalid: boolean;
@@ -12,8 +10,14 @@ export interface ValidationResult {
   line?: number;
 }
 
-export function validateYaml(input: string): ValidationResult {
+// Dynamically import yaml to avoid blocking initial load
+async function getYaml() {
+  return (await import('js-yaml')).default;
+}
+
+export async function validateYaml(input: string): Promise<ValidationResult> {
   try {
+    const yaml = await getYaml();
     yaml.load(input);
     return { valid: true };
   } catch (e) {
@@ -26,15 +30,16 @@ export function validateYaml(input: string): ValidationResult {
   }
 }
 
-export function jsonToYaml(jsonStr: string, options: Partial<YamlJsonOptions> = {}): string {
+export async function jsonToYaml(jsonStr: string, options: Partial<YamlJsonOptions> = {}): Promise<string> {
   try {
     const parsed = JSON.parse(jsonStr);
     const opts = {
       indent: 2,
       skipInvalid: true,
-      flowLevel: -1, // disable flow styles, force block styles
+      flowLevel: -1, 
       ...options
     };
+    const yaml = await getYaml();
     return yaml.dump(parsed, {
       indent: opts.indent,
       skipInvalid: opts.skipInvalid,
@@ -45,15 +50,14 @@ export function jsonToYaml(jsonStr: string, options: Partial<YamlJsonOptions> = 
   }
 }
 
-export function yamlToJson(yamlStr: string): string {
+export async function yamlToJson(yamlStr: string): Promise<string> {
   try {
-    // Support multi-document YAML strings (separated by ---)
+    const yaml = await getYaml();
     const docs = yaml.loadAll(yamlStr);
     if (docs.length === 0) return '';
     if (docs.length === 1) {
       return JSON.stringify(docs[0], null, 2);
     }
-    // Return list of documents if there are multiple documents
     return JSON.stringify(docs, null, 2);
   } catch (e) {
     return `Invalid YAML: ${(e as Error).message}`;
