@@ -193,6 +193,10 @@ export default function Page() {
               setInput(e.target.value); 
               setActiveExample(-1); 
             }} 
+            onDropText={(text) => {
+              setInput(text);
+              setActiveExample(-1);
+            }}
             placeholder={mode === 'json' ? '{"key": "value"}' : 'key: value'} 
             monospace 
             className="min-h-[260px]" 

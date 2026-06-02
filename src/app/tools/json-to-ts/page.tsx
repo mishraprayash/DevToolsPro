@@ -170,9 +170,13 @@ export default function Page() {
               setInput(e.target.value);
               setActiveExample(-1);
             }}
-            placeholder='{"key": "value"}'
-            className="min-h-[250px]"
+            onDropText={(text) => {
+              setInput(text);
+              setActiveExample(-1);
+            }}
+            placeholder='{"user": {"name": "alice"}}'
             monospace
+            className="min-h-[300px]"
           />
 
           <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-4">

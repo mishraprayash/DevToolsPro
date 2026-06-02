@@ -227,9 +227,13 @@ export default function Page() {
               setInput(e.target.value); 
               setActiveExample(-1); 
             }} 
-            placeholder={mode === 'xml' ? '<root><key>value</key></root>' : '{"key": "value"}'} 
+            onDropText={(text) => {
+              setInput(text);
+              setActiveExample(-1);
+            }}
+            placeholder={mode === 'json' ? '{"key": "value"}' : '<root><key>value</key></root>'} 
             monospace 
-            className="min-h-[280px]" 
+            className="min-h-[260px]" 
           />
 
           {/* Validation Banner (XML only) */}

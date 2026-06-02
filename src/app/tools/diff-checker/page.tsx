@@ -190,13 +190,14 @@ export default function Page() {
               Clear
             </Button>
           </div>
-          <Input
-            value={originalText}
-            onChange={(e) => { setOriginalText(e.target.value); setActiveExample(-1); }}
-            placeholder="Paste or type original text here..."
-            className="min-h-[220px]"
-            monospace
-          />
+            <Input
+              value={originalText}
+              onChange={(e) => setOriginalText(e.target.value)}
+              onDropText={(text) => setOriginalText(text)}
+              placeholder="Paste original text here or drop file..."
+              className="min-h-[300px] h-[50vh]"
+              monospace
+            />
         </div>
 
         <div className="space-y-2">
@@ -208,13 +209,14 @@ export default function Page() {
               </Button>
             </div>
           </div>
-          <Input
-            value={modifiedText}
-            onChange={(e) => { setModifiedText(e.target.value); setActiveExample(-1); }}
-            placeholder="Paste or type modified text here..."
-            className="min-h-[220px]"
-            monospace
-          />
+            <Input
+              value={modifiedText}
+              onChange={(e) => setModifiedText(e.target.value)}
+              onDropText={(text) => setModifiedText(text)}
+              placeholder="Paste modified text here or drop file..."
+              className="min-h-[300px] h-[50vh]"
+              monospace
+            />
         </div>
       </div>
 

@@ -39,7 +39,8 @@ export default function Page() {
         </div>
 
         <Input value={input} onChange={(e) => { setInput(e.target.value); }}
-          placeholder="Enter text to hash..." className="min-h-[120px]" />
+          onDropText={(text) => { setInput(text); }}
+          placeholder="Enter text or drop a text file here to hash..." className="min-h-[120px]" />
 
         <div className="space-y-3">
           <label className="text-sm text-text-secondary">Algorithm</label>

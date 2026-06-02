@@ -253,11 +253,14 @@ export default function Page() {
             onChange={(e) => {
               setInput(e.target.value);
               setActiveExample(-1);
-              setRepairApplied([]);
             }}
-            placeholder='Paste messy or broken JSON here... (Comments, single quotes, unquoted keys, trailing commas are auto-detected)'
-            className="min-h-[360px]"
+            onDropText={(text) => {
+              setInput(text);
+              setActiveExample(-1);
+            }}
+            placeholder='{"key": "value"}'
             monospace
+            className="min-h-[300px]"
           />
 
           <div className="flex flex-wrap items-center gap-4 bg-bg-secondary p-4 rounded-xl border border-border">
