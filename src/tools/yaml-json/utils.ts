@@ -12,22 +12,6 @@ export interface ValidationResult {
   line?: number;
 }
 
-export function validateJson(input: string): ValidationResult {
-  try {
-    JSON.parse(input);
-    return { valid: true };
-  } catch (e) {
-    const msg = (e as Error).message;
-    const match = msg.match(/position\s+(\d+)/i);
-    let line: number | undefined;
-    if (match) {
-      const pos = parseInt(match[1], 10);
-      line = input.slice(0, pos).split('\n').length;
-    }
-    return { valid: false, error: msg, line };
-  }
-}
-
 export function validateYaml(input: string): ValidationResult {
   try {
     yaml.load(input);

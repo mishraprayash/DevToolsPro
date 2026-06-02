@@ -1,15 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { RotateCcw, AlertCircle, CheckCircle, Clock, KeyRound, Eye, EyeOff, Search, X, ChevronUp, ChevronDown, Sparkles, Code, Settings } from 'lucide-react';
+import { RotateCcw, AlertCircle, CheckCircle, Clock, KeyRound, Eye, EyeOff, Search, X, ChevronUp, ChevronDown, Sparkles, Settings, ShieldCheck, ShieldAlert, PenTool, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
-import { Input } from '@/components/ui/Input';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { decodeJWT, getJWTStatus, signJWT, type JWTPayload } from '@/tools/jwt/utils';
+import { decodeJWT, decodeJwtParts, getJWTStatus, signJWT, verifyJwtSignature, type JWTPayload, type JWTAlgorithm } from '@/tools/jwt/utils';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
 
@@ -30,10 +29,18 @@ const examples = [
 
 const knownTimestamps = ['exp', 'iat', 'nbf', 'auth_time'];
 
+const defaultSignerPayload = `{
+  "sub": "1234567890",
+  "name": "Alice Smith",
+  "admin": true,
+  "iat": 1710000000
+}`;
+
 const algoOptions = [
   { value: 'HS256', label: 'HMAC-SHA256 (HS256)' },
   { value: 'HS384', label: 'HMAC-SHA384 (HS384)' },
   { value: 'HS512', label: 'HMAC-SHA512 (HS512)' },
+  { value: 'RS256', label: 'RSA-SHA256 (RS256)' },
 ];
 
 function formatDate(ts: number): string {
@@ -189,9 +196,6 @@ function JsonBlock({ data, label, color }: { data: Record<string, unknown>; labe
     if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, [activeIndex, matchIndices]);
 
-  React.useEffect(() => {
-    setActiveIndex(0);
-  }, [searchQuery]);
 
   React.useEffect(() => {
     scrollToActive();
@@ -228,7 +232,7 @@ function JsonBlock({ data, label, color }: { data: Record<string, unknown>; labe
           ref={inputRef}
           type="text"
           value={searchQuery}
-          onChange={(e) => { setSearchQuery(e.target.value); }}
+          onChange={(e) => { setSearchQuery(e.target.value); setActiveIndex(0); }}
           onKeyDown={handleKeyDown}
           placeholder="Search keys or values..."
           className="flex-1 bg-transparent text-xs text-text-primary placeholder:text-text-muted focus:outline-none"
@@ -268,25 +272,31 @@ export default function Page() {
 
   // --- Decoder Tab States ---
   const [input, setInput] = React.useState(SAMPLE_JWT);
-  const [decoded, setDecoded] = React.useState<JWTPayload | null>(null);
-  const [status, setStatus] = React.useState<'valid' | 'expired' | 'invalid'>('valid');
   const [activeExample, setActiveExample] = React.useState(0);
+  const [verifySecret, setVerifySecret] = React.useState('your-secret-key-123');
+  const [verifyAlgorithm, setVerifyAlgorithm] = React.useState<JWTAlgorithm>('HS256');
+  const [signatureStatus, setSignatureStatus] = React.useState<'unknown' | 'valid' | 'invalid' | 'error'>('unknown');
+  const [signatureMessage, setSignatureMessage] = React.useState<string | null>(null);
 
   // --- Signer Tab States ---
   const [signHeader, setSignHeader] = React.useState(`{\n  "alg": "HS256",\n  "typ": "JWT"\n}`);
-  const [signPayload, setSignPayload] = React.useState(`{\n  "sub": "1234567890",\n  "name": "Alice Smith",\n  "admin": true,\n  "iat": ${Math.floor(Date.now() / 1000)}\n}`);
+  const [signPayload, setSignPayload] = React.useState(defaultSignerPayload);
   const [signSecret, setSignSecret] = React.useState('your-secret-key-123');
-  const [signAlgo, setSignAlgo] = React.useState<'HS256' | 'HS384' | 'HS512'>('HS256');
+  const [signAlgo, setSignAlgo] = React.useState<JWTAlgorithm>('HS256');
   const [signedToken, setSignedToken] = React.useState('');
   const [signError, setSignError] = React.useState<string | null>(null);
+  const [builderToken, setBuilderToken] = React.useState<string>('');
+  const [builderDecodeError, setBuilderDecodeError] = React.useState<string | null>(null);
 
-  // Decode live sync
-  React.useEffect(() => {
-    if (!input.trim()) { setDecoded(null); return; }
-    const result = decodeJWT(input);
-    setDecoded(result);
-    setStatus(result ? getJWTStatus(input) : 'invalid');
+  const decoded = React.useMemo((): JWTPayload | null => {
+    if (!input.trim()) return null;
+    return decodeJWT(input);
   }, [input]);
+
+  const status = React.useMemo((): 'valid' | 'expired' | 'invalid' => {
+    if (!input.trim()) return 'invalid' as const;
+    return decoded ? getJWTStatus(input) : 'invalid';
+  }, [input, decoded]);
 
   // Signer live sync
   const handleSign = React.useCallback(async () => {
@@ -314,7 +324,57 @@ export default function Page() {
     return () => clearTimeout(t);
   }, [handleSign]);
 
-  const handleClearDecoder = () => { setInput(''); setDecoded(null); setActiveExample(-1); };
+  const handleVerify = React.useCallback(async () => {
+    if (!input.trim()) {
+      setSignatureStatus('unknown');
+      setSignatureMessage(null);
+      return;
+    }
+    const partsResult = decodeJwtParts(input);
+    if (!partsResult.success) {
+      setSignatureStatus('error');
+      setSignatureMessage(partsResult.error);
+      return;
+    }
+    const alg = (partsResult.header?.alg as string | undefined) || verifyAlgorithm;
+    if (!['HS256', 'HS384', 'HS512', 'RS256'].includes(alg)) {
+      setSignatureStatus('error');
+      setSignatureMessage(`Unsupported alg: ${alg || 'none'}`);
+      return;
+    }
+    const verified = await verifyJwtSignature(input, verifySecret, alg as JWTAlgorithm);
+    if (verified.valid) {
+      setSignatureStatus('valid');
+      setSignatureMessage('Signature verified successfully.');
+    } else {
+      setSignatureStatus('invalid');
+      setSignatureMessage(verified.error || 'Signature mismatch');
+    }
+  }, [input, verifySecret, verifyAlgorithm]);
+
+  const handleBuilderDecode = React.useCallback(() => {
+    const result = decodeJwtParts(builderToken);
+    if (!result.success) {
+      setBuilderDecodeError(result.error);
+      return;
+    }
+    setBuilderDecodeError(null);
+    setSignHeader(JSON.stringify(result.header, null, 2));
+    setSignPayload(JSON.stringify(result.payload, null, 2));
+    const alg = result.header?.alg;
+    if (alg === 'HS256' || alg === 'HS384' || alg === 'HS512') {
+      setSignAlgo(alg);
+    }
+    setActiveTab('sign');
+    toast({ type: 'success', message: 'Loaded token into builder for editing.' });
+  }, [builderToken]);
+
+  const handleClearDecoder = () => {
+    setInput('');
+    setActiveExample(-1);
+    setSignatureStatus('unknown');
+    setSignatureMessage(null);
+  };
   const applyExample = (i: number) => { setActiveExample(i); setInput(examples[i].value); };
 
   const expValue = decoded?.payload?.exp && typeof decoded.payload.exp === 'number' ? decoded.payload.exp : null;
@@ -389,30 +449,120 @@ export default function Page() {
           )}
 
           {decoded && (
-            <div className={cn('flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 rounded-xl border flex-wrap',
-              status === 'valid' && 'bg-success/10 border-success/30 text-success',
-              status === 'expired' && 'bg-warning/10 border-warning/30 text-warning',
-              status === 'invalid' && 'bg-error/10 border-error/30 text-error'
-            )}>
-              <div className="flex items-center gap-2 shrink-0">
-                {status === 'valid' && <CheckCircle className="h-5 w-5 text-success" />}
-                {status === 'expired' && <AlertCircle className="h-5 w-5 text-warning" />}
-                {status === 'invalid' && <AlertCircle className="h-5 w-5 text-error" />}
-                <span className="font-bold">
-                  {status === 'valid' ? 'Token Valid' : status === 'expired' ? 'Token Expired' : 'Invalid Token'}
-                </span>
+            <div className="space-y-4">
+              <div className={cn('flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 rounded-xl border flex-wrap',
+                status === 'valid' && 'bg-success/10 border-success/30 text-success',
+                status === 'expired' && 'bg-warning/10 border-warning/30 text-warning',
+                status === 'invalid' && 'bg-error/10 border-error/30 text-error'
+              )}>
+                <div className="flex items-center gap-2 shrink-0">
+                  {status === 'valid' && <CheckCircle className="h-5 w-5 text-success" />}
+                  {status === 'expired' && <AlertCircle className="h-5 w-5 text-warning" />}
+                  {status === 'invalid' && <AlertCircle className="h-5 w-5 text-error" />}
+                  <span className="font-bold">
+                    {status === 'valid' ? 'Token Valid' : status === 'expired' ? 'Token Expired' : 'Invalid Token'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 flex-wrap">
+                  {expValue && (
+                    <div className="flex items-center gap-2 text-sm text-text-secondary">
+                      <Clock className="h-4 w-4 text-text-muted shrink-0" />
+                      <span>Expires: <span className="font-mono text-text-primary">{formatDate(expValue)}</span></span>
+                    </div>
+                  )}
+                  {iatValue && (
+                    <div className="flex items-center gap-2 text-sm text-text-secondary">
+                      <KeyRound className="h-4 w-4 text-text-muted shrink-0" />
+                      <span>Issued: <span className="font-mono text-text-primary">{formatDate(iatValue)}</span></span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-4 flex-wrap">
-                {expValue && (
-                  <div className="flex items-center gap-2 text-sm text-text-secondary">
-                    <Clock className="h-4 w-4 text-text-muted shrink-0" />
-                    <span>Expires: <span className="font-mono text-text-primary">{formatDate(expValue)}</span></span>
+
+              <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                    <ShieldCheck className="h-4 w-4 text-accent" />
+                    <span>Verify Signature (HMAC)</span>
+                  </div>
+                  <button
+                    onClick={handleVerify}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-bg-tertiary border border-border text-text-secondary hover:text-text-primary hover:border-border-hover transition-colors"
+                  >
+                    <Timer className="h-3.5 w-3.5" />
+                    Verify Now
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <Select
+                    label="Algorithm"
+                    options={algoOptions}
+                    value={verifyAlgorithm}
+                    onChange={(e) => setVerifyAlgorithm(e.target.value as JWTAlgorithm)}
+                  />
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-text-secondary mb-2">
+                      {verifyAlgorithm === 'RS256' ? 'RSA Public Key (PEM)' : 'Shared Secret'}
+                    </label>
+                    <input
+                      type="text"
+                      value={verifySecret}
+                      onChange={(e) => setVerifySecret(e.target.value)}
+                      placeholder={verifyAlgorithm === 'RS256' ? 'Paste RSA public key in PEM format' : 'paste shared secret'}
+                      className="w-full h-9 px-3 rounded-lg bg-bg-tertiary border border-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+
+                {signatureStatus !== 'unknown' && (
+                  <div className={cn(
+                    'flex items-start gap-2.5 p-3 rounded-lg border text-xs',
+                    signatureStatus === 'valid' && 'bg-success/10 border-success/30 text-success',
+                    signatureStatus === 'invalid' && 'bg-error/10 border-error/30 text-error',
+                    signatureStatus === 'error' && 'bg-warning/10 border-warning/30 text-warning'
+                  )}>
+                    {signatureStatus === 'valid' && <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" />}
+                    {signatureStatus !== 'valid' && <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />}
+                    <div>
+                      <p className="font-semibold">
+                        {signatureStatus === 'valid'
+                          ? 'Signature Valid'
+                          : signatureStatus === 'invalid'
+                            ? 'Signature Invalid'
+                            : 'Verification Error'}
+                      </p>
+                      <p className="text-text-secondary mt-1 leading-relaxed">{signatureMessage}</p>
+                    </div>
                   </div>
                 )}
-                {iatValue && (
-                  <div className="flex items-center gap-2 text-sm text-text-secondary">
-                    <KeyRound className="h-4 w-4 text-text-muted shrink-0" />
-                    <span>Issued: <span className="font-mono text-text-primary">{formatDate(iatValue)}</span></span>
+              </div>
+
+              <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                  <PenTool className="h-4 w-4 text-accent" />
+                  <span>Load Token into Builder</span>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    value={builderToken}
+                    onChange={(e) => setBuilderToken(e.target.value)}
+                    placeholder="Paste JWT here to edit and re-sign"
+                    className="flex-1 h-10 px-4 rounded-lg bg-bg-tertiary border border-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBuilderDecode}
+                    icon={<PenTool className="h-4 w-4" />}
+                  >
+                    Load
+                  </Button>
+                </div>
+                {builderDecodeError && (
+                  <div className="text-xs text-error bg-error/10 border border-error/30 rounded-lg p-2">
+                    {builderDecodeError}
                   </div>
                 )}
               </div>
@@ -433,22 +583,24 @@ export default function Page() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Select
-                  label="HMAC Algorithm"
-                  options={algoOptions}
-                  value={signAlgo}
-                  onChange={(e) => setSignAlgo(e.target.value as any)}
-                />
+                  <Select
+                    label="Signing Algorithm"
+                    options={algoOptions}
+                    value={signAlgo}
+                    onChange={(e) => setSignAlgo(e.target.value as JWTAlgorithm)}
+                  />
 
                 <div>
-                  <label className="block text-xs font-medium text-text-secondary mb-2">HMAC Shared Secret Key</label>
-                  <input
-                    type="text"
-                    value={signSecret}
-                    onChange={(e) => setSignSecret(e.target.value)}
-                    placeholder="your-secret-key"
-                    className="w-full h-10 px-4 rounded-lg bg-bg-tertiary border border-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"
-                  />
+                    <label className="block text-xs font-medium text-text-secondary mb-2">
+                      {signAlgo === 'RS256' ? 'RSA Private Key (PEM)' : 'HMAC Shared Secret Key'}
+                    </label>
+                    <input
+                      type="text"
+                      value={signSecret}
+                      onChange={(e) => setSignSecret(e.target.value)}
+                      placeholder={signAlgo === 'RS256' ? 'Paste RSA private key in PEM format' : 'your-secret-key'}
+                      className="w-full h-10 px-4 rounded-lg bg-bg-tertiary border border-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"
+                    />
                 </div>
               </div>
             </div>

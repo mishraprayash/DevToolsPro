@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { translateCronToEnglish, getNextRuns } from '@/tools/cron/utils';
-import { getRelativeTime } from '@/tools/timestamp/utils';
+import { getRelativeTime } from '@/tools/date-toolbox/utils';
 import { cn } from '@/lib/utils';
 
 const cronFields5 = [

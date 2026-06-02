@@ -9,14 +9,16 @@ import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { 
-  jsonToYaml, 
-  yamlToJson, 
-  validateJson, 
-  validateYaml 
+import {
+  jsonToYaml,
+  yamlToJson,
+  validateYaml
 } from '@/tools/yaml-json/utils';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
+
+import { HistoryDrawer } from '@/components/tool/HistoryDrawer';
+import { useAppStore, type HistoryItem } from '@/lib/store/useStore';
 
 const indentOptions = [
   { value: '2', label: '2 Spaces' },
@@ -66,11 +68,12 @@ export default function Page() {
   const [indent, setIndent] = React.useState('2');
   const [activeExample, setActiveExample] = React.useState(0);
   const [error, setError] = React.useState<string | null>(null);
+  const { addHistoryItem } = useAppStore();
 
   // Live validation
   const validation = React.useMemo(() => {
-    if (!input.trim()) return null;
-    return mode === 'json' ? validateJson(input) : validateYaml(input);
+    if (!input.trim() || mode !== 'yaml') return null;
+    return validateYaml(input);
   }, [input, mode]);
 
   const handleProcess = React.useCallback(() => {
@@ -87,11 +90,15 @@ export default function Page() {
       
       setOutput(result);
       setError(result.startsWith('Invalid') ? result : null);
+
+      if (!result.startsWith('Invalid')) {
+        addHistoryItem('yaml-json', input.slice(0, 1000), result.slice(0, 1000), { mode });
+      }
     } catch (e) {
       setError((e as Error).message);
       setOutput('');
     }
-  }, [input, mode, indent]);
+  }, [input, mode, indent, addHistoryItem]);
 
   React.useEffect(() => {
     const t = setTimeout(handleProcess, 100);
@@ -135,11 +142,19 @@ export default function Page() {
     toast({ type: 'success', message: `Downloaded converted_config.${isTargetYaml ? 'yaml' : 'json'}` });
   };
 
+  const handleRestore = (item: HistoryItem) => {
+    setInput(item.input);
+    if (item.metadata?.mode) {
+      setMode(item.metadata.mode);
+    }
+  };
+
   return (
     <ToolLayout 
       name="YAML ↔ JSON Converter" 
       description="Convert bidirectionally between YAML and JSON formats with advanced multi-document parsing and precise line validation checks" 
       category="Formatting"
+      historyComponent={<HistoryDrawer toolId="yaml-json" onRestore={handleRestore} />}
     >
       <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
@@ -175,7 +190,7 @@ export default function Page() {
             className="min-h-[260px]" 
           />
 
-          {/* Validation Banner alerts */}
+          {/* Validation Banner alerts (YAML only) */}
           {validation && (
             <div className={cn(
               'p-3.5 rounded-xl border flex items-start gap-2.5 text-xs shadow-sm animate-fade-in',
@@ -186,13 +201,13 @@ export default function Page() {
               {validation.valid ? (
                 <>
                   <CheckCircle className="h-4 w-4 shrink-0 text-success mt-0.5" />
-                  <span>Valid {mode.toUpperCase()} Structure</span>
+                  <span>Valid YAML Structure</span>
                 </>
               ) : (
                 <>
                   <AlertTriangle className="h-4 w-4 shrink-0 text-error mt-0.5" />
                   <div className="space-y-0.5">
-                    <span className="font-bold">{mode.toUpperCase()} Parse Alert</span>
+                    <span className="font-bold">YAML Parse Alert</span>
                     <p className="leading-relaxed">
                       {validation.error} {validation.line ? `(Line: ${validation.line})` : ''}
                     </p>

@@ -1,10 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { RotateCcw, AlertCircle, Sparkles, HelpCircle, Code, Copy, Info } from 'lucide-react';
+import { RotateCcw, AlertCircle, Sparkles, Info } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { testRegex, RegexMatch } from '@/tools/regex/utils';
@@ -78,7 +77,7 @@ export default function Page() {
     matches: [], 
     isValid: true 
   });
-  const [activeExample, setActiveExample] = React.useState(0);
+  const [activeExample] = React.useState(0);
 
   // Run Regex Matching
   React.useEffect(() => {
@@ -101,19 +100,10 @@ export default function Page() {
     }
   }, [pattern, flags, testString, replacement, result.isValid]);
 
-  const applyExample = (i: number) => {
-    setActiveExample(i);
-    setPattern(examples[i].pattern);
-    setFlags(examples[i].flags);
-    setTestString(examples[i].testString);
-    setReplacement('');
-  };
-
   const handleClear = () => {
     setPattern('');
     setTestString('');
     setReplacement('');
-    setActiveExample(-1);
   };
 
   const toggleFlag = (f: string) => {
@@ -151,7 +141,6 @@ export default function Page() {
     setPattern(item.pattern);
     setTestString(item.test);
     setFlags('g');
-    setActiveExample(-1);
     toast({ type: 'success', message: `Injected ${item.name} pattern!` });
   };
 
@@ -163,8 +152,6 @@ export default function Page() {
       description="Validate regular expressions with live highlights, browse the pattern cheat sheet, and test String replacements in real-time" 
       category="Text"
     >
-      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Input Column */}
         <div className="space-y-4">
@@ -180,7 +167,7 @@ export default function Page() {
             <input
               type="text"
               value={pattern}
-              onChange={(e) => { setPattern(e.target.value); setActiveExample(-1); }}
+              onChange={(e) => { setPattern(e.target.value); }}
               placeholder="[a-zA-Z0-9]+..."
               className={cn(
                 'w-full h-11 pl-7 pr-24 rounded-lg bg-bg-tertiary border text-sm font-mono text-text-primary focus:outline-none transition-all',
@@ -229,7 +216,7 @@ export default function Page() {
             <label className="text-xs text-text-muted mb-1.5 block font-semibold">Test Source Text</label>
             <Input 
               value={testString} 
-              onChange={(e) => { setTestString(e.target.value); setActiveExample(-1); }} 
+              onChange={(e) => { setTestString(e.target.value); }} 
               placeholder="Paste test string here..." 
               className="min-h-[140px]"
               monospace 

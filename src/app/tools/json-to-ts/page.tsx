@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Download, RotateCcw, Settings, Copy } from 'lucide-react';
+import { RotateCcw, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
@@ -10,7 +10,6 @@ import { ExamplePills } from '@/components/ui/ExamplePills';
 import { Select } from '@/components/ui/Select';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { jsonToTs, type JsonToTsOptions } from '@/tools/json-to-ts/utils';
-import { toast } from '@/components/ui/Toast';
 
 const outputOptions = [
   { value: 'interface', label: 'Interface' },
@@ -147,17 +146,6 @@ export default function Page() {
     setError(null);
   };
 
-  const handleDownload = () => {
-    if (!output) return;
-    const blob = new Blob([output], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${rootName || 'types'}.ts`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ type: 'success', message: 'Typescript file downloaded successfully!' });
-  };
 
   return (
     <ToolLayout
@@ -257,15 +245,6 @@ export default function Page() {
             <h2 className="text-base font-medium text-text-secondary">TypeScript Definitions</h2>
             <div className="flex items-center gap-2">
               <CopyButton value={output} label="Copy" disabled={!output} />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDownload}
-                disabled={!output}
-                icon={<Download className="h-4 w-4" />}
-              >
-                Download
-              </Button>
             </div>
           </div>
 

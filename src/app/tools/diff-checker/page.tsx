@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { RotateCcw, Columns, AlignJustify, ArrowLeftRight, Settings, Check } from 'lucide-react';
+import { RotateCcw, Columns, AlignJustify, ArrowLeftRight, Check, Navigation, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
@@ -82,6 +82,10 @@ export default function Page() {
   
   const [splitRows, setSplitRows] = React.useState<SplitDiffRow[]>([]);
   const [unifiedLines, setUnifiedLines] = React.useState<UnifiedDiffLine[]>([]);
+  const [diffLineIndices, setDiffLineIndices] = React.useState<number[]>([]);
+  const [splitRowIndices, setSplitRowIndices] = React.useState<number[]>([]);
+  const [activeDiffIndex, setActiveDiffIndex] = React.useState(0);
+  const diffContainerRef = React.useRef<HTMLDivElement>(null);
   const [hasChanges, setHasChanges] = React.useState(false);
   const [addedCount, setAddedCount] = React.useState(0);
   const [removedCount, setRemovedCount] = React.useState(0);
@@ -98,6 +102,9 @@ export default function Page() {
     setHasChanges(result.hasChanges);
     setAddedCount(result.addedCount);
     setRemovedCount(result.removedCount);
+    setDiffLineIndices(result.diffLineIndices);
+    setSplitRowIndices(result.splitRowIndices);
+    setActiveDiffIndex(0);
   }, [originalText, modifiedText, ignoreWhitespace, ignoreCase]);
 
   React.useEffect(() => {
@@ -134,6 +141,37 @@ export default function Page() {
       })
       .join('\n');
   };
+
+  const totalDiffs = viewMode === 'split' ? splitRowIndices.length : diffLineIndices.length;
+  const hasDiffs = totalDiffs > 0;
+
+  const scrollToDiff = React.useCallback((index: number) => {
+    const container = diffContainerRef.current;
+    if (!container || !hasDiffs) return;
+    const indices = viewMode === 'split' ? splitRowIndices : diffLineIndices;
+    const targetIndex = indices[index] ?? indices[0];
+    const selector = viewMode === 'split'
+      ? `[data-split-index="${targetIndex}"]`
+      : `[data-unified-index="${targetIndex}"]`;
+    const el = container.querySelector(selector) as HTMLElement | null;
+    if (el) {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }, [hasDiffs, viewMode, splitRowIndices, diffLineIndices]);
+
+  const handleNextDiff = React.useCallback(() => {
+    if (!hasDiffs) return;
+    const next = (activeDiffIndex + 1) % totalDiffs;
+    setActiveDiffIndex(next);
+    scrollToDiff(next);
+  }, [activeDiffIndex, totalDiffs, scrollToDiff, hasDiffs]);
+
+  const handlePrevDiff = React.useCallback(() => {
+    if (!hasDiffs) return;
+    const prev = (activeDiffIndex - 1 + totalDiffs) % totalDiffs;
+    setActiveDiffIndex(prev);
+    scrollToDiff(prev);
+  }, [activeDiffIndex, totalDiffs, scrollToDiff, hasDiffs]);
 
   return (
     <ToolLayout
@@ -204,10 +242,28 @@ export default function Page() {
           </label>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center rounded-lg border border-border p-1 bg-bg-tertiary">
-            <button
-              onClick={() => setViewMode('split')}
+         <div className="flex items-center gap-3">
+           <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border bg-bg-tertiary text-xs text-text-muted">
+             <Navigation className="h-3.5 w-3.5" />
+             <span>{hasDiffs ? `${activeDiffIndex + 1}/${totalDiffs}` : '0/0'}</span>
+             <button
+               onClick={handlePrevDiff}
+               disabled={!hasDiffs}
+               className="p-1 rounded-md text-text-muted hover:text-text-primary disabled:opacity-40"
+             >
+               <ChevronUp className="h-3.5 w-3.5" />
+             </button>
+             <button
+               onClick={handleNextDiff}
+               disabled={!hasDiffs}
+               className="p-1 rounded-md text-text-muted hover:text-text-primary disabled:opacity-40"
+             >
+               <ChevronDown className="h-3.5 w-3.5" />
+             </button>
+           </div>
+           <div className="flex items-center rounded-lg border border-border p-1 bg-bg-tertiary">
+             <button
+               onClick={() => setViewMode('split')}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
                 viewMode === 'split'
@@ -256,8 +312,8 @@ export default function Page() {
           )}
         </div>
 
-        <div className="border border-border rounded-xl bg-bg-tertiary overflow-hidden font-mono text-sm shadow-sm select-text">
-          {viewMode === 'split' ? (
+         <div ref={diffContainerRef} className="border border-border rounded-xl bg-bg-tertiary overflow-hidden font-mono text-sm shadow-sm select-text">
+           {viewMode === 'split' ? (
             /* Split View Render */
             <div className="overflow-x-auto w-full">
               <table className="w-full border-collapse table-fixed min-w-[700px]">
@@ -271,9 +327,6 @@ export default function Page() {
                 </thead>
                 <tbody>
                   {splitRows.map((row, index) => {
-                    const hasOld = !!row.oldLine;
-                    const hasNew = !!row.newLine;
-                    
                     const oldType = row.oldLine?.type;
                     const newType = row.newLine?.type;
 
@@ -283,8 +336,19 @@ export default function Page() {
                       (oldType === 'modified' || newType === 'modified') && 'bg-accent/5'
                     );
 
+                    const isDiffRow = (row.oldLine?.type && row.oldLine.type !== 'unchanged') || (row.newLine?.type && row.newLine.type !== 'unchanged');
+                    const isActive = hasDiffs && splitRowIndices[activeDiffIndex] === index;
                     return (
-                      <tr key={index} className={cn('border-b border-border/40 hover:bg-bg-hover/20 transition-colors', rowBgClass)}>
+                      <tr
+                        key={index}
+                        data-split-index={index}
+                        className={cn(
+                          'border-b border-border/40 hover:bg-bg-hover/20 transition-colors',
+                          rowBgClass,
+                          isDiffRow && 'scroll-mt-20',
+                          isActive && 'ring-2 ring-accent/40 bg-accent/5'
+                        )}
+                      >
                         {/* Old Line Number */}
                         <td className={cn(
                           'px-2 py-1 border-r border-border text-right select-none text-[11px] text-text-muted font-mono leading-relaxed',
@@ -377,9 +441,20 @@ export default function Page() {
                       line.type === 'added' && 'bg-success/5',
                       line.type === 'removed' && 'bg-error/5'
                     );
+                    const isDiffLine = line.type !== 'unchanged';
+                    const isActive = hasDiffs && diffLineIndices[activeDiffIndex] === index;
 
                     return (
-                      <tr key={index} className={cn('border-b border-border/40 hover:bg-bg-hover/20 transition-colors', rowBgClass)}>
+                      <tr
+                        key={index}
+                        data-unified-index={index}
+                        className={cn(
+                          'border-b border-border/40 hover:bg-bg-hover/20 transition-colors',
+                          rowBgClass,
+                          isDiffLine && 'scroll-mt-20',
+                          isActive && 'ring-2 ring-accent/40 bg-accent/5'
+                        )}
+                      >
                         {/* Old Line Number */}
                         <td className={cn(
                           'px-2 py-1 border-r border-border text-right select-none text-[11px] text-text-muted font-mono leading-relaxed',

@@ -30,25 +30,6 @@ export function validateXml(input: string): ValidationResult {
   }
 }
 
-export function validateJson(input: string): ValidationResult {
-  if (!input.trim()) {
-    return { valid: false, error: 'Input is empty' };
-  }
-  try {
-    JSON.parse(input);
-    return { valid: true };
-  } catch (e) {
-    const msg = (e as Error).message;
-    const match = msg.match(/position\s+(\d+)/i);
-    let line: number | undefined;
-    if (match) {
-      const pos = parseInt(match[1], 10);
-      line = input.slice(0, pos).split('\n').length;
-    }
-    return { valid: false, error: msg, line };
-  }
-}
-
 export function xmlToJson(xmlStr: string, options: XmlJsonOptions = {}): string {
   try {
     const validation = validateXml(xmlStr);
@@ -72,11 +53,6 @@ export function xmlToJson(xmlStr: string, options: XmlJsonOptions = {}): string 
 
 export function jsonToXml(jsonStr: string, options: XmlJsonOptions = {}): string {
   try {
-    const validation = validateJson(jsonStr);
-    if (!validation.valid) {
-      return `Invalid JSON: ${validation.error} ${validation.line ? `(Line: ${validation.line})` : ''}`;
-    }
-
     const parsed = JSON.parse(jsonStr);
     const builder = new XMLBuilder({
       ignoreAttributes: options.ignoreAttributes ?? false,

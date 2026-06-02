@@ -7,7 +7,7 @@ import {
   FileJson, Lock, Hash, Clock, Regex, Type, Link2,
   CalendarClock, Palette, KeyRound, FileCode,
   Globe, AlignLeft, Binary, ImageUp, Search, ArrowRight, Command,
-  Earth, QrCode, Braces, Code, GitCompare, Ruler, CalendarPlus, SunMoon, Fingerprint, Shield, Laptop, Layers, Grid, Star
+  Earth, QrCode, Braces, Code, GitCompare, Ruler, CalendarPlus, SunMoon, Fingerprint, Shield, Laptop, Layers, Grid, Star, LayoutGrid, List as ListIcon, History
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
@@ -25,23 +25,20 @@ interface ToolDef {
 
 const tools: ToolDef[] = [
   { id: 'json', name: 'JSON Beautifier', description: 'Format, minify, sort keys & validate JSON', category: 'Formatting', icon: FileJson, color: 'from-amber-500 to-orange-500' },
-  { id: 'base64', name: 'Base64 Encoder', description: 'Encode & decode Base64 and URL-safe variants', category: 'Encoding', icon: Lock, color: 'from-blue-500 to-cyan-500' },
+  { id: 'encoder', name: 'Encoder & Decoder Sandbox', description: 'Encode & decode values via Base64, URL component, and HTML entities', category: 'Encoding', icon: Lock, color: 'from-blue-500 to-cyan-500' },
   { id: 'jwt', name: 'JWT Decoder', description: 'Inspect header, payload & expiry of any JWT', category: 'Security', icon: Lock, color: 'from-purple-500 to-pink-500' },
   { id: 'hash', name: 'Hash Generator', description: 'SHA-256 & SHA-512 via Web Crypto API', category: 'Security', icon: Hash, color: 'from-green-500 to-emerald-500' },
-  { id: 'timestamp', name: 'Timestamp Converter', description: 'Convert Unix timestamps to human-readable dates', category: 'Date & Time', icon: Clock, color: 'from-rose-500 to-red-500' },
+  { id: 'date-toolbox', name: 'Date, Time & Epoch Sandbox', description: 'Parse Unix epoch timestamps, convert timezones, and calculate calendar offsets', category: 'Date & Time', icon: Clock, color: 'from-rose-500 to-red-500' },
   { id: 'regex', name: 'Regex Tester', description: 'Live match highlighting with group capture', category: 'Text', icon: Regex, color: 'from-violet-500 to-purple-500' },
   { id: 'uuid', name: 'UUID Generator', description: 'Generate bulk UUID v4 identifiers instantly', category: 'Text', icon: Type, color: 'from-cyan-500 to-blue-500' },
-  { id: 'url', name: 'URL Encoder', description: 'Encode & decode URL components', category: 'Encoding', icon: Link2, color: 'from-orange-500 to-amber-500' },
+  { id: 'aes', name: 'AES Encrypt/Decrypt', description: 'Encrypt & decrypt text using AES CBC/CTR modes', category: 'Security', icon: Shield, color: 'from-zinc-500 to-indigo-500' },
   { id: 'cron', name: 'Cron Parser', description: 'Translate cron expressions to plain English', category: 'Date & Time', icon: CalendarClock, color: 'from-indigo-500 to-blue-500' },
   { id: 'color', name: 'Color Converter', description: 'Convert between hex, RGB & HSL colour formats', category: 'Formatting', icon: Palette, color: 'from-pink-500 to-purple-500' },
   { id: 'password', name: 'Password Generator', description: 'Generate strong, customisable passwords', category: 'Security', icon: KeyRound, color: 'from-red-500 to-rose-500' },
   { id: 'yaml-json', name: 'YAML ↔ JSON', description: 'Convert between YAML and JSON formats', category: 'Formatting', icon: FileCode, color: 'from-teal-500 to-emerald-500' },
   { id: 'xml-json', name: 'XML ↔ JSON', description: 'Convert between XML and JSON formats', category: 'Formatting', icon: FileCode, color: 'from-emerald-500 to-teal-500' },
   { id: 'html-preview', name: 'HTML Preview', description: 'Live render HTML with instant preview', category: 'Formatting', icon: Globe, color: 'from-orange-500 to-red-500' },
-  { id: 'lorem-ipsum', name: 'Lorem Ipsum', description: 'Generate placeholder text in various lengths', category: 'Text', icon: AlignLeft, color: 'from-sky-500 to-indigo-500' },
-  { id: 'text-statistics', name: 'Text Statistics', description: 'Words, chars, lines & read time', category: 'Text', icon: Search, color: 'from-amber-400 to-yellow-500' },
-  { id: 'slugify', name: 'Slugify', description: 'Generate URL-friendly slugs from titles', category: 'Text', icon: Link2, color: 'from-cyan-400 to-blue-500' },
-  { id: 'html-entities', name: 'HTML Entities', description: 'Encode and decode HTML entities', category: 'Formatting', icon: FileCode, color: 'from-orange-400 to-rose-500' },
+  { id: 'string-utils', name: 'Rich Text & String Utilities', description: 'Analyze word counts, generate dummy Lorem paragraphs, and transform slug cases', category: 'Text', icon: AlignLeft, color: 'from-sky-500 to-indigo-500' },
   { id: 'number-base', name: 'Base Converter', description: 'Convert between decimal, hex, binary & octal', category: 'Encoding', icon: Binary, color: 'from-violet-500 to-blue-500' },
   { id: 'image-base64', name: 'Image to Base64', description: 'Convert images to base64 data URLs', category: 'Encoding', icon: ImageUp, color: 'from-sky-500 to-teal-500' },
   { id: 'timezone', name: 'Time Zone Converter', description: 'Convert time across timezones worldwide', category: 'Date & Time', icon: Earth, color: 'from-emerald-500 to-teal-500' },
@@ -50,10 +47,8 @@ const tools: ToolDef[] = [
   { id: 'svg-to-jsx', name: 'SVG to JSX/React', description: 'Convert raw SVG into optimized React components', category: 'Formatting', icon: Code, color: 'from-teal-400 to-emerald-500' },
   { id: 'diff-checker', name: 'Diff Checker', description: 'Compare texts and highlight line-by-line differences', category: 'Text', icon: GitCompare, color: 'from-red-400 to-rose-600' },
   { id: 'css-unit-converter', name: 'CSS Unit & Fluid Typography', description: 'Convert CSS sizing values or generate fluid responsive clamp layouts', category: 'Formatting', icon: Ruler, color: 'from-fuchsia-500 to-purple-600' },
-  { id: 'date-calculator', name: 'Date Calculator', description: 'Add/subtract time offsets or calculate business and working days', category: 'Date & Time', icon: CalendarPlus, color: 'from-orange-500 to-amber-500' },
   { id: 'nepali-calendar', name: 'Nepali BS ↔ AD Calendar', description: 'Convert dates bidirectionally between Bikram Sambat and Gregorian calendars', category: 'Date & Time', icon: SunMoon, color: 'from-red-500 to-rose-500' },
-  { id: 'rsa-generator', name: 'RSA Keypair Generator', description: 'Generate public and private RSA encryption keys in PEM format', category: 'Security', icon: Fingerprint, color: 'from-indigo-500 to-purple-500' },
-  { id: 'rsa-signer', name: 'RSA Signer & Verifier', description: 'Digitally sign payloads and verify signature integrity using RSA keys', category: 'Security', icon: Shield, color: 'from-blue-500 to-sky-500' },
+  { id: 'rsa-sandbox', name: 'RSA Sandbox', description: 'Generate public/private keys, sign messages & cryptographically verify payloads', category: 'Security', icon: Shield, color: 'from-indigo-500 to-purple-500' },
   { id: 'user-agent', name: 'User-Agent Parser', description: 'Deconstruct browser User-Agent strings and inspect client metrics', category: 'Date & Time', icon: Laptop, color: 'from-teal-500 to-emerald-500' },
   { id: 'json-schema', name: 'JSON Schema Generator', description: 'Generate standard draft validation schemas from raw JSON payloads', category: 'Formatting', icon: Layers, color: 'from-amber-500 to-orange-500' },
   { id: 'css-sandbox', name: 'CSS Flexbox & Grid visual sandbox', description: 'Prototype CSS Flex and Grid structures visually with Tailwind and CSS code outputs', category: 'Formatting', icon: Grid, color: 'from-fuchsia-500 to-pink-500' }
@@ -71,13 +66,13 @@ const cardVariant = {
   show: { opacity: 1, y: 0, transition: { duration: 0.2 } },
 };
 
-// ─── Memoised card ───────────────────────────────────────────────────────────
+// ─── Memoised item components ────────────────────────────────────────────────
 
-interface ToolCardProps { tool: ToolDef }
+interface ToolItemProps { tool: ToolDef; viewMode: 'grid' | 'list' }
 
-const ToolCard = React.memo(function ToolCard({ tool }: ToolCardProps) {
+const ToolItem = React.memo(function ToolItem({ tool, viewMode }: ToolItemProps) {
   const Icon = tool.icon;
-  const { favorites, toggleFavorite } = useAppStore();
+  const { favorites, toggleFavorite, addRecentTool } = useAppStore();
   const isFavorite = React.useMemo(() => favorites.includes(tool.id), [favorites, tool.id]);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
@@ -92,9 +87,62 @@ const ToolCard = React.memo(function ToolCard({ tool }: ToolCardProps) {
     });
   };
 
+  if (viewMode === 'list') {
+    return (
+      <motion.div variants={cardVariant}>
+        <Link href={`/tools/${tool.id}`} onClick={() => addRecentTool(tool.id)} className="block">
+          <Card hover className="p-3 group cursor-pointer flex items-center gap-4 transition-all hover:bg-bg-hover">
+            <div className={cn('w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105', tool.color)}>
+              <Icon className="h-5 w-5 text-white" />
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold font-outfit text-sm text-text-primary group-hover:text-accent transition-colors duration-150 truncate">
+                  {tool.name}
+                </h3>
+                <span className="text-[10px] text-text-muted bg-bg-tertiary border border-border px-2 py-0.5 rounded-full whitespace-nowrap hidden sm:inline-block">
+                  {tool.category}
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-text-secondary truncate">
+                {tool.description}
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={handleFavoriteClick}
+                className={cn(
+                  "p-1.5 rounded-lg border border-transparent bg-transparent cursor-pointer",
+                  "hover:border-border hover:bg-bg-tertiary transition-all duration-150 active:scale-95",
+                  isFavorite && "text-accent"
+                )}
+                title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              >
+                <Star
+                  className={cn(
+                    "h-4 w-4 stroke-1.5 transition-all duration-150",
+                    isFavorite 
+                      ? "fill-accent stroke-accent scale-110" 
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                />
+              </button>
+              <div className="text-[11px] text-accent font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:flex items-center gap-1 w-20 justify-end">
+                Open <ArrowRight className="h-3 w-3" />
+              </div>
+            </div>
+          </Card>
+        </Link>
+      </motion.div>
+    );
+  }
+
+  // Grid View (Default)
   return (
-    <motion.div variants={cardVariant}>
-      <Link href={`/tools/${tool.id}`} className="block h-full">
+    <motion.div variants={cardVariant} className="h-full">
+      <Link href={`/tools/${tool.id}`} onClick={() => addRecentTool(tool.id)} className="block h-full">
         <Card hover className="h-full p-5 group cursor-pointer flex flex-col">
           <div className="flex items-start justify-between gap-2">
             <div className={cn('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110', tool.color)}>
@@ -148,12 +196,27 @@ const ToolCard = React.memo(function ToolCard({ tool }: ToolCardProps) {
 export function ToolGrid() {
   const [query, setQuery] = React.useState('');
   const [activeCategory, setActiveCategory] = React.useState('All');
-  const { setCommandPaletteOpen, favorites } = useAppStore();
+  const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
+  const { setCommandPaletteOpen, favorites, recentTools } = useAppStore();
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem('devtools-viewmode');
+    if (saved === 'list' || saved === 'grid') setViewMode(saved);
+  }, []);
+
+  const handleSetViewMode = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('devtools-viewmode', mode);
+  };
 
   const favoriteTools = React.useMemo(() => {
     return tools.filter((t) => favorites.includes(t.id));
   }, [favorites]);
+
+  const recentToolsData = React.useMemo(() => {
+    return recentTools.map(id => tools.find(t => t.id === id)).filter(Boolean) as ToolDef[];
+  }, [recentTools]);
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -185,12 +248,41 @@ export function ToolGrid() {
     return counts;
   }, []);
 
+  const renderToolGroup = (title: string, groupTools: ToolDef[], icon?: React.ReactNode) => {
+    if (groupTools.length === 0) return null;
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-10"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          {icon}
+          <h2 className="text-sm font-bold font-outfit text-text-primary uppercase tracking-wider">
+            {title}
+          </h2>
+          <span className="ml-auto text-[10px] text-text-muted font-mono bg-bg-hover px-2 py-0.5 rounded-md border border-border">
+            {groupTools.length}
+          </span>
+        </div>
+        <div className={viewMode === 'grid' 
+          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" 
+          : "flex flex-col gap-2"}>
+          {groupTools.map((tool) => (
+            <ToolItem key={`${title}-${tool.id}`} tool={tool} viewMode={viewMode} />
+          ))}
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
     <section className="min-h-[calc(100vh-4rem)]">
       <div className="border-b border-border bg-bg-primary/95 backdrop-blur-xl sticky top-16 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="shrink-0">
+            <div className="shrink-0 hidden md:block">
               <h1 className="text-lg font-bold font-outfit gradient-text leading-none">DevTools Pro</h1>
             </div>
 
@@ -207,10 +299,29 @@ export function ToolGrid() {
               )}
             </div>
 
-            <button onClick={() => setCommandPaletteOpen(true)}
-              className="hidden lg:flex items-center gap-1.5 px-3 h-9 shrink-0 rounded-lg border border-border bg-bg-tertiary text-xs text-text-muted hover:text-text-primary hover:border-border-hover transition-all duration-200">
-              <Command className="h-3 w-3" /><span>K</span><span className="text-text-muted/70 ml-0.5">quick jump</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-bg-tertiary border border-border rounded-lg p-0.5 h-9">
+                <button
+                  onClick={() => handleSetViewMode('grid')}
+                  className={cn("p-1.5 rounded-md transition-colors", viewMode === 'grid' ? "bg-bg-primary shadow-sm text-text-primary" : "text-text-muted hover:text-text-primary")}
+                  aria-label="Grid view"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleSetViewMode('list')}
+                  className={cn("p-1.5 rounded-md transition-colors", viewMode === 'list' ? "bg-bg-primary shadow-sm text-text-primary" : "text-text-muted hover:text-text-primary")}
+                  aria-label="List view"
+                >
+                  <ListIcon className="h-4 w-4" />
+                </button>
+              </div>
+
+              <button onClick={() => setCommandPaletteOpen(true)}
+                className="hidden lg:flex items-center gap-1.5 px-3 h-9 shrink-0 rounded-lg border border-border bg-bg-tertiary text-xs text-text-muted hover:text-text-primary hover:border-border-hover transition-all duration-200">
+                <Command className="h-3 w-3" /><span>K</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 mt-3 overflow-x-auto scrollbar-hide">
@@ -233,30 +344,6 @@ export function ToolGrid() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {/* Favorite Tools Collection */}
-        {favoriteTools.length > 0 && activeCategory === 'All' && !query && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-10 pb-8 border-b border-border/60"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold font-outfit text-accent uppercase tracking-wider flex items-center gap-2">
-                <Star className="h-4.5 w-4.5 fill-accent stroke-accent" />
-                <span>Favorite Collection</span>
-              </h2>
-              <span className="text-[10px] text-text-muted font-mono bg-bg-hover px-2 py-0.5 rounded-md border border-border">
-                {favoriteTools.length} {favoriteTools.length === 1 ? 'tool' : 'tools'}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {favoriteTools.map((tool) => (
-                <ToolCard key={`fav-${tool.id}`} tool={tool} />
-              ))}
-            </div>
-          </motion.div>
-        )}
-
         <AnimatePresence mode="wait">
           {filtered.length === 0 ? (
             <motion.div key="empty" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -266,9 +353,32 @@ export function ToolGrid() {
               <button onClick={handleClear} className="mt-3 text-sm text-accent hover:underline">Clear filters</button>
             </motion.div>
           ) : (
-            <motion.div key={activeCategory + query} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-              variants={container} initial="hidden" animate="show">
-              {filtered.map((tool) => <ToolCard key={tool.id} tool={tool} />)}
+            <motion.div key={activeCategory + query + viewMode} className="w-full">
+              {/* Categorized View (when no filters are active) */}
+              {activeCategory === 'All' && !query ? (
+                <div className="space-y-6">
+                  {recentToolsData.length > 0 && renderToolGroup("Jump Back In", recentToolsData, <History className="h-4.5 w-4.5 text-blue-500" />)}
+                  {favoriteTools.length > 0 && renderToolGroup("Favorites", favoriteTools, <Star className="h-4.5 w-4.5 text-amber-500 fill-amber-500" />)}
+                  
+                  {/* Render by Category */}
+                  {categories.filter(c => c !== 'All').map(cat => {
+                    const catTools = tools.filter(t => t.category === cat);
+                    return <React.Fragment key={cat}>{renderToolGroup(cat, catTools)}</React.Fragment>;
+                  })}
+                </div>
+              ) : (
+                /* Flat Filtered View */
+                <motion.div 
+                  variants={container} 
+                  initial="hidden" 
+                  animate="show"
+                  className={viewMode === 'grid' 
+                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" 
+                    : "flex flex-col gap-2"}
+                >
+                  {filtered.map((tool) => <ToolItem key={tool.id} tool={tool} viewMode={viewMode} />)}
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

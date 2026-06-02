@@ -36,6 +36,8 @@ export interface DiffResult {
   hasChanges: boolean;
   addedCount: number;
   removedCount: number;
+  diffLineIndices: number[];
+  splitRowIndices: number[];
 }
 
 function charDiff(oldStr: string, newStr: string): { oldTokens: DiffToken[]; newTokens: DiffToken[] } {
@@ -179,6 +181,7 @@ export function computeDiff(original: string, modified: string, options: Partial
 
   // Build unified lines directly from path
   const unifiedLines: UnifiedDiffLine[] = [];
+  const diffLineIndices: number[] = [];
   let addedCount = 0;
   let removedCount = 0;
   let hasChanges = false;
@@ -199,6 +202,7 @@ export function computeDiff(original: string, modified: string, options: Partial
         lineNumberNew: step.newIdx + 1,
         value: newLines[step.newIdx]
       });
+      diffLineIndices.push(unifiedLines.length - 1);
     } else {
       hasChanges = true;
       removedCount++;
@@ -207,12 +211,14 @@ export function computeDiff(original: string, modified: string, options: Partial
         lineNumberOld: step.oldIdx + 1,
         value: oldLines[step.oldIdx]
       });
+      diffLineIndices.push(unifiedLines.length - 1);
     }
   }
 
   // Build split rows
   // To handle character highlighting on "modified" lines, we group adjacent removes & adds
   const splitRows: SplitDiffRow[] = [];
+  const splitRowIndices: number[] = [];
   let idx = 0;
 
   while (idx < path.length) {
@@ -273,6 +279,7 @@ export function computeDiff(original: string, modified: string, options: Partial
               tokens: newTokens
             }
           });
+          splitRowIndices.push(splitRows.length - 1);
         } else if (rem) {
           // Only removal
           splitRows.push({
@@ -282,6 +289,7 @@ export function computeDiff(original: string, modified: string, options: Partial
               type: 'removed'
             }
           });
+          splitRowIndices.push(splitRows.length - 1);
         } else if (add) {
           // Only addition
           splitRows.push({
@@ -291,6 +299,7 @@ export function computeDiff(original: string, modified: string, options: Partial
               type: 'added'
             }
           });
+          splitRowIndices.push(splitRows.length - 1);
         }
       }
     }
@@ -301,6 +310,8 @@ export function computeDiff(original: string, modified: string, options: Partial
     unifiedLines,
     hasChanges,
     addedCount,
-    removedCount
+    removedCount,
+    diffLineIndices,
+    splitRowIndices
   };
 }

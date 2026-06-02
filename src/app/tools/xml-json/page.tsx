@@ -9,14 +9,16 @@ import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { 
-  xmlToJson, 
-  jsonToXml, 
-  validateXml, 
-  validateJson 
+import {
+  xmlToJson,
+  jsonToXml,
+  validateXml
 } from '@/tools/xml-json/utils';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
+
+import { HistoryDrawer } from '@/components/tool/HistoryDrawer';
+import { useAppStore, type HistoryItem } from '@/lib/store/useStore';
 
 const indentOptions = [
   { value: '2', label: '2 Spaces' },
@@ -105,11 +107,12 @@ export default function Page() {
   const [attributePrefix, setAttributePrefix] = React.useState('@_');
   const [parseValues, setParseValues] = React.useState(true);
   const [activeExample, setActiveExample] = React.useState(0);
+  const { addHistoryItem } = useAppStore();
 
   // Live validation
   const validation = React.useMemo(() => {
-    if (!input.trim()) return null;
-    return mode === 'xml' ? validateXml(input) : validateJson(input);
+    if (!input.trim() || mode !== 'xml') return null;
+    return validateXml(input);
   }, [input, mode]);
 
   const handleProcess = React.useCallback(() => {
@@ -133,10 +136,14 @@ export default function Page() {
         : jsonToXml(input, opts);
 
       setOutput(result);
+
+      if (!result.startsWith('Error') && !result.startsWith('Invalid')) {
+        addHistoryItem('xml-json', input.slice(0, 1000), result.slice(0, 1000), { mode });
+      }
     } catch (e) {
       setOutput(`Error: ${(e as Error).message}`);
     }
-  }, [input, mode, indent, ignoreAttributes, attributePrefix, parseValues]);
+  }, [input, mode, indent, ignoreAttributes, attributePrefix, parseValues, addHistoryItem]);
 
   React.useEffect(() => {
     const t = setTimeout(handleProcess, 100);
@@ -177,11 +184,19 @@ export default function Page() {
     toast({ type: 'success', message: `Downloaded converted.${isTargetXml ? 'xml' : 'json'}` });
   };
 
+  const handleRestore = (item: HistoryItem) => {
+    setInput(item.input);
+    if (item.metadata?.mode) {
+      setMode(item.metadata.mode);
+    }
+  };
+
   return (
     <ToolLayout 
       name="XML ↔ JSON Converter" 
       description="Convert bidirectionally between XML and JSON documents with support for node attributes, parsing options, value conversion, and precise syntax validation" 
       category="Formatting"
+      historyComponent={<HistoryDrawer toolId="xml-json" onRestore={handleRestore} />}
     >
       <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
@@ -217,7 +232,7 @@ export default function Page() {
             className="min-h-[280px]" 
           />
 
-          {/* Validation Banner */}
+          {/* Validation Banner (XML only) */}
           {validation && (
             <div className={cn(
               'p-3.5 rounded-xl border flex items-start gap-2.5 text-xs shadow-sm animate-fade-in',
@@ -228,13 +243,13 @@ export default function Page() {
               {validation.valid ? (
                 <>
                   <CheckCircle className="h-4 w-4 shrink-0 text-success mt-0.5" />
-                  <span>Valid {mode.toUpperCase()} Structure</span>
+                  <span>Valid XML Structure</span>
                 </>
               ) : (
                 <>
                   <AlertTriangle className="h-4 w-4 shrink-0 text-error mt-0.5" />
                   <div className="space-y-0.5">
-                    <span className="font-bold">{mode.toUpperCase()} Parse Alert</span>
+                    <span className="font-bold">XML Parse Alert</span>
                     <p className="leading-relaxed">
                       {validation.error} {validation.line ? `(Line: ${validation.line})` : ''}
                     </p>

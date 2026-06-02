@@ -1,13 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { RotateCcw, Copy, Download, RefreshCw, Hash } from 'lucide-react';
+import { RotateCcw, Copy, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { generateBulkUuids, type UuidOptions } from '@/tools/uuid/utils';
-import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 
 const versionOptions = [
@@ -57,20 +56,8 @@ export default function Page() {
   const handleCopyAll = () => {
     if (uuids.length === 0) return;
     navigator.clipboard.writeText(uuids.join('\n'));
-    toast({ type: 'success', message: `Copied all ${uuids.length} UUIDs to clipboard!` });
   };
 
-  const handleDownload = () => {
-    if (uuids.length === 0) return;
-    const blob = new Blob([uuids.join('\n')], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `uuids_v${version}_count_${uuids.length}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ type: 'success', message: 'UUID file downloaded successfully!' });
-  };
 
   return (
     <ToolLayout
@@ -184,9 +171,6 @@ export default function Page() {
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={handleCopyAll} icon={<Copy className="h-4 w-4" />}>
                 Copy All
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleDownload} icon={<Download className="h-4 w-4" />}>
-                Download
               </Button>
             </div>
           </div>

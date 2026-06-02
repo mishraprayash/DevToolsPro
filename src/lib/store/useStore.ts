@@ -3,6 +3,14 @@ import { persist } from 'zustand/middleware';
 
 type Theme = 'dark' | 'light';
 
+export interface HistoryItem {
+  id: string;
+  timestamp: number;
+  input: string;
+  output: string;
+  metadata?: Record<string, any>;
+}
+
 interface AppState {
   theme: Theme;
   setTheme: (theme: Theme) => void;
@@ -15,6 +23,9 @@ interface AppState {
   setCommandPaletteOpen: (open: boolean) => void;
   feedbackOpen: boolean;
   setFeedbackOpen: (open: boolean) => void;
+  history: Record<string, HistoryItem[]>;
+  addHistoryItem: (toolId: string, input: string, output: string, metadata?: Record<string, any>) => void;
+  clearHistory: (toolId: string) => void;
 }
 
 function applyTheme(theme: Theme) {
@@ -57,6 +68,32 @@ export const useAppStore = create<AppState>()(
       setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
       feedbackOpen: false,
       setFeedbackOpen: (open) => set({ feedbackOpen: open }),
+      history: {},
+      addHistoryItem: (toolId, input, output, metadata) => {
+        const currentHistory = get().history[toolId] || [];
+        const newItem: HistoryItem = {
+          id: Math.random().toString(36).substring(2, 9),
+          timestamp: Date.now(),
+          input,
+          output,
+          metadata
+        };
+        const updatedHistory = [newItem, ...currentHistory.filter(h => h.input !== input)].slice(0, 20);
+        set((state) => ({
+          history: {
+            ...state.history,
+            [toolId]: updatedHistory
+          }
+        }));
+      },
+      clearHistory: (toolId) => {
+        set((state) => ({
+          history: {
+            ...state.history,
+            [toolId]: []
+          }
+        }));
+      }
     }),
     {
       name: 'devtools-storage',
@@ -64,6 +101,7 @@ export const useAppStore = create<AppState>()(
         theme: state.theme,
         recentTools: state.recentTools,
         favorites: state.favorites,
+        history: state.history,
       }),
     }
   )

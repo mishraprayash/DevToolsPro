@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { RotateCcw, Copy, Download, Settings, RefreshCw, AlertTriangle, Sparkles } from 'lucide-react';
+import { RotateCcw, Settings, AlertTriangle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
@@ -9,9 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { generateJsonSchema, type SchemaOptions } from '@/tools/json-schema/utils';
-import { toast } from '@/components/ui/Toast';
-import { cn } from '@/lib/utils';
+import { generateJsonSchema } from '@/tools/json-schema/utils';
 
 const draftOptions = [
   { value: 'draft-07', label: 'JSON Schema Draft-07 (Widely Compatible)' },
@@ -109,17 +107,6 @@ export default function Page() {
     setActiveExample(-1);
   };
 
-  const handleDownload = () => {
-    if (!output || error) return;
-    const blob = new Blob([output], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'schema.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ type: 'success', message: 'Schema download started!' });
-  };
 
   return (
     <ToolLayout
@@ -195,9 +182,6 @@ export default function Page() {
             
             <div className="flex items-center gap-2">
               <CopyButton value={output} disabled={!output} />
-              <Button variant="ghost" size="sm" onClick={handleDownload} disabled={!output} icon={<Download className="h-4 w-4" />}>
-                Download
-              </Button>
             </div>
           </div>
 

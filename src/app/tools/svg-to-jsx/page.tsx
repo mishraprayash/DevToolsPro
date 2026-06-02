@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Download, RotateCcw, Settings, Eye } from 'lucide-react';
+import { RotateCcw, Settings, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
@@ -10,7 +10,6 @@ import { ExamplePills } from '@/components/ui/ExamplePills';
 import { Select } from '@/components/ui/Select';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { svgToJsx, type SvgToJsxOptions } from '@/tools/svg-to-jsx/utils';
-import { toast } from '@/components/ui/Toast';
 
 const dimensionOptions = [
   { value: 'props', label: 'Responsive ({...props})' },
@@ -113,17 +112,6 @@ export default function Page() {
     setError(null);
   };
 
-  const handleDownload = () => {
-    if (!output) return;
-    const blob = new Blob([output], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${componentName || 'SvgIcon'}.${language === 'ts' ? 'tsx' : 'jsx'}`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ type: 'success', message: 'React component downloaded successfully!' });
-  };
 
   return (
     <ToolLayout
@@ -232,15 +220,6 @@ export default function Page() {
             <h2 className="text-base font-medium text-text-secondary">Generated React Component</h2>
             <div className="flex items-center gap-2">
               <CopyButton value={output} label="Copy" disabled={!output} />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDownload}
-                disabled={!output}
-                icon={<Download className="h-4 w-4" />}
-              >
-                Download
-              </Button>
             </div>
           </div>
 

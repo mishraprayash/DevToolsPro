@@ -31,7 +31,6 @@ export function parseInput(input: string): ParseResult {
   if (!input || input.trim() === '') return { success: false, error: 'Empty input' };
   const s = input.trim();
 
-  // numeric -> timestamp
   if (/^-?\d+$/.test(s)) {
     const num = parseInt(s, 10);
     const unit = detectTimestampUnit(s);
@@ -42,28 +41,16 @@ export function parseInput(input: string): ParseResult {
     return { success: true, dateMs: num, originalVal: num, detectedUnit: 'unknown' };
   }
 
-  // try Date.parse for ISO / RFC / common strings
   const parsed = Date.parse(s);
   if (!isNaN(parsed)) return { success: true, dateMs: parsed, originalVal: parsed, detectedUnit: 'unknown' };
 
   return { success: false, error: 'Unable to parse input as timestamp or date string' };
 }
 
-export function toEpochSeconds(dateMs: number): number {
-  return Math.floor(dateMs / 1000);
-}
-
-export function toEpochMilliseconds(dateMs: number): number {
-  return dateMs;
-}
-
-export function toEpochMicroseconds(dateMs: number): number {
-  return dateMs * 1000;
-}
-
-export function toEpochNanoseconds(dateMs: number): number {
-  return dateMs * 1000000;
-}
+export function toEpochSeconds(dateMs: number): number { return Math.floor(dateMs / 1000); }
+export function toEpochMilliseconds(dateMs: number): number { return dateMs; }
+export function toEpochMicroseconds(dateMs: number): number { return dateMs * 1000; }
+export function toEpochNanoseconds(dateMs: number): number { return dateMs * 1000000; }
 
 export function formatInTimezone(dateMs: number, timeZone?: string, opts?: Intl.DateTimeFormatOptions): string {
   try {
@@ -75,44 +62,15 @@ export function formatInTimezone(dateMs: number, timeZone?: string, opts?: Intl.
   }
 }
 
-export function startOfDay(dateMs: number): number {
-  const d = new Date(dateMs);
-  d.setHours(0,0,0,0);
-  return d.getTime();
-}
-
-export function endOfDay(dateMs: number): number {
-  const d = new Date(dateMs);
-  d.setHours(23,59,59,999);
-  return d.getTime();
-}
-
 export function listTimeZones(): string[] {
   try {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     if (typeof Intl?.supportedValuesOf === 'function') {
-      // @ts-ignore
       return Intl.supportedValuesOf('timeZone');
     }
   } catch {
     // ignore
   }
   return ['UTC','America/Los_Angeles','America/New_York','Europe/London','Europe/Paris','Asia/Tokyo','Asia/Kolkata','Australia/Sydney'];
-}
-
-export function formatTimestamp(timestamp: number, format: 'unix' | 'iso' | 'local' = 'iso'): string {
-  const date = new Date(timestamp);
-  switch (format) {
-    case 'unix':
-      return Math.floor(date.getTime() / 1000).toString();
-    case 'iso':
-      return date.toISOString();
-    case 'local':
-      return date.toLocaleString();
-    default:
-      return date.toISOString();
-  }
 }
 
 export function getRelativeTime(timestampMs: number): string {
@@ -123,17 +81,12 @@ export function getRelativeTime(timestampMs: number): string {
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
-  const months = Math.floor(days / 30);
-  const years = Math.floor(days / 365);
 
   const isFuture = diff < 0;
   const prefix = isFuture ? 'in ' : '';
   const suffix = isFuture ? '' : ' ago';
 
   if (seconds < 5) return 'just now';
-  
-  if (years > 0) return `${prefix}${years} year${years > 1 ? 's' : ''}${suffix}`;
-  if (months > 0) return `${prefix}${months} month${months > 1 ? 's' : ''}${suffix}`;
   if (days > 0) return `${prefix}${days} day${days > 1 ? 's' : ''}${suffix}`;
   if (hours > 0) return `${prefix}${hours} hour${hours > 1 ? 's' : ''}${suffix}`;
   if (minutes > 0) return `${prefix}${minutes} minute${minutes > 1 ? 's' : ''}${suffix}`;
@@ -148,4 +101,85 @@ export function detectTimestampUnit(input: string): 'seconds' | 'milliseconds' |
   if (len <= 13) return 'milliseconds';
   if (len <= 16) return 'microseconds';
   return 'nanoseconds';
+}
+
+export interface DateOffset {
+  years: number;
+  months: number;
+  weeks: number;
+  days: number;
+}
+
+export interface DateDiffResult {
+  totalDays: number;
+  weeks: number;
+  remainingDays: number;
+  months: number;
+  remainingDaysInMonth: number;
+  years: number;
+  remainingMonths: number;
+  businessDays: number;
+}
+
+export function addSubtractDate(baseDate: Date, offset: DateOffset, action: 'add' | 'subtract'): Date {
+  const result = new Date(baseDate.getTime());
+  const factor = action === 'add' ? 1 : -1;
+
+  if (offset.years) result.setFullYear(result.getFullYear() + offset.years * factor);
+  if (offset.months) result.setMonth(result.getMonth() + offset.months * factor);
+  if (offset.weeks) result.setDate(result.getDate() + offset.weeks * 7 * factor);
+  if (offset.days) result.setDate(result.getDate() + offset.days * factor);
+
+  return result;
+}
+
+export function computeDateDifference(startDate: Date, endDate: Date): DateDiffResult {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const isReverse = start.getTime() > end.getTime();
+  const early = isReverse ? end : start;
+  const late = isReverse ? start : end;
+
+  const timeDiff = late.getTime() - early.getTime();
+  const totalDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+  const weeks = Math.floor(totalDays / 7);
+  const remainingDays = totalDays % 7;
+
+  let yDiff = late.getFullYear() - early.getFullYear();
+  let mDiff = late.getMonth() - early.getMonth();
+  let dDiff = late.getDate() - early.getDate();
+
+  if (dDiff < 0) {
+    mDiff--;
+    const prevMonth = new Date(late.getFullYear(), late.getMonth(), 0);
+    dDiff += prevMonth.getDate();
+  }
+
+  if (mDiff < 0) {
+    yDiff--;
+    mDiff += 12;
+  }
+
+  let businessDays = 0;
+  const current = new Date(early.getTime());
+  current.setHours(0, 0, 0, 0);
+  const finish = new Date(late.getTime());
+  finish.setHours(0, 0, 0, 0);
+
+  while (current.getTime() <= finish.getTime()) {
+    const day = current.getDay();
+    if (day !== 0 && day !== 6) businessDays++;
+    current.setDate(current.getDate() + 1);
+  }
+
+  return {
+    totalDays,
+    weeks,
+    remainingDays,
+    months: yDiff * 12 + mDiff,
+    remainingDaysInMonth: dDiff,
+    years: yDiff,
+    remainingMonths: mDiff,
+    businessDays
+  };
 }

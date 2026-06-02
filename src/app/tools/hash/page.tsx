@@ -4,7 +4,6 @@ import * as React from 'react';
 import { RotateCcw, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { ExamplePills } from '@/components/ui/ExamplePills';
 import { Input } from '@/components/ui/Input';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { hashString, hashAlgorithms, HashAlgorithm } from '@/tools/hash/utils';
@@ -21,7 +20,6 @@ export default function Page() {
   const [hash, setHash] = React.useState('');
   const [algorithm, setAlgorithm] = React.useState<HashAlgorithm>(examples[0].algo);
   const [error, setError] = React.useState<string | null>(null);
-  const [activeExample, setActiveExample] = React.useState(0);
 
   React.useEffect(() => {
     if (!input.trim()) { setHash(''); setError(null); return; }
@@ -30,24 +28,17 @@ export default function Page() {
       .catch(err => { setError((err as Error).message); setHash(''); });
   }, [input, algorithm]);
 
-  const applyExample = (i: number) => {
-    setActiveExample(i);
-    setAlgorithm(examples[i].algo);
-    setInput(examples[i].input);
-  };
 
   return (
     <ToolLayout name="Hash Generator" description="Generate SHA-256 & SHA-512 hashes securely via the Web Crypto API" category="Security">
-      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
-
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-medium text-text-secondary">Input Text</h2>
-          <Button variant="ghost" size="sm" onClick={() => { setInput(''); setHash(''); setError(null); setActiveExample(-1); }}
+          <Button variant="ghost" size="sm" onClick={() => { setInput(''); setHash(''); setError(null); }}
             icon={<RotateCcw className="h-4 w-4" />}>Clear</Button>
         </div>
 
-        <Input value={input} onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }}
+        <Input value={input} onChange={(e) => { setInput(e.target.value); }}
           placeholder="Enter text to hash..." className="min-h-[120px]" />
 
         <div className="space-y-3">
