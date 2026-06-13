@@ -2,36 +2,12 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sun, Moon, Menu, X, Command, MessageSquare } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { useAppStore } from '@/lib/store/useStore';
-
-const tools = [
-  { id: 'json', name: 'JSON Beautifier', category: 'formatting' },
-  { id: 'base64', name: 'Base64 Encoder', category: 'encoding' },
-  { id: 'jwt', name: 'JWT Decoder', category: 'security' },
-  { id: 'hash', name: 'Hash Generator', category: 'security' },
-  { id: 'timestamp', name: 'Timestamp Converter', category: 'datetime' },
-  { id: 'regex', name: 'Regex Tester', category: 'text' },
-  { id: 'uuid', name: 'UUID Generator', category: 'text' },
-  { id: 'url', name: 'URL Encoder', category: 'encoding' },
-  { id: 'cron', name: 'Cron Parser', category: 'datetime' },
-  { id: 'timezone', name: 'Time Zone Converter', category: 'datetime' },
-  { id: 'qr-code', name: 'QR Code Generator', category: 'encoding' },
-  { id: 'subnet', name: 'IP Subnet Calculator', category: 'network' },
-  { id: 'ipv6', name: 'IPv6 Address Helper', category: 'network' },
-  { id: 'mac-lookup', name: 'MAC Address Lookup', category: 'network' },
-];
-
-const categories = [
-  { id: 'network', name: 'Network', tools: ['subnet', 'ipv6', 'mac-lookup'] },
-  { id: 'encoding', name: 'Encoding', tools: ['base64', 'url', 'qr-code'] },
-  { id: 'security', name: 'Security', tools: ['jwt', 'hash'] },
-  { id: 'formatting', name: 'Formatting', tools: ['json'] },
-  { id: 'text', name: 'Text', tools: ['regex', 'uuid'] },
-  { id: 'datetime', name: 'Date & Time', tools: ['timestamp', 'cron', 'timezone'] },
-];
+import { tools, categories, type ToolCategory } from '@/tools/registry';
+import { cn } from '@/lib/utils';
 
 export function Header() {
   const { theme, toggleTheme, setCommandPaletteOpen, setFeedbackOpen } = useAppStore();
@@ -48,116 +24,127 @@ export function Header() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [setCommandPaletteOpen]);
 
+  const toolsByCategory = React.useMemo(() => {
+    const map = new Map<ToolCategory, typeof tools>();
+    for (const cat of categories) {
+      map.set(cat, tools.filter(t => t.category === cat));
+    }
+    return map;
+  }, []);
+
   return (
     <header className="fixed top-0 left-0 right-0 z-40 border-b border-border bg-bg-primary/80 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-viol-500 flex items-center justify-center">
+        <div className="flex items-center justify-between h-14">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-secondary flex items-center justify-center shadow-sm shadow-accent/20">
               <span className="text-bg-primary font-bold text-sm">D</span>
             </div>
-            <span className="font-outfit font-semibold text-lg group-hover:text-accent transition-colors">
+            <span className="font-outfit font-semibold text-base text-text-primary group-hover:text-accent transition-colors">
               DevTools Pro
             </span>
           </Link>
 
-          <div className="flex items-center gap-2">
+          <nav className="hidden lg:flex items-center gap-1">
+            <Link href="/" className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all">
+              Home
+            </Link>
+          </nav>
+
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setCommandPaletteOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-text-muted bg-bg-tertiary border border-border rounded-lg hover:border-border-hover transition-colors"
+              className="hidden sm:flex items-center gap-2 h-8 px-3 text-xs text-text-muted bg-bg-tertiary border border-border rounded-lg hover:border-border-hover hover:text-text-primary transition-all duration-200"
+              aria-label="Search tools"
             >
-              <Search className="h-4 w-4" />
+              <Search className="h-3.5 w-3.5" />
               <span>Search tools...</span>
-              <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs bg-bg-hover rounded">
-                <Command className="h-3 w-3" />K
+              <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] bg-bg-hover rounded border border-border font-mono">
+                <Command className="h-2.5 w-2.5" />K
               </kbd>
             </button>
 
             <button
-              onClick={() => setCommandPaletteOpen(true)}
-              className="sm:hidden p-2 text-text-secondary hover:text-text-primary transition-colors"
-            >
-              {/* <Search className="h-5 w-5" /> */}
-            </button>
-
-            <button
               onClick={() => setFeedbackOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors border border-transparent"
+              className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all border border-transparent"
               title="Send Feedback"
             >
-              <MessageSquare className="h-4 w-4 text-accent" />
-              <span className="font-outfit font-medium">Feedback</span>
+              <MessageSquare className="h-3.5 w-3.5 text-accent" />
+              <span className="hidden md:inline">Feedback</span>
             </button>
 
             <a
               href="https://github.com/mishraprayash/web-tools"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 text-text-secondary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-hover"
+              className="h-8 w-8 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all"
+              aria-label="GitHub"
             >
-              <FaGithub className="h-5 w-5" />
+              <FaGithub className="h-4 w-4" />
             </a>
 
             <button
               onClick={toggleTheme}
-              className="p-2 text-text-secondary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-hover"
+              className="h-8 w-8 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all"
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-text-secondary hover:text-text-primary transition-colors"
+              className="lg:hidden h-8 w-8 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all"
+              aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
           </div>
         </div>
       </div>
 
-      {mobileMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="md:hidden border-t border-border bg-bg-primary"
-        >
-          <div className="px-4 py-4 space-y-2">
-            {categories.map((cat) => (
-              <div key={cat.id}>
-                <p className="text-xs text-text-muted uppercase tracking-wider mb-2">{cat.name}</p>
-                <div className="space-y-1">
-                  {cat.tools.map((toolId) => {
-                    const tool = tools.find((t) => t.id === toolId);
-                    return tool ? (
-                      <Link
-                        key={toolId}
-                        href={`/tools/${toolId}`}
-                        className="block py-2 px-3 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {tool.name}
-                      </Link>
-                    ) : null;
-                  })}
-                </div>
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="lg:hidden border-t border-border bg-bg-primary overflow-hidden"
+          >
+            <div className="px-4 py-4 space-y-4 max-h-[70vh] overflow-y-auto scrollbar-thin">
+              {categories.map((cat) => {
+                const catTools = toolsByCategory.get(cat) || [];
+                return (
+                  <div key={cat}>
+                    <p className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-2">{cat}</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      {catTools.map((tool) => (
+                        <Link
+                          key={tool.id}
+                          href={`/tools/${tool.id}`}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center gap-2 py-1.5 px-2.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all"
+                        >
+                          <tool.icon className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{tool.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="pt-3 border-t border-border">
+                <button
+                  onClick={() => { setMobileMenuOpen(false); setFeedbackOpen(true); }}
+                  className="flex items-center gap-2 w-full text-left py-2 px-3 text-xs text-accent hover:text-accent-hover hover:bg-bg-tertiary rounded-lg transition-all font-medium cursor-pointer"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  <span>Send Feedback</span>
+                </button>
               </div>
-            ))}
-            
-            <div className="pt-2 border-t border-border mt-2 space-y-1">
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setFeedbackOpen(true);
-                }}
-                className="flex items-center gap-2 w-full text-left py-2 px-3 text-sm text-accent hover:text-accent-hover hover:bg-bg-hover rounded-lg transition-colors font-medium cursor-pointer"
-              >
-                <MessageSquare className="h-4 w-4" />
-                <span>Send Feedback</span>
-              </button>
             </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

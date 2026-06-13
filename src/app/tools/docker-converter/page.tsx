@@ -7,6 +7,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { dockerRunToCompose, dockerComposeToRun } from '@/tools/docker-converter/utils';
+import { useAppStore } from '@/lib/store/useStore';
+import { defineEditorThemes } from '@/tools/editor-theme';
 
 const DEFAULT_RUN = `docker run -d \\
   --name web-app \\
@@ -33,6 +35,9 @@ services:
     restart: always`;
 
 export default function Page() {
+  const { theme } = useAppStore();
+  const monacoTheme = theme === 'dark' ? 'app-dark' : 'app-light';
+  const editorBg = theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white';
   const [mode, setMode] = React.useState<'run-to-compose' | 'compose-to-run'>('run-to-compose');
   const [input, setInput] = React.useState(DEFAULT_RUN);
   const [output, setOutput] = React.useState('');
@@ -97,11 +102,12 @@ export default function Page() {
               </h2>
               <Button variant="ghost" size="sm" onClick={() => setInput('')} className="h-8">Clear</Button>
             </div>
-            <div className="flex-1 rounded-xl border border-border bg-[#1e1e1e] overflow-hidden">
+            <div className={`flex-1 rounded-xl border border-border ${editorBg} overflow-hidden`}>
               <Editor
                 height="100%"
                 defaultLanguage={mode === 'run-to-compose' ? 'shell' : 'yaml'}
-                theme="vs-dark"
+                theme={monacoTheme}
+                beforeMount={defineEditorThemes}
                 value={input}
                 onChange={(val) => setInput(val || '')}
                 options={{ minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
@@ -117,14 +123,15 @@ export default function Page() {
               </h2>
               <CopyButton value={output} />
             </div>
-            <div className="flex-1 relative rounded-xl border border-border bg-[#1e1e1e] overflow-hidden">
+            <div className={`flex-1 relative rounded-xl border border-border ${editorBg} overflow-hidden`}>
               {error ? (
                 <div className="p-4 text-sm text-red-400 font-mono">{error}</div>
               ) : (
                 <Editor
                   height="100%"
                   defaultLanguage={mode === 'run-to-compose' ? 'yaml' : 'shell'}
-                  theme="vs-dark"
+                  theme={monacoTheme}
+                  beforeMount={defineEditorThemes}
                   value={output}
                   options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
                 />

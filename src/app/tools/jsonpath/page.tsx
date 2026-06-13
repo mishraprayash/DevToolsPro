@@ -7,6 +7,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { evaluateJsonPath } from '@/tools/jsonpath/utils';
 import { JsonTreeViewer } from '@/components/ui/JsonTreeViewer';
+import { useAppStore } from '@/lib/store/useStore';
+import { defineEditorThemes } from '@/tools/editor-theme';
 
 const DEFAULT_JSON = `{
   "store": {
@@ -39,6 +41,9 @@ const DEFAULT_JSON = `{
 }`;
 
 export default function Page() {
+  const { theme } = useAppStore();
+  const monacoTheme = theme === 'dark' ? 'app-dark' : 'app-light';
+  const editorBg = theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white';
   const [jsonInput, setJsonInput] = React.useState(DEFAULT_JSON);
   const [path, setPath] = React.useState('$.store.book[*].author');
   const [output, setOutput] = React.useState<any>(null);
@@ -85,11 +90,12 @@ export default function Page() {
                 <Code className="h-4 w-4 text-emerald-500" /> Source JSON
               </h2>
             </div>
-            <div className="flex-1 rounded-xl border border-border bg-[#1e1e1e] overflow-hidden">
+            <div className={`flex-1 rounded-xl border border-border ${editorBg} overflow-hidden`}>
               <Editor
                 height="100%"
                 defaultLanguage="json"
-                theme="vs-dark"
+                theme={monacoTheme}
+                beforeMount={defineEditorThemes}
                 value={jsonInput}
                 onChange={(val) => setJsonInput(val || '')}
                 options={{ minimap: { enabled: false }, fontSize: 14, tabSize: 2 }}

@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { parseSqlCreate, generateOrmEntities, type GeneratedEntity } from '@/tools/sql-to-orm/utils';
+import { useAppStore } from '@/lib/store/useStore';
+import { defineEditorThemes } from '@/tools/editor-theme';
 
 const DEFAULT_SQL = `CREATE TABLE users (
   id SERIAL PRIMARY KEY,
@@ -19,6 +21,9 @@ const DEFAULT_SQL = `CREATE TABLE users (
 );`;
 
 export default function Page() {
+  const { theme } = useAppStore();
+  const monacoTheme = theme === 'dark' ? 'app-dark' : 'app-light';
+  const editorBg = theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white';
   const [input, setInput] = React.useState(DEFAULT_SQL);
   const [orm, setOrm] = React.useState<'prisma' | 'typeorm' | 'mongoose'>('prisma');
   const [output, setOutput] = React.useState('');
@@ -51,11 +56,12 @@ export default function Page() {
             </h2>
             <Button variant="ghost" size="sm" onClick={() => setInput('')} className="h-8">Clear</Button>
           </div>
-          <div className="flex-1 rounded-xl border border-border bg-[#1e1e1e] overflow-hidden">
+          <div className={`flex-1 rounded-xl border border-border ${editorBg} overflow-hidden`}>
             <Editor
               height="100%"
               defaultLanguage="sql"
-              theme="vs-dark"
+              theme={monacoTheme}
+              beforeMount={defineEditorThemes}
               value={input}
               onChange={(val) => setInput(val || '')}
               options={{ minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
@@ -88,14 +94,15 @@ export default function Page() {
             </div>
             <CopyButton value={output} />
           </div>
-          <div className="flex-1 relative rounded-xl border border-border bg-[#1e1e1e] overflow-hidden">
+          <div className={`flex-1 relative rounded-xl border border-border ${editorBg} overflow-hidden`}>
             {error ? (
               <div className="p-4 text-sm text-red-400 font-mono">{error}</div>
             ) : (
               <Editor
                 height="100%"
                 defaultLanguage={orm === 'prisma' ? 'graphql' : 'typescript'}
-                theme="vs-dark"
+                theme={monacoTheme}
+                beforeMount={defineEditorThemes}
                 value={output}
                 options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
               />

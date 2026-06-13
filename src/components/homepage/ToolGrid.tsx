@@ -4,89 +4,26 @@ import * as React from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FileJson, Lock, Hash, Clock, Regex, Type, Link2,
-  CalendarClock, Palette, KeyRound, FileCode,
-  Globe, AlignLeft, Binary, ImageUp, Search, ArrowRight, Command,
-  Earth, QrCode, Braces, Code, GitCompare, Ruler, CalendarPlus, SunMoon, Fingerprint, Shield, Laptop, Layers, Grid, Star, LayoutGrid, List as ListIcon, History, TerminalSquare, Database, GitBranch, Calculator, Bot, Sparkles, FileMinus, Network, Cpu
+  Search, ArrowRight, Command, Star, LayoutGrid, List as ListIcon,
+  History, Sparkles, X,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store/useStore';
 import { toast } from '@/components/ui/Toast';
+import { tools, categories, type ToolDef } from '@/tools/registry';
 
-interface ToolDef {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  color: string;
-    icon: React.ElementType;
-  isNew?: boolean;
-}
-
-const tools: ToolDef[] = [
-  { id: 'chmod', name: 'Chmod Calculator', description: 'Convert and calculate Unix octal, symbolic, and text permissions', category: 'Security', icon: Shield, color: 'from-blue-500 to-indigo-600', isNew: true },
-  { id: 'subnet', name: 'IP Subnet Calculator', description: 'Calculate CIDR subnets, mask values, usable hosts and network boundaries', category: 'Network', icon: Network, color: 'from-cyan-500 to-blue-500', isNew: true },
-  { id: 'mask-converter', name: 'Subnet Mask Converter', description: 'Convert bidirectionally between CIDR, Subnet Masks, and Wildcard Masks', category: 'Network', icon: Layers, color: 'from-teal-500 to-emerald-600', isNew: true },
-  { id: 'ipv6', name: 'IPv6 Address Helper', description: 'Expand, compress, validate, and parse reverse DNS lookup keys', category: 'Network', icon: Globe, color: 'from-blue-500 to-cyan-500', isNew: true },
-  { id: 'mac-lookup', name: 'MAC Address Lookup', description: 'Vendor, transmission, and admin classification check', category: 'Network', icon: Cpu, color: 'from-purple-500 to-indigo-500', isNew: true },
-  { id: 'dns-decoder', name: 'DNS Record Decoder', description: 'Parse queries and response headers from binary DNS HEX streams', category: 'Network', icon: Globe, color: 'from-emerald-500 to-teal-600', isNew: true },
-  { id: 'json', name: 'JSON Beautifier', description: 'Format, minify, sort keys & validate JSON', category: 'Formatting', icon: FileJson, color: 'from-amber-500 to-orange-500' },
-  { id: 'encoder', name: 'Encoder & Decoder Sandbox', description: 'Encode & decode values via Base64, URL component, and HTML entities', category: 'Encoding', icon: Lock, color: 'from-blue-500 to-cyan-500' },
-  { id: 'jwt', name: 'JWT Decoder', description: 'Inspect header, payload & expiry of any JWT', category: 'Security', icon: Lock, color: 'from-purple-500 to-pink-500' },
-  { id: 'hash', name: 'Hash Generator', description: 'SHA-256 & SHA-512 via Web Crypto API', category: 'Security', icon: Hash, color: 'from-green-500 to-emerald-500' },
-  { id: 'date-toolbox', name: 'Date, Time & Epoch Sandbox', description: 'Parse Unix epoch timestamps, convert timezones, and calculate calendar offsets', category: 'Date & Time', icon: Clock, color: 'from-rose-500 to-red-500' },
-  { id: 'regex', name: 'Regex Tester', description: 'Live match highlighting with group capture', category: 'Text', icon: Regex, color: 'from-violet-500 to-purple-500' },
-  { id: 'uuid', name: 'UUID Generator', description: 'Generate bulk UUID v4 identifiers instantly', category: 'Text', icon: Type, color: 'from-cyan-500 to-blue-500' },
-  { id: 'curl-converter', name: 'cURL Converter', description: 'Convert cURL commands to Fetch, Axios, Python & Go', category: 'Encoding', icon: TerminalSquare, color: 'from-fuchsia-500 to-pink-500' },
-  { id: 'aes', name: 'AES Encrypt/Decrypt', description: 'Encrypt & decrypt text using AES CBC/CTR modes', category: 'Security', icon: Shield, color: 'from-zinc-500 to-indigo-500' },
-  { id: 'cron', name: 'Cron Parser', description: 'Translate cron expressions to plain English', category: 'Date & Time', icon: CalendarClock, color: 'from-indigo-500 to-blue-500' },
-  { id: 'color', name: 'Color Converter', description: 'Convert between hex, RGB & HSL colour formats', category: 'Formatting', icon: Palette, color: 'from-pink-500 to-purple-500' },
-  { id: 'password', name: 'Password Generator', description: 'Generate strong, customisable passwords', category: 'Security', icon: KeyRound, color: 'from-red-500 to-rose-500' },
-  { id: 'yaml-json', name: 'YAML ↔ JSON', description: 'Convert between YAML and JSON formats', category: 'Formatting', icon: FileCode, color: 'from-teal-500 to-emerald-500' },
-  { id: 'xml-json', name: 'XML ↔ JSON', description: 'Convert between XML and JSON formats', category: 'Formatting', icon: FileCode, color: 'from-emerald-500 to-teal-500' },
-  { id: 'html-preview', name: 'HTML Preview', description: 'Live render HTML with instant preview', category: 'Formatting', icon: Globe, color: 'from-orange-500 to-red-500' },
-  { id: 'string-utils', name: 'Rich Text & String Utilities', description: 'Analyze word counts, generate dummy Lorem paragraphs, and transform slug cases', category: 'Text', icon: AlignLeft, color: 'from-sky-500 to-indigo-500' },
-  { id: 'number-base', name: 'Base Converter', description: 'Convert between decimal, hex, binary & octal', category: 'Encoding', icon: Binary, color: 'from-violet-500 to-blue-500' },
-  { id: 'image-base64', name: 'Image to Base64', description: 'Convert images to base64 data URLs', category: 'Encoding', icon: ImageUp, color: 'from-sky-500 to-teal-500' },
-  { id: 'timezone', name: 'Time Zone Converter', description: 'Convert time across timezones worldwide', category: 'Date & Time', icon: Earth, color: 'from-emerald-500 to-teal-500' },
-  { id: 'qr-code', name: 'QR Code Generator', description: 'Generate QR codes from text, URLs & more', category: 'Encoding', icon: QrCode, color: 'from-fuchsia-500 to-pink-500' },
-  { id: 'json-to-ts', name: 'JSON to TypeScript', description: 'Convert raw JSON into typed TypeScript interfaces', category: 'Formatting', icon: Braces, color: 'from-blue-500 to-indigo-500' },
-  { id: 'svg-to-jsx', name: 'SVG to JSX/React', description: 'Convert raw SVG into optimized React components', category: 'Formatting', icon: Code, color: 'from-teal-400 to-emerald-500' },
-  { id: 'diff-checker', name: 'Diff Checker', description: 'Compare texts and highlight line-by-line differences', category: 'Text', icon: GitCompare, color: 'from-red-400 to-rose-600' },
-  { id: 'css-unit-converter', name: 'CSS Unit & Fluid Typography', description: 'Convert CSS sizing values or generate fluid responsive clamp layouts', category: 'Formatting', icon: Ruler, color: 'from-fuchsia-500 to-purple-600' },
-  { id: 'nepali-calendar', name: 'Nepali BS ↔ AD Calendar', description: 'Convert dates bidirectionally between Bikram Sambat and Gregorian calendars', category: 'Date & Time', icon: SunMoon, color: 'from-red-500 to-rose-500' },
-  { id: 'rsa-sandbox', name: 'RSA Sandbox', description: 'Generate public/private keys, sign messages & cryptographically verify payloads', category: 'Security', icon: Shield, color: 'from-indigo-500 to-purple-500' },
-  { id: 'user-agent', name: 'User-Agent Parser', description: 'Deconstruct browser User-Agent strings and inspect client metrics', category: 'Date & Time', icon: Laptop, color: 'from-teal-500 to-emerald-500' },
-  { id: 'json-schema', name: 'JSON Schema Generator', description: 'Generate standard draft validation schemas from raw JSON payloads', category: 'Formatting', icon: Layers, color: 'from-amber-500 to-orange-500' },
-  { id: 'css-sandbox', name: 'CSS Flexbox & Grid visual sandbox', description: 'Prototype CSS Flex and Grid structures visually with Tailwind and CSS code outputs', category: 'Formatting', icon: Grid, color: 'from-fuchsia-500 to-pink-500' },
-  { id: 'http-status', name: 'HTTP Status Code Glossary', description: 'A searchable reference tool for all HTTP status codes', category: 'Encoding', icon: Globe, color: 'from-blue-500 to-cyan-500', isNew: true },
-  { id: 'bcrypt', name: 'Bcrypt Generator & Checker', description: 'Quickly generate and verify Bcrypt hashes with configurable salt rounds', category: 'Security', icon: Shield, color: 'from-rose-500 to-pink-600', isNew: true },
-  { id: 'mock-data', name: 'Mock Data Generator', description: 'Generate robust random JSON or CSV data arrays based on custom schemas', category: 'Formatting', icon: Database, color: 'from-violet-500 to-fuchsia-500', isNew: true },
-  { id: 'git-generator', name: 'Git Command Generator', description: 'Visually construct complex Git commands with clear explanations', category: 'Text', icon: GitBranch, color: 'from-orange-500 to-red-500', isNew: true },
-  { id: 'llm-pricing', name: 'LLM Pricing Calculator', description: 'Compare token costs across major AI models like GPT-4o, Claude 3.5, and Gemini', category: 'Text', icon: Calculator, color: 'from-teal-400 to-emerald-600', isNew: true },
-  { id: 'prompt-builder', name: 'System Prompt Builder', description: 'Structure and generate high-quality system prompts for LLMs', category: 'Text', icon: Bot, color: 'from-purple-500 to-indigo-500', isNew: true },
-  { id: 'gitignore', name: '.gitignore Generator', description: 'Select OS, IDEs, and languages to compile a complete .gitignore file', category: 'Text', icon: FileMinus, color: 'from-orange-500 to-amber-500', isNew: true },
-  { id: 'graphql-to-ts', name: 'GraphQL to TypeScript', description: 'Paste a GraphQL schema and instantly generate strict TypeScript types', category: 'Formatting', icon: Braces, color: 'from-pink-500 to-rose-500', isNew: true },
-  { id: 'jsonpath', name: 'JSONPath Playground', description: 'Filter and query JSON payloads with JSONPath expressions in real-time', category: 'Formatting', icon: Braces, color: 'from-blue-500 to-indigo-500', isNew: true },
-  { id: 'sql-prettify', name: 'SQL Formatter & Prettifier', description: 'Format and beautify SQL statements with configurable casing', category: 'Formatting', icon: Database, color: 'from-sky-500 to-blue-500', isNew: true },
-  { id: 'sql-to-orm', name: 'SQL to ORM Entity Generator', description: 'Generate typed ORM models from raw SQL CREATE TABLE schemas', category: 'Formatting', icon: Code, color: 'from-teal-500 to-emerald-500', isNew: true },
-  { id: 'docker-converter', name: 'Docker Run ↔ Compose Converter', description: 'Translate Docker run commands to compose configurations, and vice-versa', category: 'Formatting', icon: Layers, color: 'from-cyan-500 to-blue-500', isNew: true }
-];
-
-const categories = ['All', 'New', 'Formatting', 'Encoding', 'Security', 'Network', 'Text', 'Date & Time'];
+const categoryPills = ['All', 'New', ...categories] as const;
 
 const container = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.035 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.03 } },
 };
 
 const cardVariant = {
   hidden: { opacity: 0, y: 14 },
   show: { opacity: 1, y: 0, transition: { duration: 0.2 } },
 };
-
-// ─── Memoised item components ────────────────────────────────────────────────
 
 interface ToolItemProps { tool: ToolDef; viewMode: 'grid' | 'list' }
 
@@ -101,8 +38,8 @@ const ToolItem = React.memo(function ToolItem({ tool, viewMode }: ToolItemProps)
     toggleFavorite(tool.id);
     toast({
       type: 'success',
-      message: isFavorite 
-        ? `${tool.name} removed from favorites.` 
+      message: isFavorite
+        ? `${tool.name} removed from favorites.`
         : `${tool.name} added to favorites!`,
     });
   };
@@ -115,7 +52,6 @@ const ToolItem = React.memo(function ToolItem({ tool, viewMode }: ToolItemProps)
             <div className={cn('w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105', tool.color)}>
               <Icon className="h-5 w-5 text-white" />
             </div>
-            
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold font-outfit text-sm text-text-primary group-hover:text-accent transition-colors duration-150 truncate">
@@ -125,16 +61,11 @@ const ToolItem = React.memo(function ToolItem({ tool, viewMode }: ToolItemProps)
                   {tool.category}
                 </span>
                 {tool.isNew && (
-                  <span className="text-[9px] font-bold text-white bg-accent px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                    NEW
-                  </span>
+                  <span className="text-[9px] font-bold text-white bg-accent px-1.5 py-0.5 rounded-full whitespace-nowrap">NEW</span>
                 )}
               </div>
-              <p className="mt-0.5 text-xs text-text-secondary truncate">
-                {tool.description}
-              </p>
+              <p className="mt-0.5 text-xs text-text-secondary truncate">{tool.description}</p>
             </div>
-            
             <div className="flex items-center gap-3 shrink-0">
               <button
                 onClick={handleFavoriteClick}
@@ -145,14 +76,7 @@ const ToolItem = React.memo(function ToolItem({ tool, viewMode }: ToolItemProps)
                 )}
                 title={isFavorite ? "Remove from favorites" : "Add to favorites"}
               >
-                <Star
-                  className={cn(
-                    "h-4 w-4 stroke-1.5 transition-all duration-150",
-                    isFavorite 
-                      ? "fill-accent stroke-accent scale-110" 
-                      : "text-text-secondary hover:text-text-primary"
-                  )}
-                />
+                <Star className={cn("h-4 w-4 stroke-1.5 transition-all duration-150", isFavorite ? "fill-accent stroke-accent scale-110" : "text-text-secondary hover:text-text-primary")} />
               </button>
               <div className="text-[11px] text-accent font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:flex items-center gap-1 w-20 justify-end">
                 Open <ArrowRight className="h-3 w-3" />
@@ -164,18 +88,15 @@ const ToolItem = React.memo(function ToolItem({ tool, viewMode }: ToolItemProps)
     );
   }
 
-  // Grid View (Default)
   return (
     <motion.div variants={cardVariant} className="h-full">
       <Link href={`/tools/${tool.id}`} onClick={() => addRecentTool(tool.id)} className="block h-full">
-        <Card hover glass className="h-full p-5 group cursor-pointer flex flex-col relative overflow-hidden">
-          {/* Subtle card-specific glow element */}
+        <Card hover className="h-full p-5 group cursor-pointer flex flex-col relative overflow-hidden card-highlight">
           <div className={cn("absolute top-0 right-0 w-24 h-24 rounded-full bg-gradient-to-br opacity-0 group-hover:opacity-[0.06] transition-opacity duration-300 blur-xl pointer-events-none", tool.color)} />
           <div className="flex items-start justify-between gap-2">
             <div className={cn('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-3 shadow-md', tool.color)}>
               <Icon className="h-5 w-5 text-white" />
             </div>
-            
             <div className="flex items-center gap-1.5">
               <button
                 onClick={handleFavoriteClick}
@@ -186,22 +107,13 @@ const ToolItem = React.memo(function ToolItem({ tool, viewMode }: ToolItemProps)
                 )}
                 title={isFavorite ? "Remove from favorites" : "Add to favorites"}
               >
-                <Star
-                  className={cn(
-                    "h-4 w-4 stroke-1.5 transition-all duration-150",
-                    isFavorite 
-                      ? "fill-accent stroke-accent scale-110" 
-                      : "text-text-secondary hover:text-text-primary"
-                  )}
-                />
+                <Star className={cn("h-4 w-4 stroke-1.5 transition-all duration-150", isFavorite ? "fill-accent stroke-accent scale-110" : "text-text-secondary hover:text-text-primary")} />
               </button>
               <span className="text-[10px] text-text-muted bg-bg-hover border border-border px-2 py-0.5 rounded-full whitespace-nowrap leading-relaxed">
                 {tool.category}
               </span>
               {tool.isNew && (
-                <span className="text-[9px] font-bold text-white bg-accent px-1.5 py-0.5 rounded-full whitespace-nowrap shadow-sm">
-                  NEW
-                </span>
+                <span className="text-[9px] font-bold text-white bg-accent px-1.5 py-0.5 rounded-full whitespace-nowrap shadow-sm">NEW</span>
               )}
             </div>
           </div>
@@ -209,13 +121,10 @@ const ToolItem = React.memo(function ToolItem({ tool, viewMode }: ToolItemProps)
             <h3 className="font-semibold font-outfit text-sm text-text-primary group-hover:text-accent transition-colors duration-150 leading-snug">
               {tool.name}
             </h3>
-            <p className="mt-1 text-xs text-text-secondary leading-relaxed">
-              {tool.description}
-            </p>
+            <p className="mt-1 text-xs text-text-secondary leading-relaxed">{tool.description}</p>
           </div>
           <div className="mt-3 flex items-center gap-1 text-[11px] text-accent font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            Open tool
-            <ArrowRight className="h-3 w-3" />
+            Open tool <ArrowRight className="h-3 w-3" />
           </div>
         </Card>
       </Link>
@@ -223,11 +132,9 @@ const ToolItem = React.memo(function ToolItem({ tool, viewMode }: ToolItemProps)
   );
 });
 
-// ─── Main export ─────────────────────────────────────────────────────────────
-
 export function ToolGrid() {
   const [query, setQuery] = React.useState('');
-  const [activeCategory, setActiveCategory] = React.useState('All');
+  const [activeCategory, setActiveCategory] = React.useState<string>('All');
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
   const { setCommandPaletteOpen, favorites, recentTools } = useAppStore();
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -241,14 +148,6 @@ export function ToolGrid() {
     setViewMode(mode);
     localStorage.setItem('devtools-viewmode', mode);
   };
-
-  const favoriteTools = React.useMemo(() => {
-    return tools.filter((t) => favorites.includes(t.id));
-  }, [favorites]);
-
-  const recentToolsData = React.useMemo(() => {
-    return recentTools.map(id => tools.find(t => t.id === id)).filter(Boolean) as ToolDef[];
-  }, [recentTools]);
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -264,17 +163,15 @@ export function ToolGrid() {
   const filtered = React.useMemo(() => {
     const q = query.toLowerCase().trim();
     return tools.filter((t) => {
-      const matchesCat = activeCategory === 'All' 
-        ? true 
-        : activeCategory === 'New' 
-          ? t.isNew 
+      const matchesCat = activeCategory === 'All'
+        ? true
+        : activeCategory === 'New'
+          ? t.isNew
           : t.category === activeCategory;
       const matchesQ = !q || t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q) || t.category.toLowerCase().includes(q);
       return matchesCat && matchesQ;
     });
   }, [query, activeCategory]);
-
-  const handleClear = React.useCallback(() => { setQuery(''); setActiveCategory('All'); }, []);
 
   const categoryCounts = React.useMemo(() => {
     const counts: Record<string, number> = { All: tools.length, New: tools.filter(t => t.isNew).length };
@@ -284,26 +181,22 @@ export function ToolGrid() {
     return counts;
   }, []);
 
+  const favoriteTools = React.useMemo(() => tools.filter((t) => favorites.includes(t.id)), [favorites]);
+  const recentToolsData = React.useMemo(() => recentTools.map(id => tools.find(t => t.id === id)).filter(Boolean) as ToolDef[], [recentTools]);
+
   const renderToolGroup = (title: string, groupTools: ToolDef[], icon?: React.ReactNode) => {
     if (groupTools.length === 0) return null;
-    
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-10"
-      >
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
         <div className="flex items-center gap-2 mb-4">
           {icon}
-          <h2 className="text-sm font-bold font-outfit text-text-primary uppercase tracking-wider">
-            {title}
-          </h2>
+          <h2 className="text-sm font-bold font-outfit text-text-primary uppercase tracking-wider">{title}</h2>
           <span className="ml-auto text-[10px] text-text-muted font-mono bg-bg-hover px-2 py-0.5 rounded-md border border-border">
             {groupTools.length}
           </span>
         </div>
-        <div className={viewMode === 'grid' 
-          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" 
+        <div className={viewMode === 'grid'
+          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
           : "flex flex-col gap-2"}>
           {groupTools.map((tool) => (
             <ToolItem key={`${title}-${tool.id}`} tool={tool} viewMode={viewMode} />
@@ -314,18 +207,14 @@ export function ToolGrid() {
   };
 
   return (
-    <section className="min-h-[calc(100vh-4rem)]">
+    <section className="min-h-[50vh]">
       <div className="border-y border-border bg-bg-primary/95 backdrop-blur-xl sticky top-16 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="shrink-0 hidden md:block">
-              <h1 className="text-lg font-bold font-outfit gradient-text leading-none">DevTools Pro</h1>
-            </div>
-
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted pointer-events-none" />
               <input ref={inputRef} type="text" value={query} onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search tools…"
+                placeholder="Search tools by name, category, or description…"
                 className="w-full h-9 pl-9 pr-10 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all duration-200" />
               {!query && (
                 <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] text-text-muted bg-bg-hover border border-border rounded">/</kbd>
@@ -339,14 +228,14 @@ export function ToolGrid() {
               <div className="flex items-center bg-bg-tertiary border border-border rounded-lg p-0.5 h-9">
                 <button
                   onClick={() => handleSetViewMode('grid')}
-                  className={cn("p-1.5 rounded-md transition-colors", viewMode === 'grid' ? "bg-bg-primary shadow-sm text-text-primary" : "text-text-muted hover:text-text-primary")}
+                  className={cn("p-1.5 rounded-md transition-colors", viewMode === 'grid' ? "bg-bg-elevated shadow-sm text-text-primary" : "text-text-muted hover:text-text-primary")}
                   aria-label="Grid view"
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => handleSetViewMode('list')}
-                  className={cn("p-1.5 rounded-md transition-colors", viewMode === 'list' ? "bg-bg-primary shadow-sm text-text-primary" : "text-text-muted hover:text-text-primary")}
+                  className={cn("p-1.5 rounded-md transition-colors", viewMode === 'list' ? "bg-bg-elevated shadow-sm text-text-primary" : "text-text-muted hover:text-text-primary")}
                   aria-label="List view"
                 >
                   <ListIcon className="h-4 w-4" />
@@ -361,7 +250,7 @@ export function ToolGrid() {
           </div>
 
           <div className="flex items-center gap-2 mt-3 overflow-x-auto scrollbar-hide">
-            {categories.map((cat) => (
+            {categoryPills.map((cat) => (
               <button key={cat} onClick={() => setActiveCategory(cat)}
                 className={cn('flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-150',
                   activeCategory === cat
@@ -371,7 +260,7 @@ export function ToolGrid() {
                 {cat}
                 <span className={cn('text-[10px] px-1.5 py-0 rounded-full leading-5',
                   activeCategory === cat ? 'bg-white/25 text-bg-primary' : 'bg-bg-hover text-text-muted')}>
-                  {categoryCounts[cat]}
+                  {categoryCounts[cat] || 0}
                 </span>
               </button>
             ))}
@@ -386,33 +275,25 @@ export function ToolGrid() {
               className="flex flex-col items-center justify-center py-32 text-center">
               <Search className="h-8 w-8 text-text-muted mb-3" />
               <p className="text-text-secondary text-sm">No tools match &ldquo;{query}&rdquo;</p>
-              <button onClick={handleClear} className="mt-3 text-sm text-accent hover:underline">Clear filters</button>
+              <button onClick={() => { setQuery(''); setActiveCategory('All'); }} className="mt-3 text-sm text-accent hover:underline">Clear filters</button>
             </motion.div>
           ) : (
             <motion.div key={activeCategory + query + viewMode} className="w-full">
-              {/* Categorized View (when no filters are active) */}
               {activeCategory === 'All' && !query ? (
                 <div className="space-y-6">
                   {recentToolsData.length > 0 && renderToolGroup("Jump Back In", recentToolsData.slice(0, 4), <History className="h-4.5 w-4.5 text-blue-500" />)}
                   {favoriteTools.length > 0 && renderToolGroup("Favorites", favoriteTools, <Star className="h-4.5 w-4.5 text-amber-500 fill-amber-500" />)}
                   {renderToolGroup("Recently Added", tools.filter(t => t.isNew).slice(0, 8), <Sparkles className="h-4.5 w-4.5 text-fuchsia-500" />)}
-                  
-                  {/* Render by Category */}
-                  {categories.filter(c => c !== 'All' && c !== 'New').map(cat => {
+                  {categories.map(cat => {
                     const catTools = tools.filter(t => t.category === cat);
                     return <React.Fragment key={cat}>{renderToolGroup(cat, catTools)}</React.Fragment>;
                   })}
                 </div>
               ) : (
-                /* Flat Filtered View */
-                <motion.div 
-                  variants={container} 
-                  initial="hidden" 
-                  animate="show"
-                  className={viewMode === 'grid' 
-                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" 
-                    : "flex flex-col gap-2"}
-                >
+                <motion.div variants={container} initial="hidden" animate="show"
+                  className={viewMode === 'grid'
+                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                    : "flex flex-col gap-2"}>
                   {filtered.map((tool) => <ToolItem key={tool.id} tool={tool} viewMode={viewMode} />)}
                 </motion.div>
               )}

@@ -87,7 +87,7 @@ export default function Page() {
             </h2>
             <CopyButton value={output} />
           </div>
-          <div className="flex-1 relative rounded-xl border border-border bg-[#0d1117] overflow-hidden">
+          <div className="flex-1 relative rounded-xl border border-border bg-bg-secondary overflow-hidden">
             {error ? (
               <div className="p-4 text-sm text-red-400 font-mono">{error}</div>
             ) : (

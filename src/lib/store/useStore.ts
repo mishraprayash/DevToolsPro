@@ -39,13 +39,11 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       theme: 'dark',
       setTheme: (theme) => {
-        localStorage.setItem('devtools-theme', theme);
         applyTheme(theme);
         set({ theme });
       },
       toggleTheme: () => {
         const newTheme = get().theme === 'dark' ? 'light' : 'dark';
-        localStorage.setItem('devtools-theme', newTheme);
         applyTheme(newTheme);
         set({ theme: newTheme });
       },

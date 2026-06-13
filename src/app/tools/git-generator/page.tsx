@@ -219,7 +219,7 @@ export default function Page() {
           {result.success && (
             <div className="space-y-3">
               <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">Generated Command</h3>
-              <div className="p-4 rounded-xl bg-[#0d1117] border border-border flex items-center justify-between gap-4">
+              <div className="p-4 rounded-xl bg-bg-secondary border border-border flex items-center justify-between gap-4">
                 <code className="text-green-400 font-mono text-sm break-all">
                   {result.data.command}
                 </code>

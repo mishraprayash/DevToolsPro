@@ -121,7 +121,7 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="border border-border rounded-xl bg-[#0d1117] overflow-hidden shadow-sm h-full min-h-[600px]">
+          <div className="border border-border rounded-xl bg-bg-secondary overflow-hidden shadow-sm h-full min-h-[600px]">
             <textarea
               readOnly
               value={output || '# Select templates from the left to generate your .gitignore...'}
