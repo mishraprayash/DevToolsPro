@@ -49,7 +49,7 @@ export function CommandPalette() {
     <Modal open={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)}>
       <div className="relative" onKeyDown={handleKeyDown}>
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
-        <input type="text" placeholder="Search 49 tools..." value={query} onChange={(e) => setQuery(e.target.value)}
+        <input type="text" placeholder={`Search ${tools.length} tools...`} value={query} onChange={(e) => setQuery(e.target.value)}
           className="w-full h-14 pl-12 pr-10 bg-transparent text-text-primary placeholder:text-text-muted focus:outline-none text-lg" autoFocus />
         <button onClick={() => setCommandPaletteOpen(false)}
           className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors">

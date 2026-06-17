@@ -3,12 +3,13 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Lock, Keyboard, Sparkles } from 'lucide-react';
+import { tools } from '@/tools/registry';
 
 const features = [
   {
     icon: Zap,
     title: 'Instant Processing',
-    description: 'All 49 tools run locally in your browser. No server roundtrips, no network delays, instant results.',
+    description: `All ${tools.length} tools run locally in your browser. No server roundtrips, no network delays, instant results.`,
   },
   {
     icon: Lock,

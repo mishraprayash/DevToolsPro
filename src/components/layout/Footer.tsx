@@ -28,7 +28,7 @@ export function Footer() {
               <span className="font-outfit font-semibold text-base text-text-primary">DevTools Pro</span>
             </Link>
             <p className="mt-3 text-xs text-text-secondary leading-relaxed max-w-xs">
-              An offline-first suite of 49 developer utilities. Open source, privacy-first, keyboard-driven.
+              An offline-first suite of {tools.length} developer utilities. Open source, privacy-first, keyboard-driven.
             </p>
           </div>
 

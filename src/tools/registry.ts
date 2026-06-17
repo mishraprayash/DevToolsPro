@@ -5,7 +5,7 @@ import {
   ImageUp, Earth, QrCode, Braces, Code, GitCompare, Ruler, SunMoon, Fingerprint,
   Laptop, Grid, Database, GitBranch, Calculator, Bot, Sparkles, FileMinus, Star,
   CreditCard, GripHorizontal, Box, Monitor, ScanLine, Ban, ArrowLeftRight, Wifi,
-  Smartphone, Paintbrush, SlidersHorizontal, Combine, ListTree,
+  Smartphone, Paintbrush, SlidersHorizontal, Combine, ListTree, Languages
 } from 'lucide-react';
 
 export type ToolCategory = 'Formatting' | 'Encoding' | 'Security' | 'Network' | 'Text' | 'Date & Time';
@@ -74,6 +74,9 @@ export const tools: ToolDef[] = [
   { id: 'prompt-builder', name: 'System Prompt Builder', description: 'Structure and generate high-quality LLM prompts', category: 'Text', icon: Bot, color: 'from-purple-500 to-indigo-500' },
   { id: 'gitignore', name: '.gitignore Generator', description: 'Compile a .gitignore for OS, IDE & language', category: 'Text', icon: FileMinus, color: 'from-orange-500 to-amber-500' },
   { id: 'llm-pricing', name: 'LLM Pricing Calculator', description: 'Compare token costs across AI models', category: 'Text', icon: Calculator, color: 'from-teal-400 to-emerald-600' },
+
+
+  { id: 'nepali-romanized', name: 'Romanized to Nepali', description: 'Instantly convert Romanized English (e.g., "namaste") to Nepali Unicode (Devanagari).', category: 'Text', icon: Languages, color: 'from-orange-500 to-red-500', isNew: true },
 
   // ── Date & Time ────────────────────────────────────────────────
   { id: 'date-toolbox', name: 'Date, Time & Epoch Sandbox', description: 'Parse timestamps, convert timezones & calculate offsets', category: 'Date & Time', icon: Clock, color: 'from-rose-500 to-red-500' },

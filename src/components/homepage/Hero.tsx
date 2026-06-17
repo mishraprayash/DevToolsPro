@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, Command } from 'lucide-react';
 import { useAppStore } from '@/lib/store/useStore';
+import { tools } from '@/tools/registry';
 
 export function Hero() {
   const { setCommandPaletteOpen } = useAppStore();
@@ -38,13 +39,13 @@ export function Hero() {
           <span className="gradient-text">modern developers</span>
         </motion.h1>
 
-        <motion.p
-          className="mt-5 text-base sm:text-lg text-text-secondary max-w-xl mx-auto leading-relaxed"
+        <motion.p 
+          className="text-lg md:text-xl text-text-secondary mb-10 max-w-2xl mx-auto leading-relaxed"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          An offline-first suite of 49 developer tools — hashers, encoders, formatters, calculators, and more.
+          An offline-first suite of {tools.length} developer tools — hashers, encoders, formatters, calculators, and more.
         </motion.p>
 
         <motion.div
@@ -82,7 +83,7 @@ export function Hero() {
         >
           <div className="flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 text-accent" />
-            <span>49 tools</span>
+            <span>{tools.length} tools</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-success" />
