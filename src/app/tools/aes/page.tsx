@@ -2,27 +2,44 @@
 
 import * as React from 'react';
 import { processAES } from '@/tools/aes/utils';
-import { Shield, ArrowRightLeft, Copy, Check } from 'lucide-react';
+import { Shield, ArrowRightLeft, Settings, Copy } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { CopyButton } from '@/components/ui/CopyButton';
+import { Select } from '@/components/ui/Select';
+import { GradientBox } from '@/components/ui/GradientBox';
+import { ToolLayout } from '@/components/tool/ToolLayout';
+import { Input } from '@/components/ui/Input';
+import { toast } from '@/components/ui/Toast';
+import { cn } from '@/lib/utils';
 
 export default function AESCryptoPage() {
   const [action, setAction] = React.useState<'encrypt' | 'decrypt'>('encrypt');
   const [mode, setMode] = React.useState<'CBC' | 'CTR' | 'GCM'>('CBC');
-  const [input, setInput] = React.useState('');
-  const [key, setKey] = React.useState('');
+  const [input, setInput] = React.useState('DevTools Pro AES Sandbox');
+  const [key, setKey] = React.useState('my-secret-key-32');
   const [keyFormat, setKeyFormat] = React.useState<'utf8' | 'hex'>('utf8');
-  const [iv, setIv] = React.useState('');
+  const [iv, setIv] = React.useState('my-init-vector-16');
   const [ivFormat, setIvFormat] = React.useState<'utf8' | 'hex'>('utf8');
   const [cipherFormat, setCipherFormat] = React.useState<'base64' | 'hex'>('base64');
   
   const [output, setOutput] = React.useState('');
   const [error, setError] = React.useState('');
-  const [copied, setCopied] = React.useState(false);
 
   React.useEffect(() => {
     async function performCrypto() {
-      if (!input || !key || !iv) {
+      if (!input) {
         setOutput('');
         setError('');
+        return;
+      }
+      if (!key) {
+        setOutput('');
+        setError('Secret Key is required.');
+        return;
+      }
+      if (!iv) {
+        setOutput('');
+        setError('IV is required.');
         return;
       }
       
@@ -46,180 +63,177 @@ export default function AESCryptoPage() {
       }
     }
 
-    performCrypto();
+    const t = setTimeout(performCrypto, 100);
+    return () => clearTimeout(t);
   }, [action, mode, input, key, keyFormat, iv, ivFormat, cipherFormat]);
 
-  const copyToClipboard = () => {
-    if (output) {
-      navigator.clipboard.writeText(output);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const handleSwap = () => {
+    if (output && !error) {
+      setInput(output);
+      setAction(a => a === 'encrypt' ? 'decrypt' : 'encrypt');
+      toast({ type: 'success', message: 'Swapped input and output direction!' });
     }
   };
 
+  const handleClear = () => {
+    setInput('');
+    setOutput('');
+    setError('');
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <Shield className="w-8 h-8 text-indigo-500" />
-          AES Encryption & Decryption
-        </h1>
-        <p className="text-zinc-400">
-          Encrypt and decrypt text using Advanced Encryption Standard (AES) with CBC or CTR modes.
-          Note: This tool runs entirely in your browser using the Web Crypto API.
-        </p>
+    <ToolLayout
+      name="AES Encryption & Decryption"
+      description="Encrypt and decrypt text using Advanced Encryption Standard (AES) with CBC, CTR, or GCM modes."
+      category="Cryptography"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Direction Selector */}
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-bg-secondary border border-border">
+          <button
+            onClick={() => setAction('encrypt')}
+            className={cn(
+              'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
+              action === 'encrypt' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'
+            )}
+          >
+            Encrypt
+          </button>
+          <button
+            onClick={() => setAction('decrypt')}
+            className={cn(
+              'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
+              action === 'decrypt' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'
+            )}
+          >
+            Decrypt
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Controls */}
-        <div className="space-y-4 bg-zinc-900/50 border border-zinc-800 p-4 rounded-xl">
-          <div>
-            <label className="block text-sm font-medium mb-1">Action</label>
-            <div className="flex bg-zinc-800/50 p-1 rounded-lg">
-              <button
-                onClick={() => setAction('encrypt')}
-                className={`flex-1 py-1.5 text-sm rounded-md transition-colors ${
-                  action === 'encrypt' ? 'bg-indigo-500 text-white shadow' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                Encrypt
-              </button>
-              <button
-                onClick={() => setAction('decrypt')}
-                className={`flex-1 py-1.5 text-sm rounded-md transition-colors ${
-                  action === 'decrypt' ? 'bg-indigo-500 text-white shadow' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                Decrypt
-              </button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
+        {/* Left Side Inputs */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-text-primary">
+              {action === 'encrypt' ? 'Plaintext Input' : 'Ciphertext Input'}
+            </h2>
+            <Button variant="ghost" size="sm" onClick={handleClear}>Clear</Button>
+          </div>
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="h-[200px]"
+            placeholder={action === 'encrypt' ? 'Enter text to encrypt...' : 'Enter ciphertext to decrypt...'}
+            monospace
+          />
+
+          {/* Configs Panel */}
+          <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-4 shadow-sm">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-text-primary font-outfit border-b border-border pb-2.5">
+              <Settings className="h-4 w-4 text-accent" />
+              <span>Cryptographic Parameters</span>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Mode</label>
-            <select
-              value={mode}
-              onChange={(e) => setMode(e.target.value as 'CBC' | 'CTR' | 'GCM')}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="CBC">AES-CBC</option>
-              <option value="CTR">AES-CTR</option>
-              <option value="GCM">AES-GCM (Authenticated)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 flex justify-between">
-              <span>Secret Key</span>
-              <span className="text-zinc-500 text-xs">Pads/truncates to 16/24/32 bytes</span>
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                placeholder="Enter secret key"
-                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Select
+                label="AES Mode"
+                options={[
+                  { value: 'CBC', label: 'AES-CBC' },
+                  { value: 'CTR', label: 'AES-CTR' },
+                  { value: 'GCM', label: 'AES-GCM (Authenticated)' }
+                ]}
+                value={mode}
+                onChange={(e) => setMode(e.target.value as any)}
               />
-              <select
-                value={keyFormat}
-                onChange={(e) => setKeyFormat(e.target.value as 'utf8' | 'hex')}
-                className="bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-24"
-              >
-                <option value="utf8">UTF-8</option>
-                <option value="hex">HEX</option>
-              </select>
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1 flex justify-between">
-              <span>Initialization Vector (IV)</span>
-              <span className="text-zinc-500 text-xs">
-                {mode === 'GCM' ? 'Pads/truncates to 12 bytes' : 'Pads/truncates to 16 bytes'}
-              </span>
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={iv}
-                onChange={(e) => setIv(e.target.value)}
-                placeholder="Enter IV"
-                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+              <Select
+                label="Ciphertext Format"
+                options={[
+                  { value: 'base64', label: 'Base64 String' },
+                  { value: 'hex', label: 'Hexadecimal Bytes' }
+                ]}
+                value={cipherFormat}
+                onChange={(e) => setCipherFormat(e.target.value as any)}
               />
-              <select
-                value={ivFormat}
-                onChange={(e) => setIvFormat(e.target.value as 'utf8' | 'hex')}
-                className="bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-24"
-              >
-                <option value="utf8">UTF-8</option>
-                <option value="hex">HEX</option>
-              </select>
             </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Ciphertext Format</label>
-            <select
-              value={cipherFormat}
-              onChange={(e) => setCipherFormat(e.target.value as 'base64' | 'hex')}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="base64">Base64</option>
-              <option value="hex">HEX</option>
-            </select>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-2">Secret Key</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={key}
+                    onChange={(e) => setKey(e.target.value)}
+                    placeholder="Enter key"
+                    className="flex-1 h-10 px-3 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 font-mono"
+                  />
+                  <select
+                    value={keyFormat}
+                    onChange={(e) => setKeyFormat(e.target.value as any)}
+                    className="w-24 h-10 px-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+                  >
+                    <option value="utf8">UTF-8</option>
+                    <option value="hex">HEX</option>
+                  </select>
+                </div>
+                <span className="text-[10px] text-text-muted mt-1 block">Pads/truncates to 16/24/32 bytes</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-2">Initialization Vector (IV)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={iv}
+                    onChange={(e) => setIv(e.target.value)}
+                    placeholder="Enter IV"
+                    className="flex-1 h-10 px-3 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 font-mono"
+                  />
+                  <select
+                    value={ivFormat}
+                    onChange={(e) => setIvFormat(e.target.value as any)}
+                    className="w-24 h-10 px-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+                  >
+                    <option value="utf8">UTF-8</option>
+                    <option value="hex">HEX</option>
+                  </select>
+                </div>
+                <span className="text-[10px] text-text-muted mt-1 block">
+                  {mode === 'GCM' ? 'Pads/truncates to 12 bytes' : 'Pads/truncates to 16 bytes'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* I/O Fields */}
+        {/* Right Side Outputs */}
         <div className="space-y-4">
-          <div className="relative">
-            <label className="block text-sm font-medium mb-1 text-zinc-300">
-              {action === 'encrypt' ? 'Plaintext' : 'Ciphertext'}
-            </label>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="w-full h-32 bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-              placeholder={action === 'encrypt' ? 'Enter text to encrypt...' : 'Enter ciphertext to decrypt...'}
-              spellCheck="false"
-            />
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-text-primary">
+              {action === 'encrypt' ? 'Ciphertext Output' : 'Plaintext Output'}
+            </h2>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={handleSwap} disabled={!output || !!error} icon={<Copy className="h-3.5 w-3.5" />}>Swap</Button>
+              {output && !error && <CopyButton value={output} label="Copy Output" />}
+            </div>
           </div>
-
-          <div className="flex justify-center">
-            <ArrowRightLeft className={`w-6 h-6 text-zinc-600 ${action === 'encrypt' ? 'rotate-90' : '-rotate-90 md:rotate-0'} md:rotate-90`} />
-          </div>
-
           <div className="relative">
-            <label className="block text-sm font-medium mb-1 text-zinc-300 flex justify-between items-center">
-              <span>{action === 'encrypt' ? 'Ciphertext' : 'Plaintext'} Output</span>
-              {output && (
-                <button
-                  onClick={copyToClipboard}
-                  className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-md text-xs transition-colors"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? 'Copied' : 'Copy'}
-                </button>
-              )}
-            </label>
-            <textarea
+            <GradientBox
               value={error ? '' : output}
-              readOnly
-              className={`w-full h-32 bg-zinc-900/80 border rounded-xl p-4 text-sm font-mono resize-none focus:outline-none ${
-                error ? 'border-red-500/50 text-red-400' : 'border-zinc-800 text-indigo-300'
-              }`}
-              placeholder="Output will appear here..."
-              spellCheck="false"
+              placeholder={error ? '' : "Conversion output will appear here..."}
+              className="h-[430px] font-mono leading-relaxed"
             />
             {error && (
-              <div className="absolute inset-0 top-7 p-4 pointer-events-none text-red-400 text-sm font-mono">
-                Error: {error}
+              <div className="absolute inset-0 z-20 p-4 rounded-lg bg-error/5 border border-error/20 text-error text-sm font-mono overflow-auto">
+                <span className="font-bold block mb-1">Cryptographic Error:</span>
+                {error}
               </div>
             )}
           </div>
         </div>
       </div>
-    </div>
+    </ToolLayout>
   );
 }
