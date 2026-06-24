@@ -199,7 +199,7 @@ export default function Page() {
             }}
             placeholder={mode === 'json' ? '{"key": "value"}' : 'key: value'} 
             monospace 
-            className="min-h-[260px]" 
+            className="h-[320px]" 
           />
 
           {/* Validation Banner alerts (YAML only) */}
@@ -290,7 +290,7 @@ export default function Page() {
             </div>
           </div>
 
-          <GradientBox value={output} placeholder="Output code will appear here..." className="min-h-[360px]" />
+          <GradientBox value={output} placeholder="Output code will appear here..." className="h-[400px]" />
           
           {output && !output.startsWith('Invalid') && (
             <span className="text-xs text-text-muted font-medium block">

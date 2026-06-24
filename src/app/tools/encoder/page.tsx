@@ -141,7 +141,7 @@ export default function Page() {
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            className="w-full min-h-[280px] p-4 rounded-xl bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent resize-y font-mono"
+            className="w-full h-[280px] p-4 rounded-xl bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent resize-none font-mono overflow-y-auto"
             placeholder="Type values here..."
           />
 
@@ -223,7 +223,7 @@ export default function Page() {
               {output && <CopyButton value={output} label="Copy Output" />}
             </div>
           </div>
-          <GradientBox value={output} placeholder="Conversion output will appear here..." className="min-h-[380px] font-mono leading-relaxed" />
+          <GradientBox value={output} placeholder="Conversion output will appear here..." className="h-[390px] font-mono leading-relaxed" />
         </div>
       </div>
     </ToolLayout>

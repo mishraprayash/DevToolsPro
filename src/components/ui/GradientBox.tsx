@@ -14,14 +14,14 @@ export function GradientBox({ value, placeholder = 'Output will appear here...',
   
   return (
     <div className={cn(
-      'relative min-h-[200px] rounded-lg border transition-all duration-300',
+      'relative min-h-[200px] rounded-lg border transition-all duration-300 flex flex-col overflow-hidden',
       hasValue 
         ? 'bg-gradient-to-br from-bg-tertiary via-bg-secondary to-bg-tertiary border-accent/30 shadow-[0_0_30px_rgba(34,211,238,0.1)]' 
         : 'bg-bg-tertiary border-border',
       className
     )}>
       <div className={cn(
-        'absolute inset-0 rounded-lg overflow-hidden',
+        'absolute inset-0 rounded-lg overflow-hidden pointer-events-none',
         hasValue && 'animate-pulse-glow'
       )}>
         {hasValue && (
@@ -29,8 +29,8 @@ export function GradientBox({ value, placeholder = 'Output will appear here...',
         )}
       </div>
       <pre className={cn(
-        'relative z-10 w-full min-h-[200px] px-4 py-3 font-mono text-sm text-text-primary',
-        'whitespace-pre-wrap break-words overflow-auto',
+        'relative z-10 w-full flex-1 px-4 py-3 font-mono text-sm text-text-primary',
+        'whitespace-pre-wrap break-words overflow-y-auto',
         !hasValue && 'text-text-muted italic'
       )}>
         {hasValue ? value : placeholder}
