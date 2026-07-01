@@ -11,6 +11,9 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { decodeJWT, decodeJwtParts, getJWTStatus, signJWT, verifyJwtSignature, type JWTPayload, type JWTAlgorithm } from '@/tools/jwt/utils';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
+import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
+import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
+import { SplitPanesView } from '@/components/ui/SplitPanesView';
 
 const SAMPLE_JWT =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
@@ -179,7 +182,7 @@ function highlightJson(json: string, showRaw: boolean, searchQuery: string, acti
   };
 }
 
-function JsonBlock({ data, label, color }: { data: Record<string, unknown>; label: string; color: string }) {
+function JsonBlock({ data, label, color, className }: { data: Record<string, unknown>; label: string; color: string; className?: string }) {
   const [showRaw, setShowRaw] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [activeIndex, setActiveIndex] = React.useState(0);
@@ -214,7 +217,7 @@ function JsonBlock({ data, label, color }: { data: Record<string, unknown>; labe
   };
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden flex flex-col">
+    <div className={cn("border border-border rounded-xl overflow-hidden flex flex-col", className)}>
       <div className={cn('flex items-center justify-between px-4 py-2.5 shrink-0', color)}>
         <h3 className="text-sm font-medium text-white">{label}</h3>
         <div className="flex items-center gap-1">
@@ -223,10 +226,10 @@ function JsonBlock({ data, label, color }: { data: Record<string, unknown>; labe
           <CopyButton value={jsonStr} className="text-white/70 hover:text-white [&>svg]:text-white/70 [&>svg]:hover:text-white" />
         </div>
       </div>
-      <div ref={scrollRef} className="flex-1 p-4 bg-bg-tertiary overflow-auto min-h-[180px] max-h-[360px] font-mono text-sm text-text-primary whitespace-pre">
+      <div ref={scrollRef} className="flex-1 p-4 bg-bg-tertiary overflow-auto min-h-[120px] font-mono text-sm text-text-primary whitespace-pre">
         {highlighted}
       </div>
-      <div className="flex items-center gap-2 px-4 py-2 bg-bg-secondary border-t border-border">
+      <div className="flex items-center gap-2 px-4 py-2 bg-bg-secondary border-t border-border shrink-0">
         <Search className="h-3.5 w-3.5 text-text-muted shrink-0" />
         <input
           ref={inputRef}
@@ -267,57 +270,89 @@ function JsonBlock({ data, label, color }: { data: Record<string, unknown>; labe
   );
 }
 
+interface JwtState {
+  activeMode: 'decode' | 'sign';
+  // Decoder
+  input: string;
+  activeExample: number;
+  verifySecret: string;
+  verifyAlgorithm: JWTAlgorithm;
+  signatureStatus: 'unknown' | 'valid' | 'invalid' | 'error';
+  signatureMessage: string | null;
+  builderToken: string;
+  builderDecodeError: string | null;
+  // Signer
+  signHeader: string;
+  signPayload: string;
+  signSecret: string;
+  signAlgo: JWTAlgorithm;
+  signedToken: string;
+  signError: string | null;
+}
+
+const defaultState: JwtState = {
+  activeMode: 'decode',
+  input: SAMPLE_JWT,
+  activeExample: 0,
+  verifySecret: 'your-secret-key-123',
+  verifyAlgorithm: 'HS256',
+  signatureStatus: 'unknown',
+  signatureMessage: null,
+  builderToken: '',
+  builderDecodeError: null,
+  signHeader: `{\n  "alg": "HS256",\n  "typ": "JWT"\n}`,
+  signPayload: defaultSignerPayload,
+  signSecret: 'your-secret-key-123',
+  signAlgo: 'HS256',
+  signedToken: '',
+  signError: null,
+};
+
 export default function Page() {
-  const [activeTab, setActiveTab] = React.useState<'decode' | 'sign'>('decode');
+  const {
+    workspaces,
+    activeWorkspaceId,
+    activeWorkspace,
+    setActiveWorkspaceId,
+    addWorkspace,
+    removeWorkspace,
+    updateActiveWorkspace
+  } = useWorkspaces<JwtState>(defaultState, 'JWT');
 
-  // --- Decoder Tab States ---
-  const [input, setInput] = React.useState(SAMPLE_JWT);
-  const [activeExample, setActiveExample] = React.useState(0);
-  const [verifySecret, setVerifySecret] = React.useState('your-secret-key-123');
-  const [verifyAlgorithm, setVerifyAlgorithm] = React.useState<JWTAlgorithm>('HS256');
-  const [signatureStatus, setSignatureStatus] = React.useState<'unknown' | 'valid' | 'invalid' | 'error'>('unknown');
-  const [signatureMessage, setSignatureMessage] = React.useState<string | null>(null);
-
-  // --- Signer Tab States ---
-  const [signHeader, setSignHeader] = React.useState(`{\n  "alg": "HS256",\n  "typ": "JWT"\n}`);
-  const [signPayload, setSignPayload] = React.useState(defaultSignerPayload);
-  const [signSecret, setSignSecret] = React.useState('your-secret-key-123');
-  const [signAlgo, setSignAlgo] = React.useState<JWTAlgorithm>('HS256');
-  const [signedToken, setSignedToken] = React.useState('');
-  const [signError, setSignError] = React.useState<string | null>(null);
-  const [builderToken, setBuilderToken] = React.useState<string>('');
-  const [builderDecodeError, setBuilderDecodeError] = React.useState<string | null>(null);
+  const { state } = activeWorkspace;
 
   const decoded = React.useMemo((): JWTPayload | null => {
-    if (!input.trim()) return null;
-    return decodeJWT(input);
-  }, [input]);
+    if (!state.input.trim()) return null;
+    return decodeJWT(state.input);
+  }, [state.input]);
 
   const status = React.useMemo((): 'valid' | 'expired' | 'invalid' => {
-    if (!input.trim()) return 'invalid' as const;
-    return decoded ? getJWTStatus(input) : 'invalid';
-  }, [input, decoded]);
+    if (!state.input.trim()) return 'invalid' as const;
+    return decoded ? getJWTStatus(state.input) : 'invalid';
+  }, [state.input, decoded]);
 
   // Signer live sync
   const handleSign = React.useCallback(async () => {
+    if (state.activeMode !== 'sign') return;
     try {
-      const headerObj = JSON.parse(signHeader);
-      const payloadObj = JSON.parse(signPayload);
+      const headerObj = JSON.parse(state.signHeader);
+      const payloadObj = JSON.parse(state.signPayload);
       
       // Update algorithm header inside json dynamically if needed
-      if (headerObj.alg !== signAlgo) {
-        headerObj.alg = signAlgo;
-        setSignHeader(JSON.stringify(headerObj, null, 2));
+      if (headerObj.alg !== state.signAlgo) {
+        headerObj.alg = state.signAlgo;
+        updateActiveWorkspace({ signHeader: JSON.stringify(headerObj, null, 2) });
       }
 
-      const token = await signJWT(headerObj, payloadObj, signSecret, signAlgo);
-      setSignedToken(token);
-      setSignError(null);
+      const token = await signJWT(headerObj, payloadObj, state.signSecret, state.signAlgo);
+      updateActiveWorkspace({ signedToken: token, signError: null });
     } catch (e) {
-      setSignError((e as Error).message || 'Invalid JSON syntax inside Header or Payload');
-      setSignedToken('');
+      updateActiveWorkspace({
+        signError: (e as Error).message || 'Invalid JSON syntax inside Header or Payload',
+        signedToken: ''
+      });
     }
-  }, [signHeader, signPayload, signSecret, signAlgo]);
+  }, [state.signHeader, state.signPayload, state.signSecret, state.signAlgo, state.activeMode, updateActiveWorkspace]);
 
   React.useEffect(() => {
     const t = setTimeout(handleSign, 150);
@@ -325,114 +360,245 @@ export default function Page() {
   }, [handleSign]);
 
   const handleVerify = React.useCallback(async () => {
-    if (!input.trim()) {
-      setSignatureStatus('unknown');
-      setSignatureMessage(null);
+    if (!state.input.trim()) {
+      updateActiveWorkspace({ signatureStatus: 'unknown', signatureMessage: null });
       return;
     }
-    const partsResult = decodeJwtParts(input);
+    const partsResult = decodeJwtParts(state.input);
     if (!partsResult.success) {
-      setSignatureStatus('error');
-      setSignatureMessage(partsResult.error);
+      updateActiveWorkspace({ signatureStatus: 'error', signatureMessage: partsResult.error });
       return;
     }
-    const alg = (partsResult.header?.alg as string | undefined) || verifyAlgorithm;
+    const alg = (partsResult.header?.alg as string | undefined) || state.verifyAlgorithm;
     if (!['HS256', 'HS384', 'HS512', 'RS256'].includes(alg)) {
-      setSignatureStatus('error');
-      setSignatureMessage(`Unsupported alg: ${alg || 'none'}`);
+      updateActiveWorkspace({ signatureStatus: 'error', signatureMessage: `Unsupported alg: ${alg || 'none'}` });
       return;
     }
-    const verified = await verifyJwtSignature(input, verifySecret, alg as JWTAlgorithm);
+    const verified = await verifyJwtSignature(state.input, state.verifySecret, alg as JWTAlgorithm);
     if (verified.valid) {
-      setSignatureStatus('valid');
-      setSignatureMessage('Signature verified successfully.');
+      updateActiveWorkspace({ signatureStatus: 'valid', signatureMessage: 'Signature verified successfully.' });
     } else {
-      setSignatureStatus('invalid');
-      setSignatureMessage(verified.error || 'Signature mismatch');
+      updateActiveWorkspace({ signatureStatus: 'invalid', signatureMessage: verified.error || 'Signature mismatch' });
     }
-  }, [input, verifySecret, verifyAlgorithm]);
+  }, [state.input, state.verifySecret, state.verifyAlgorithm, updateActiveWorkspace]);
 
   const handleBuilderDecode = React.useCallback(() => {
-    const result = decodeJwtParts(builderToken);
+    const result = decodeJwtParts(state.builderToken);
     if (!result.success) {
-      setBuilderDecodeError(result.error);
+      updateActiveWorkspace({ builderDecodeError: result.error });
       return;
     }
-    setBuilderDecodeError(null);
-    setSignHeader(JSON.stringify(result.header, null, 2));
-    setSignPayload(JSON.stringify(result.payload, null, 2));
     const alg = result.header?.alg;
+    const updates: Partial<JwtState> = {
+      builderDecodeError: null,
+      signHeader: JSON.stringify(result.header, null, 2),
+      signPayload: JSON.stringify(result.payload, null, 2),
+      activeMode: 'sign'
+    };
     if (alg === 'HS256' || alg === 'HS384' || alg === 'HS512') {
-      setSignAlgo(alg);
+      updates.signAlgo = alg as JWTAlgorithm;
     }
-    setActiveTab('sign');
+    updateActiveWorkspace(updates);
     toast({ type: 'success', message: 'Loaded token into builder for editing.' });
-  }, [builderToken]);
-
-  const handleClearDecoder = () => {
-    setInput('');
-    setActiveExample(-1);
-    setSignatureStatus('unknown');
-    setSignatureMessage(null);
-  };
-  const applyExample = (i: number) => { setActiveExample(i); setInput(examples[i].value); };
+  }, [state.builderToken, updateActiveWorkspace]);
 
   const expValue = decoded?.payload?.exp && typeof decoded.payload.exp === 'number' ? decoded.payload.exp : null;
   const iatValue = decoded?.payload?.iat && typeof decoded.payload.iat === 'number' ? decoded.payload.iat : null;
 
-  return (
-    <ToolLayout name="JWT Decoder & Token Builder" description="Decode and inspect JWT header/payload structures, or sign new secure HMAC JSON Web Tokens instantly" category="Security">
-      {/* Tab Switcher */}
-      <div className="flex border-b border-border/80 mb-6 select-none">
+  const toolbarContent = (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-bg-secondary border border-border overflow-x-auto scrollbar-hide">
         <button
-          onClick={() => setActiveTab('decode')}
+          onClick={() => updateActiveWorkspace({ activeMode: 'decode' })}
           className={cn(
-            'px-5 py-3 border-b-2 font-medium text-sm transition-all duration-200',
-            activeTab === 'decode'
-              ? 'border-accent text-accent font-semibold'
-              : 'border-transparent text-text-muted hover:text-text-primary'
+            'flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap',
+            state.activeMode === 'decode'
+              ? 'bg-bg-tertiary text-accent border border-border'
+              : 'text-text-secondary hover:text-text-primary'
           )}
         >
+          <Search className="h-3.5 w-3.5" />
           JWT Decoder
         </button>
         <button
-          onClick={() => setActiveTab('sign')}
+          onClick={() => updateActiveWorkspace({ activeMode: 'sign' })}
           className={cn(
-            'px-5 py-3 border-b-2 font-medium text-sm transition-all duration-200',
-            activeTab === 'sign'
-              ? 'border-accent text-accent font-semibold'
-              : 'border-transparent text-text-muted hover:text-text-primary'
+            'flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap',
+            state.activeMode === 'sign'
+              ? 'bg-bg-tertiary text-accent border border-border'
+              : 'text-text-secondary hover:text-text-primary'
           )}
         >
-          JWT Token Builder &amp; Signer
+          <PenTool className="h-3.5 w-3.5" />
+          Token Builder
         </button>
       </div>
+    </div>
+  );
 
-      {activeTab === 'decode' ? (
-        /* Tab 1: JWT Decoder */
-        <div className="space-y-4 animate-fade-in">
-          <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
+  const renderDecodeMode = () => {
+    const leftPane = (
+      <div className="flex flex-col h-full space-y-4 min-h-0">
+        <ExamplePills
+          examples={examples}
+          activeIndex={state.activeExample}
+          onSelect={(i) => updateActiveWorkspace({ activeExample: i, input: examples[i].value })}
+        />
 
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-text-secondary">Encoded JWT Token String</h2>
-            <Button variant="ghost" size="sm" onClick={handleClearDecoder} icon={<RotateCcw className="h-4 w-4" />}>Clear</Button>
-          </div>
+        <div className="flex items-center justify-between shrink-0">
+          <h2 className="text-sm font-medium text-text-secondary">Encoded JWT Token String</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => updateActiveWorkspace({ input: '', activeExample: -1, signatureStatus: 'unknown', signatureMessage: null })}
+            icon={<RotateCcw className="h-4 w-4" />}
+          >
+            Clear
+          </Button>
+        </div>
 
-          <textarea
-            value={input}
-            onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }}
-            placeholder="Paste JWT token (header.payload.signature)..."
-            className="w-full min-h-[140px] px-4 py-3 rounded-xl bg-bg-tertiary border border-border text-text-primary placeholder:text-text-muted font-mono text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all duration-200 resize-none shadow-inner"
-          />
+        <textarea
+          value={state.input}
+          onChange={(e) => updateActiveWorkspace({ input: e.target.value, activeExample: -1 })}
+          placeholder="Paste JWT token (header.payload.signature)..."
+          className="w-full flex-1 min-h-[140px] px-4 py-3 rounded-xl bg-bg-tertiary border border-border text-text-primary placeholder:text-text-muted font-mono text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all duration-200 resize-none shadow-inner"
+        />
 
-          {decoded ? (
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <JsonBlock data={decoded.header} label="Header" color="bg-gradient-to-r from-rose-600 to-pink-600" />
-                <JsonBlock data={decoded.payload} label="Payload" color="bg-gradient-to-r from-blue-600 to-cyan-600" />
+        {decoded && (
+          <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-3 shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+                <ShieldCheck className="h-4 w-4 text-accent" />
+                <span>Verify Signature (HMAC)</span>
               </div>
+              <button
+                onClick={handleVerify}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-bg-tertiary border border-border text-text-secondary hover:text-text-primary hover:border-border-hover transition-colors"
+              >
+                <Timer className="h-3.5 w-3.5" />
+                Verify Now
+              </button>
+            </div>
 
-              <div className="border border-border rounded-xl overflow-hidden shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Select
+                label="Algorithm"
+                options={algoOptions}
+                value={state.verifyAlgorithm}
+                onChange={(e) => updateActiveWorkspace({ verifyAlgorithm: e.target.value as JWTAlgorithm })}
+              />
+              <div className="md:col-span-2">
+                <label className="block text-xs font-medium text-text-secondary mb-2">
+                  {state.verifyAlgorithm === 'RS256' ? 'RSA Public Key (PEM)' : 'Shared Secret'}
+                </label>
+                <input
+                  type="text"
+                  value={state.verifySecret}
+                  onChange={(e) => updateActiveWorkspace({ verifySecret: e.target.value })}
+                  placeholder={state.verifyAlgorithm === 'RS256' ? 'Paste RSA public key in PEM format' : 'paste shared secret'}
+                  className="w-full h-9 px-3 rounded-lg bg-bg-tertiary border border-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"
+                />
+              </div>
+            </div>
+
+            {state.signatureStatus !== 'unknown' && (
+              <div className={cn(
+                'flex items-start gap-2.5 p-3 rounded-lg border text-xs',
+                state.signatureStatus === 'valid' && 'bg-success/10 border-success/30 text-success',
+                state.signatureStatus === 'invalid' && 'bg-error/10 border-error/30 text-error',
+                state.signatureStatus === 'error' && 'bg-warning/10 border-warning/30 text-warning'
+              )}>
+                {state.signatureStatus === 'valid' && <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" />}
+                {state.signatureStatus !== 'valid' && <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />}
+                <div>
+                  <p className="font-semibold">
+                    {state.signatureStatus === 'valid'
+                      ? 'Signature Valid'
+                      : state.signatureStatus === 'invalid'
+                        ? 'Signature Invalid'
+                        : 'Verification Error'}
+                  </p>
+                  <p className="text-text-secondary mt-1 leading-relaxed">{state.signatureMessage}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {decoded && (
+          <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-3 shrink-0">
+            <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+              <PenTool className="h-4 w-4 text-accent" />
+              <span>Load Token into Builder</span>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                value={state.builderToken}
+                onChange={(e) => updateActiveWorkspace({ builderToken: e.target.value })}
+                placeholder="Paste JWT here to edit and re-sign"
+                className="flex-1 h-10 px-4 rounded-lg bg-bg-tertiary border border-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBuilderDecode}
+                icon={<PenTool className="h-4 w-4" />}
+              >
+                Load
+              </Button>
+            </div>
+            {state.builderDecodeError && (
+              <div className="text-xs text-error bg-error/10 border border-error/30 rounded-lg p-2">
+                {state.builderDecodeError}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+
+    const rightPane = (
+      <div className="flex flex-col h-full space-y-4 min-h-0">
+        {!decoded ? (
+          <div className="flex items-center justify-center h-full min-h-[300px] rounded-xl bg-bg-tertiary border border-dashed border-border text-text-muted text-sm italic">
+            Paste a JWT token on the left to decode its parts.
+          </div>
+        ) : (
+          <div className="flex flex-col h-full gap-4">
+            <div className={cn('flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 rounded-xl border flex-wrap shrink-0',
+              status === 'valid' && 'bg-success/10 border-success/30 text-success',
+              status === 'expired' && 'bg-warning/10 border-warning/30 text-warning',
+              status === 'invalid' && 'bg-error/10 border-error/30 text-error'
+            )}>
+              <div className="flex items-center gap-2 shrink-0">
+                {status === 'valid' && <CheckCircle className="h-5 w-5 text-success" />}
+                {status === 'expired' && <AlertCircle className="h-5 w-5 text-warning" />}
+                {status === 'invalid' && <AlertCircle className="h-5 w-5 text-error" />}
+                <span className="font-bold">
+                  {status === 'valid' ? 'Token Valid' : status === 'expired' ? 'Token Expired' : 'Invalid Token'}
+                </span>
+              </div>
+              <div className="flex items-center gap-4 flex-wrap">
+                {expValue && (
+                  <div className="flex items-center gap-2 text-sm text-text-secondary">
+                    <Clock className="h-4 w-4 text-text-muted shrink-0" />
+                    <span>Expires: <span className="font-mono text-text-primary">{formatDate(expValue)}</span></span>
+                  </div>
+                )}
+                {iatValue && (
+                  <div className="flex items-center gap-2 text-sm text-text-secondary">
+                    <KeyRound className="h-4 w-4 text-text-muted shrink-0" />
+                    <span>Issued: <span className="font-mono text-text-primary">{formatDate(iatValue)}</span></span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col flex-1 gap-4 overflow-y-auto">
+              <JsonBlock data={decoded.header} label="Header" color="bg-gradient-to-r from-rose-600 to-pink-600" className="shrink-0" />
+              <JsonBlock data={decoded.payload} label="Payload" color="bg-gradient-to-r from-blue-600 to-cyan-600" className="flex-1" />
+              <div className="border border-border rounded-xl overflow-hidden shadow-sm shrink-0">
                 <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-gray-600 to-slate-600">
                   <h3 className="text-sm font-medium text-white">Signature</h3>
                   <CopyButton value={decoded.raw.signature} className="text-white/70 hover:text-white" />
@@ -442,222 +608,118 @@ export default function Page() {
                 </div>
               </div>
             </div>
-          ) : input.trim() ? null : (
-            <div className="flex items-center justify-center h-32 rounded-xl bg-bg-tertiary border border-dashed border-border text-text-muted text-sm italic">
-              Paste a JWT token above to decode header, payload and signature parts.
-            </div>
-          )}
+          </div>
+        )}
+      </div>
+    );
 
-          {decoded && (
-            <div className="space-y-4">
-              <div className={cn('flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 rounded-xl border flex-wrap',
-                status === 'valid' && 'bg-success/10 border-success/30 text-success',
-                status === 'expired' && 'bg-warning/10 border-warning/30 text-warning',
-                status === 'invalid' && 'bg-error/10 border-error/30 text-error'
-              )}>
-                <div className="flex items-center gap-2 shrink-0">
-                  {status === 'valid' && <CheckCircle className="h-5 w-5 text-success" />}
-                  {status === 'expired' && <AlertCircle className="h-5 w-5 text-warning" />}
-                  {status === 'invalid' && <AlertCircle className="h-5 w-5 text-error" />}
-                  <span className="font-bold">
-                    {status === 'valid' ? 'Token Valid' : status === 'expired' ? 'Token Expired' : 'Invalid Token'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 flex-wrap">
-                  {expValue && (
-                    <div className="flex items-center gap-2 text-sm text-text-secondary">
-                      <Clock className="h-4 w-4 text-text-muted shrink-0" />
-                      <span>Expires: <span className="font-mono text-text-primary">{formatDate(expValue)}</span></span>
-                    </div>
-                  )}
-                  {iatValue && (
-                    <div className="flex items-center gap-2 text-sm text-text-secondary">
-                      <KeyRound className="h-4 w-4 text-text-muted shrink-0" />
-                      <span>Issued: <span className="font-mono text-text-primary">{formatDate(iatValue)}</span></span>
-                    </div>
-                  )}
-                </div>
-              </div>
+    return <SplitPanesView toolbarContent={toolbarContent} leftPane={leftPane} rightPane={rightPane} />;
+  };
 
-              <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-                    <ShieldCheck className="h-4 w-4 text-accent" />
-                    <span>Verify Signature (HMAC)</span>
-                  </div>
-                  <button
-                    onClick={handleVerify}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-bg-tertiary border border-border text-text-secondary hover:text-text-primary hover:border-border-hover transition-colors"
-                  >
-                    <Timer className="h-3.5 w-3.5" />
-                    Verify Now
-                  </button>
-                </div>
+  const renderSignMode = () => {
+    const leftPane = (
+      <div className="flex flex-col h-full space-y-4 min-h-0">
+        <h2 className="text-base font-medium text-text-secondary shrink-0">JWT Claims Configuration</h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <Select
-                    label="Algorithm"
-                    options={algoOptions}
-                    value={verifyAlgorithm}
-                    onChange={(e) => setVerifyAlgorithm(e.target.value as JWTAlgorithm)}
-                  />
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-text-secondary mb-2">
-                      {verifyAlgorithm === 'RS256' ? 'RSA Public Key (PEM)' : 'Shared Secret'}
-                    </label>
-                    <input
-                      type="text"
-                      value={verifySecret}
-                      onChange={(e) => setVerifySecret(e.target.value)}
-                      placeholder={verifyAlgorithm === 'RS256' ? 'Paste RSA public key in PEM format' : 'paste shared secret'}
-                      className="w-full h-9 px-3 rounded-lg bg-bg-tertiary border border-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"
-                    />
-                  </div>
-                </div>
-
-                {signatureStatus !== 'unknown' && (
-                  <div className={cn(
-                    'flex items-start gap-2.5 p-3 rounded-lg border text-xs',
-                    signatureStatus === 'valid' && 'bg-success/10 border-success/30 text-success',
-                    signatureStatus === 'invalid' && 'bg-error/10 border-error/30 text-error',
-                    signatureStatus === 'error' && 'bg-warning/10 border-warning/30 text-warning'
-                  )}>
-                    {signatureStatus === 'valid' && <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" />}
-                    {signatureStatus !== 'valid' && <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />}
-                    <div>
-                      <p className="font-semibold">
-                        {signatureStatus === 'valid'
-                          ? 'Signature Valid'
-                          : signatureStatus === 'invalid'
-                            ? 'Signature Invalid'
-                            : 'Verification Error'}
-                      </p>
-                      <p className="text-text-secondary mt-1 leading-relaxed">{signatureMessage}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-                  <PenTool className="h-4 w-4 text-accent" />
-                  <span>Load Token into Builder</span>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="text"
-                    value={builderToken}
-                    onChange={(e) => setBuilderToken(e.target.value)}
-                    placeholder="Paste JWT here to edit and re-sign"
-                    className="flex-1 h-10 px-4 rounded-lg bg-bg-tertiary border border-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleBuilderDecode}
-                    icon={<PenTool className="h-4 w-4" />}
-                  >
-                    Load
-                  </Button>
-                </div>
-                {builderDecodeError && (
-                  <div className="text-xs text-error bg-error/10 border border-error/30 rounded-lg p-2">
-                    {builderDecodeError}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Tab 2: JWT Builder/Signer */
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
-          {/* Signer inputs */}
-          <div className="space-y-4">
-            <h2 className="text-base font-medium text-text-secondary">JWT Claims Configuration</h2>
-
-            <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-4">
-              <div className="flex items-center gap-2 text-xs font-semibold text-text-primary font-outfit border-b border-border pb-2">
-                <Settings className="h-4 w-4 text-accent" />
-                <span>Signature Options</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Select
-                    label="Signing Algorithm"
-                    options={algoOptions}
-                    value={signAlgo}
-                    onChange={(e) => setSignAlgo(e.target.value as JWTAlgorithm)}
-                  />
-
-                <div>
-                    <label className="block text-xs font-medium text-text-secondary mb-2">
-                      {signAlgo === 'RS256' ? 'RSA Private Key (PEM)' : 'HMAC Shared Secret Key'}
-                    </label>
-                    <input
-                      type="text"
-                      value={signSecret}
-                      onChange={(e) => setSignSecret(e.target.value)}
-                      placeholder={signAlgo === 'RS256' ? 'Paste RSA private key in PEM format' : 'your-secret-key'}
-                      className="w-full h-10 px-4 rounded-lg bg-bg-tertiary border border-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"
-                    />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <span className="text-xs font-bold text-text-muted uppercase tracking-wider block">Header JSON</span>
-                <textarea
-                  value={signHeader}
-                  onChange={(e) => setSignHeader(e.target.value)}
-                  className="w-full h-44 p-3 rounded-lg bg-bg-tertiary border border-border font-mono text-xs text-text-primary focus:outline-none focus:border-accent resize-none shadow-inner"
-                  spellCheck={false}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <span className="text-xs font-bold text-text-muted uppercase tracking-wider block">Payload Claims JSON</span>
-                <textarea
-                  value={signPayload}
-                  onChange={(e) => setSignPayload(e.target.value)}
-                  className="w-full h-44 p-3 rounded-lg bg-bg-tertiary border border-border font-mono text-xs text-text-primary focus:outline-none focus:border-accent resize-none shadow-inner"
-                  spellCheck={false}
-                />
-              </div>
-            </div>
-
-            {signError && (
-              <div className="p-4 rounded-xl bg-error/10 text-error border border-error/30 text-xs flex gap-2.5 items-start shadow-sm">
-                <AlertCircle className="h-5 w-5 shrink-0 text-error mt-0.5" />
-                <p className="leading-relaxed font-semibold">{signError}</p>
-              </div>
-            )}
+        <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-4 shrink-0">
+          <div className="flex items-center gap-2 text-xs font-semibold text-text-primary font-outfit border-b border-border pb-2">
+            <Settings className="h-4 w-4 text-accent" />
+            <span>Signature Options</span>
           </div>
 
-          {/* Signer outputs */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-medium text-text-secondary">
-                <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent font-bold">
-                  Generated Signed Token
-                </span>
-              </h2>
-              <CopyButton value={signedToken} disabled={!signedToken} />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Select
+              label="Signing Algorithm"
+              options={algoOptions}
+              value={state.signAlgo}
+              onChange={(e) => updateActiveWorkspace({ signAlgo: e.target.value as JWTAlgorithm })}
+            />
 
-            <GradientBox value={signedToken} placeholder="JWT Signed token will appear here..." className="min-h-[140px] text-xs font-bold" />
-
-            <div className="p-4 rounded-xl border border-border bg-bg-secondary flex gap-3 text-xs text-text-muted">
-              <Sparkles className="h-5 w-5 text-accent shrink-0 animate-pulse-glow" />
-              <div>
-                <p className="font-semibold text-text-primary mb-0.5">Cryptographic HMAC Verification</p>
-                <p className="leading-relaxed">This token is formed of base64url encoded header, payload, and a secure signature generated completely locally using browser Subtly Cryptography. Ideal for mock testing backend API endpoints.</p>
-              </div>
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-2">
+                {state.signAlgo === 'RS256' ? 'RSA Private Key (PEM)' : 'HMAC Shared Secret Key'}
+              </label>
+              <input
+                type="text"
+                value={state.signSecret}
+                onChange={(e) => updateActiveWorkspace({ signSecret: e.target.value })}
+                placeholder={state.signAlgo === 'RS256' ? 'Paste RSA private key in PEM format' : 'your-secret-key'}
+                className="w-full h-10 px-4 rounded-lg bg-bg-tertiary border border-border text-text-primary text-xs font-mono focus:outline-none focus:border-accent"
+              />
             </div>
           </div>
         </div>
-      )}
+
+        <div className="flex-1 min-h-[300px] flex flex-col gap-4">
+          <div className="flex-1 flex flex-col space-y-1.5 min-h-[100px]">
+            <span className="text-xs font-bold text-text-muted uppercase tracking-wider block shrink-0">Header JSON</span>
+            <textarea
+              value={state.signHeader}
+              onChange={(e) => updateActiveWorkspace({ signHeader: e.target.value })}
+              className="w-full flex-1 p-3 rounded-lg bg-bg-tertiary border border-border font-mono text-xs text-text-primary focus:outline-none focus:border-accent resize-none shadow-inner"
+              spellCheck={false}
+            />
+          </div>
+
+          <div className="flex-1 flex flex-col space-y-1.5 min-h-[150px]">
+            <span className="text-xs font-bold text-text-muted uppercase tracking-wider block shrink-0">Payload Claims JSON</span>
+            <textarea
+              value={state.signPayload}
+              onChange={(e) => updateActiveWorkspace({ signPayload: e.target.value })}
+              className="w-full flex-1 p-3 rounded-lg bg-bg-tertiary border border-border font-mono text-xs text-text-primary focus:outline-none focus:border-accent resize-none shadow-inner"
+              spellCheck={false}
+            />
+          </div>
+        </div>
+
+        {state.signError && (
+          <div className="p-4 rounded-xl bg-error/10 text-error border border-error/30 text-xs flex gap-2.5 items-start shadow-sm shrink-0">
+            <AlertCircle className="h-5 w-5 shrink-0 text-error mt-0.5" />
+            <p className="leading-relaxed font-semibold">{state.signError}</p>
+          </div>
+        )}
+      </div>
+    );
+
+    const rightPane = (
+      <div className="flex flex-col h-full space-y-4 min-h-0">
+        <div className="flex items-center justify-between shrink-0">
+          <h2 className="text-base font-medium text-text-secondary">
+            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent font-bold">
+              Generated Signed Token
+            </span>
+          </h2>
+          <CopyButton value={state.signedToken} disabled={!state.signedToken} />
+        </div>
+
+        <GradientBox value={state.signedToken} placeholder="JWT Signed token will appear here..." className="flex-1 min-h-[200px] text-xs font-bold" />
+
+        <div className="p-4 rounded-xl border border-border bg-bg-secondary flex gap-3 text-xs text-text-muted shrink-0">
+          <Sparkles className="h-5 w-5 text-accent shrink-0 animate-pulse-glow" />
+          <div>
+            <p className="font-semibold text-text-primary mb-0.5">Cryptographic HMAC Verification</p>
+            <p className="leading-relaxed">This token is formed of base64url encoded header, payload, and a secure signature generated completely locally using browser Subtly Cryptography. Ideal for mock testing backend API endpoints.</p>
+          </div>
+        </div>
+      </div>
+    );
+
+    return <SplitPanesView toolbarContent={toolbarContent} leftPane={leftPane} rightPane={rightPane} />;
+  };
+
+  return (
+    <ToolLayout name="JWT Decoder & Token Builder" description="Decode and inspect JWT header/payload structures, or sign new secure HMAC JSON Web Tokens instantly" category="Security">
+      <WorkspaceTabs
+        workspaces={workspaces}
+        activeId={activeWorkspaceId}
+        onChange={setActiveWorkspaceId}
+        onAdd={addWorkspace}
+        onClose={removeWorkspace}
+      />
+      
+      <div className="mt-4">
+        {state.activeMode === 'decode' ? renderDecodeMode() : renderSignMode()}
+      </div>
     </ToolLayout>
   );
 }

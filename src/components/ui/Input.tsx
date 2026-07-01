@@ -8,10 +8,11 @@ interface InputProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   monospace?: boolean;
   onDropText?: (text: string) => void;
   onDropFile?: (file: File) => void;
+  wrapperClassName?: string;
 }
 
 const Input = React.forwardRef<HTMLTextAreaElement, InputProps>(
-  ({ className, label, error, monospace = false, onDropText, onDropFile, ...props }, ref) => {
+  ({ className, wrapperClassName, label, error, monospace = false, onDropText, onDropFile, ...props }, ref) => {
     const [isDragging, setIsDragging] = React.useState(false);
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -52,12 +53,12 @@ const Input = React.forwardRef<HTMLTextAreaElement, InputProps>(
     const isDropEnabled = !!onDropText || !!onDropFile;
 
     return (
-      <div className="w-full relative">
+      <div className={cn("w-full relative flex flex-col", wrapperClassName)}>
         {label && (
           <label className="block text-sm font-medium text-text-secondary mb-2">{label}</label>
         )}
         <div 
-          className="relative w-full h-full"
+          className="relative w-full flex-1 min-h-0"
           onDragOver={isDropEnabled ? handleDragOver : undefined}
           onDragLeave={isDropEnabled ? handleDragLeave : undefined}
           onDrop={isDropEnabled ? handleDrop : undefined}
@@ -65,7 +66,7 @@ const Input = React.forwardRef<HTMLTextAreaElement, InputProps>(
           <textarea
             ref={ref}
             className={cn(
-              'w-full min-h-[200px] px-4 py-3 rounded-lg bg-bg-tertiary border border-border',
+              'w-full h-full min-h-[200px] px-4 py-3 rounded-lg bg-bg-tertiary border border-border',
               'text-text-primary placeholder:text-text-muted',
               'focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30',
               'transition-all duration-200 resize-none',

@@ -160,12 +160,14 @@ interface JsonViewerProps {
   value: string;
   maxHeight?: string;
   minHeight?: string;
+  className?: string;
 }
 
 export function JsonViewer({
   value,
   maxHeight = '480px',
   minHeight = '180px',
+  className
 }: JsonViewerProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [activeIndex, setActiveIndex] = React.useState(0);
@@ -206,11 +208,11 @@ export function JsonViewer({
   };
 
   return (
-    <div className="flex flex-col border border-border rounded-xl overflow-hidden">
+    <div className={cn("flex flex-col border border-border rounded-xl overflow-hidden", className)}>
       <div
         ref={scrollRef}
         className="flex-1 p-4 bg-bg-tertiary overflow-auto font-mono text-sm text-text-primary whitespace-pre"
-        style={{ maxHeight, minHeight }}
+        style={{ maxHeight: className ? undefined : maxHeight, minHeight: className ? undefined : minHeight }}
       >
         {value ? (
           highlighted

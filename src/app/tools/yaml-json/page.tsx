@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { RotateCcw, ArrowRight, Settings, Download, AlertTriangle, CheckCircle } from 'lucide-react';
+import { RotateCcw, ArrowRight, Settings, Download, AlertTriangle, CheckCircle, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
@@ -16,9 +16,11 @@ import {
 } from '@/tools/yaml-json/utils';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
-
 import { HistoryDrawer } from '@/components/tool/HistoryDrawer';
 import { useAppStore, type HistoryItem } from '@/lib/store/useStore';
+import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
+import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
+import { SplitPanesView } from '@/components/ui/SplitPanesView';
 
 const indentOptions = [
   { value: '2', label: '2 Spaces' },
@@ -61,52 +63,75 @@ spec:
   }
 ];
 
-export default function Page() {
-  const [input, setInput] = React.useState(examples[0].input);
-  const [output, setOutput] = React.useState('');
-  const [mode, setMode] = React.useState<'json' | 'yaml'>('json');
-  const [indent, setIndent] = React.useState('2');
-  const [activeExample, setActiveExample] = React.useState(0);
-  const [error, setError] = React.useState<string | null>(null);
-  const { addHistoryItem } = useAppStore();
+interface YamlJsonState {
+  input: string;
+  output: string;
+  mode: 'json' | 'yaml';
+  indent: string;
+  activeExample: number;
+  error: string | null;
+  validation: any;
+}
 
-  const [validation, setValidation] = React.useState<any>(null);
+const defaultState: YamlJsonState = {
+  input: examples[0].input,
+  output: '',
+  mode: 'json',
+  indent: '2',
+  activeExample: 0,
+  error: null,
+  validation: null,
+};
+
+export default function Page() {
+  const {
+    workspaces,
+    activeWorkspaceId,
+    activeWorkspace,
+    setActiveWorkspaceId,
+    addWorkspace,
+    removeWorkspace,
+    updateActiveWorkspace
+  } = useWorkspaces<YamlJsonState>(defaultState, 'Converter');
+
+  const { state } = activeWorkspace;
+  const { addHistoryItem } = useAppStore();
 
   React.useEffect(() => {
     let active = true;
-    if (!input.trim() || mode !== 'yaml') {
-      setValidation(null);
+    if (!state.input.trim() || state.mode !== 'yaml') {
+      updateActiveWorkspace({ validation: null });
       return;
     }
-    validateYaml(input).then(res => {
-      if (active) setValidation(res);
+    validateYaml(state.input).then(res => {
+      if (active) updateActiveWorkspace({ validation: res });
     });
     return () => { active = false; };
-  }, [input, mode]);
+  }, [state.input, state.mode, updateActiveWorkspace]);
 
   const handleProcess = React.useCallback(async () => {
-    if (!input.trim()) {
-      setOutput('');
-      setError(null);
+    if (!state.input.trim()) {
+      updateActiveWorkspace({ output: '', error: null });
       return;
     }
 
     try {
-      const result = mode === 'json' 
-        ? await jsonToYaml(input, { indent: parseInt(indent, 10) }) 
-        : await yamlToJson(input);
+      const result = state.mode === 'json' 
+        ? await jsonToYaml(state.input, { indent: parseInt(state.indent, 10) }) 
+        : await yamlToJson(state.input);
       
-      setOutput(result);
-      setError(result.startsWith('Invalid') ? result : null);
+      updateActiveWorkspace({
+        output: result,
+        error: result.startsWith('Invalid') ? result : null
+      });
 
       if (!result.startsWith('Invalid')) {
-        addHistoryItem('yaml-json', input.slice(0, 1000), result.slice(0, 1000), { mode });
+        addHistoryItem('yaml-json', state.input.slice(0, 1000), result.slice(0, 1000), { mode: state.mode });
       }
     } catch (e) {
-      setError((e as Error).message);
-      setOutput('');
+      updateActiveWorkspace({ error: (e as Error).message, output: '' });
     }
-  }, [input, mode, indent, addHistoryItem]);
+  }, [state.input, state.mode, state.indent, addHistoryItem, updateActiveWorkspace]);
 
   React.useEffect(() => {
     const t = setTimeout(handleProcess, 100);
@@ -114,33 +139,39 @@ export default function Page() {
   }, [handleProcess]);
 
   const applyExample = (i: number) => {
-    setActiveExample(i);
-    setMode(examples[i].mode);
-    setInput(examples[i].input);
-    setError(null);
+    updateActiveWorkspace({
+      activeExample: i,
+      mode: examples[i].mode,
+      input: examples[i].input,
+      error: null
+    });
   };
 
   const handleClear = () => {
-    setInput('');
-    setOutput('');
-    setError(null);
-    setActiveExample(-1);
+    updateActiveWorkspace({
+      input: '',
+      output: '',
+      error: null,
+      activeExample: -1
+    });
   };
 
   const handleSwap = () => {
-    if (!output || output.startsWith('Invalid')) return;
-    setMode((m) => m === 'json' ? 'yaml' : 'json');
-    setInput(output);
-    setOutput('');
-    setError(null);
-    setActiveExample(-1);
+    if (!state.output || state.output.startsWith('Invalid')) return;
+    updateActiveWorkspace({
+      mode: state.mode === 'json' ? 'yaml' : 'json',
+      input: state.output,
+      output: '',
+      error: null,
+      activeExample: -1
+    });
     toast({ type: 'success', message: 'Swapped inputs and conversion direction!' });
   };
 
   const handleDownload = () => {
-    if (!output || output.startsWith('Invalid')) return;
-    const isTargetYaml = mode === 'json';
-    const blob = new Blob([output], { type: isTargetYaml ? 'text/yaml' : 'application/json' });
+    if (!state.output || state.output.startsWith('Invalid')) return;
+    const isTargetYaml = state.mode === 'json';
+    const blob = new Blob([state.output], { type: isTargetYaml ? 'text/yaml' : 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -151,11 +182,167 @@ export default function Page() {
   };
 
   const handleRestore = (item: HistoryItem) => {
-    setInput(item.input);
+    const updates: Partial<YamlJsonState> = { input: item.input, activeExample: -1 };
     if (item.metadata?.mode) {
-      setMode(item.metadata.mode);
+      updates.mode = item.metadata.mode as 'json' | 'yaml';
     }
+    updateActiveWorkspace(updates);
   };
+
+  const toolbarContent = (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-bg-secondary border border-border shrink-0">
+        <button
+          onClick={() => updateActiveWorkspace({ mode: 'json' })}
+          className={cn(
+            'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
+            state.mode === 'json' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'
+          )}
+        >
+          JSON to YAML
+        </button>
+        <button
+          onClick={() => updateActiveWorkspace({ mode: 'yaml' })}
+          className={cn(
+            'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
+            state.mode === 'yaml' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'
+          )}
+        >
+          YAML to JSON
+        </button>
+      </div>
+    </div>
+  );
+
+  const leftPane = (
+    <div className="flex flex-col h-full space-y-4 min-h-0">
+      <div className="flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-medium text-text-secondary">Input Code</h2>
+          <span className={cn(
+            'text-[10px] px-2 py-0.5 rounded-full font-bold border uppercase tracking-wider',
+            state.mode === 'json' 
+              ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
+              : 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'
+          )}>
+            {state.mode === 'json' ? 'JSON' : 'YAML'}
+          </span>
+        </div>
+        <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+          Clear
+        </Button>
+      </div>
+
+      <Input 
+        value={state.input} 
+        onChange={(e) => updateActiveWorkspace({ input: e.target.value, activeExample: -1 })}
+        onDropText={(text) => updateActiveWorkspace({ input: text, activeExample: -1 })}
+        placeholder={state.mode === 'json' ? '{"key": "value"}' : 'key: value'} 
+        monospace 
+        className="w-full h-full"
+        wrapperClassName="flex-1 min-h-[200px]" 
+      />
+
+      {/* Validation Banner alerts (YAML only) */}
+      {state.validation && (
+        <div className={cn(
+          'p-3.5 rounded-xl border flex items-start gap-2.5 text-xs shadow-sm animate-fade-in shrink-0',
+          state.validation.valid 
+            ? 'bg-success/5 border-success/20 text-success font-semibold' 
+            : 'bg-error/10 border-error/20 text-error'
+        )}>
+          {state.validation.valid ? (
+            <>
+              <CheckCircle className="h-4 w-4 shrink-0 text-success mt-0.5" />
+              <span>Valid YAML Structure</span>
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="h-4 w-4 shrink-0 text-error mt-0.5" />
+              <div className="space-y-0.5">
+                <span className="font-bold">YAML Parse Alert</span>
+                <p className="leading-relaxed">
+                  {state.validation.error} {state.validation.line ? `(Line: ${state.validation.line})` : ''}
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {state.mode === 'json' && (
+        <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-4 shrink-0">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-text-primary font-outfit border-b border-border pb-2.5">
+            <Settings className="h-4 w-4 text-accent" />
+            <span>Conversion Preferences</span>
+          </div>
+          <div className="w-full">
+            <Select
+              label="YAML Indent Spacing"
+              options={indentOptions}
+              value={state.indent}
+              onChange={(e) => updateActiveWorkspace({ indent: e.target.value })}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const rightPane = (
+    <div className="flex flex-col h-full space-y-4 min-h-0">
+      <div className="flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-medium text-text-secondary">
+            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent font-bold">
+              Converted Output
+            </span>
+          </h2>
+          <span className={cn(
+            'text-[10px] px-2 py-0.5 rounded-full font-bold border uppercase tracking-wider',
+            state.mode === 'yaml' 
+              ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
+              : 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'
+          )}>
+            {state.mode === 'yaml' ? 'JSON' : 'YAML'}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleSwap} 
+            disabled={!state.output || state.output.startsWith('Invalid') || state.output.startsWith('Error')}
+            icon={<ArrowRight className="h-4 w-4" />}
+            title="Swap Inputs"
+          >
+            Swap
+          </Button>
+          <CopyButton value={state.output} disabled={!state.output || state.output.startsWith('Invalid')} />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDownload}
+            disabled={!state.output || state.output.startsWith('Invalid')}
+            icon={<Download className="h-4 w-4" />}
+          >
+            Download
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-[200px]">
+        <GradientBox value={state.output} placeholder="Output code will appear here..." className="h-full w-full overflow-y-auto" />
+      </div>
+      
+      {state.output && !state.output.startsWith('Invalid') && (
+        <span className="text-xs text-text-muted font-medium block shrink-0">
+          {state.output.length.toLocaleString()} characters · {state.output.split('\n').length.toLocaleString()} lines
+        </span>
+      )}
+    </div>
+  );
 
   return (
     <ToolLayout 
@@ -164,140 +351,22 @@ export default function Page() {
       category="Formatting"
       historyComponent={<HistoryDrawer toolId="yaml-json" onRestore={handleRestore} />}
     >
-      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
+      <WorkspaceTabs
+        workspaces={workspaces}
+        activeId={activeWorkspaceId}
+        onChange={setActiveWorkspaceId}
+        onAdd={addWorkspace}
+        onClose={removeWorkspace}
+      />
+      
+      <ExamplePills examples={examples} activeIndex={state.activeExample} onSelect={applyExample} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Side Inputs */}
-        <div className="space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-medium text-text-secondary">Input Code</h2>
-              <span className={cn(
-                'text-[10px] px-2 py-0.5 rounded-full font-bold border uppercase tracking-wider',
-                mode === 'json' 
-                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
-                  : 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'
-              )}>
-                {mode === 'json' ? 'JSON' : 'YAML'}
-              </span>
-            </div>
-
-            <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
-              Clear
-            </Button>
-          </div>
-
-          <Input 
-            value={input} 
-            onChange={(e) => { 
-              setInput(e.target.value); 
-              setActiveExample(-1); 
-            }} 
-            onDropText={(text) => {
-              setInput(text);
-              setActiveExample(-1);
-            }}
-            placeholder={mode === 'json' ? '{"key": "value"}' : 'key: value'} 
-            monospace 
-            className="h-[320px]" 
-          />
-
-          {/* Validation Banner alerts (YAML only) */}
-          {validation && (
-            <div className={cn(
-              'p-3.5 rounded-xl border flex items-start gap-2.5 text-xs shadow-sm animate-fade-in',
-              validation.valid 
-                ? 'bg-success/5 border-success/20 text-success font-semibold' 
-                : 'bg-error/10 border-error/20 text-error'
-            )}>
-              {validation.valid ? (
-                <>
-                  <CheckCircle className="h-4 w-4 shrink-0 text-success mt-0.5" />
-                  <span>Valid YAML Structure</span>
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-error mt-0.5" />
-                  <div className="space-y-0.5">
-                    <span className="font-bold">YAML Parse Alert</span>
-                    <p className="leading-relaxed">
-                      {validation.error} {validation.line ? `(Line: ${validation.line})` : ''}
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {mode === 'json' && (
-            <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-4">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-text-primary font-outfit border-b border-border pb-2.5">
-                <Settings className="h-4 w-4 text-accent" />
-                <span>Conversion Preferences</span>
-              </div>
-              <div className="w-full">
-                <Select
-                  label="YAML Indent Spacing"
-                  options={indentOptions}
-                  value={indent}
-                  onChange={(e) => setIndent(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right Side Outputs */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-medium text-text-secondary">
-                <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent font-bold">
-                  Converted Output
-                </span>
-              </h2>
-              <span className={cn(
-                'text-[10px] px-2 py-0.5 rounded-full font-bold border uppercase tracking-wider',
-                mode === 'yaml' 
-                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
-                  : 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'
-              )}>
-                {mode === 'yaml' ? 'JSON' : 'YAML'}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleSwap} 
-                disabled={!output || output.startsWith('Invalid') || output.startsWith('Error')}
-                icon={<ArrowRight className="h-4 w-4" />}
-                title="Swap Inputs"
-              >
-                Swap
-              </Button>
-              <CopyButton value={output} disabled={!output || output.startsWith('Invalid')} />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDownload}
-                disabled={!output || output.startsWith('Invalid')}
-                icon={<Download className="h-4 w-4" />}
-              >
-                Download
-              </Button>
-            </div>
-          </div>
-
-          <GradientBox value={output} placeholder="Output code will appear here..." className="h-[400px]" />
-          
-          {output && !output.startsWith('Invalid') && (
-            <span className="text-xs text-text-muted font-medium block">
-              {output.length.toLocaleString()} characters · {output.split('\n').length.toLocaleString()} lines
-            </span>
-          )}
-        </div>
+      <div className="mt-4">
+        <SplitPanesView
+          toolbarContent={toolbarContent}
+          leftPane={leftPane}
+          rightPane={rightPane}
+        />
       </div>
     </ToolLayout>
   );

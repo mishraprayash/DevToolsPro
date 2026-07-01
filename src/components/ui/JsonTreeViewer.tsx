@@ -3,17 +3,20 @@
 import * as React from 'react';
 import { ChevronRight, ChevronDown, Copy, Check, Search, ListCollapse, ListPlus } from 'lucide-react';
 import { toast } from '@/components/ui/Toast';
+import { cn } from '@/lib/utils';
 
 interface JsonTreeViewerProps {
   data: unknown;
   maxHeight?: string;
   minHeight?: string;
+  className?: string;
 }
 
 export function JsonTreeViewer({
   data,
   maxHeight = '500px',
-  minHeight = '240px'
+  minHeight = '240px',
+  className
 }: JsonTreeViewerProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [collapsed, setCollapsed] = React.useState<Record<string, boolean>>({});
@@ -365,7 +368,7 @@ export function JsonTreeViewer({
   };
 
   return (
-    <div className="flex flex-col border border-border rounded-xl overflow-hidden bg-bg-secondary">
+    <div className={cn("flex flex-col border border-border rounded-xl overflow-hidden bg-bg-secondary", className)}>
       {/* Search and control header */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-border bg-bg-tertiary">
         <div className="flex items-center gap-2 flex-1 max-w-sm relative">
@@ -401,8 +404,8 @@ export function JsonTreeViewer({
 
       {/* Tree viewport */}
       <div
-        className="p-5 overflow-auto font-mono text-sm text-text-primary leading-relaxed scrollbar-thin"
-        style={{ maxHeight, minHeight }}
+        className="p-5 overflow-auto font-mono text-sm text-text-primary leading-relaxed scrollbar-thin flex-1"
+        style={{ maxHeight: className ? undefined : maxHeight, minHeight: className ? undefined : minHeight }}
       >
         <div className="select-text">
           {renderNode(data, '$')}
