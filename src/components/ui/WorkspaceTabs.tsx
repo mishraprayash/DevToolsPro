@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Share2 } from 'lucide-react';
 
 export interface WorkspaceTabsProps {
   workspaces: { id: string; name: string }[];
@@ -8,9 +8,10 @@ export interface WorkspaceTabsProps {
   onChange: (id: string) => void;
   onAdd: () => void;
   onClose: (id: string) => void;
+  onShare?: () => void;
 }
 
-export function WorkspaceTabs({ workspaces, activeId, onChange, onAdd, onClose }: WorkspaceTabsProps) {
+export function WorkspaceTabs({ workspaces, activeId, onChange, onAdd, onClose, onShare }: WorkspaceTabsProps) {
   return (
     <div className="flex items-center gap-1.5 p-1 mb-6 rounded-xl bg-bg-secondary border border-border overflow-x-auto scrollbar-hide">
       {workspaces.map((w) => {
@@ -50,6 +51,19 @@ export function WorkspaceTabs({ workspaces, activeId, onChange, onAdd, onClose }
       >
         <Plus className="h-4 w-4" />
       </button>
+
+      {onShare && (
+        <div className="ml-auto pl-2 border-l border-border/50 shrink-0">
+          <button
+            onClick={onShare}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+            title="Share current tab state via URL"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            Share
+          </button>
+        </div>
+      )}
     </div>
   );
 }

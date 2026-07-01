@@ -46,8 +46,9 @@ export default function Page() {
     setActiveWorkspaceId,
     addWorkspace,
     removeWorkspace,
-    updateActiveWorkspace
-  } = useWorkspaces<EncoderState>(defaultState, 'Encoder');
+    updateActiveWorkspace,
+    copyShareLink
+  } = useWorkspaces<EncoderState>(defaultState, 'Encoder', 'encoder');
 
   const { state } = activeWorkspace;
 
@@ -264,6 +265,7 @@ export default function Page() {
         onChange={setActiveWorkspaceId}
         onAdd={addWorkspace}
         onClose={removeWorkspace}
+        onShare={copyShareLink}
       />
       <SplitPanesView
         toolbarContent={toolbarContent}

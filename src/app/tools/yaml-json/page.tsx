@@ -91,8 +91,9 @@ export default function Page() {
     setActiveWorkspaceId,
     addWorkspace,
     removeWorkspace,
-    updateActiveWorkspace
-  } = useWorkspaces<YamlJsonState>(defaultState, 'Converter');
+    updateActiveWorkspace,
+    copyShareLink
+  } = useWorkspaces<YamlJsonState>(defaultState, 'Converter', 'yaml-json');
 
   const { state } = activeWorkspace;
   const { addHistoryItem } = useAppStore();
@@ -357,6 +358,7 @@ export default function Page() {
         onChange={setActiveWorkspaceId}
         onAdd={addWorkspace}
         onClose={removeWorkspace}
+        onShare={copyShareLink}
       />
       
       <ExamplePills examples={examples} activeIndex={state.activeExample} onSelect={applyExample} />

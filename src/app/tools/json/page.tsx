@@ -105,8 +105,9 @@ export default function Page() {
     setActiveWorkspaceId,
     addWorkspace,
     removeWorkspace,
-    updateActiveWorkspace
-  } = useWorkspaces<JsonState>(defaultState, 'JSON');
+    updateActiveWorkspace,
+    copyShareLink
+  } = useWorkspaces<JsonState>(defaultState, 'JSON', 'json');
 
   const { state } = activeWorkspace;
   const { addHistoryItem } = useAppStore();
@@ -458,6 +459,7 @@ export default function Page() {
         onChange={setActiveWorkspaceId}
         onAdd={addWorkspace}
         onClose={removeWorkspace}
+        onShare={copyShareLink}
       />
       
       <ExamplePills examples={examples} activeIndex={state.activeExample} onSelect={applyExample} />

@@ -316,8 +316,9 @@ export default function Page() {
     setActiveWorkspaceId,
     addWorkspace,
     removeWorkspace,
-    updateActiveWorkspace
-  } = useWorkspaces<JwtState>(defaultState, 'JWT');
+    updateActiveWorkspace,
+    copyShareLink
+  } = useWorkspaces<JwtState>(defaultState, 'JWT', 'jwt');
 
   const { state } = activeWorkspace;
 
@@ -715,6 +716,7 @@ export default function Page() {
         onChange={setActiveWorkspaceId}
         onAdd={addWorkspace}
         onClose={removeWorkspace}
+        onShare={copyShareLink}
       />
       
       <div className="mt-4">
