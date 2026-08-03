@@ -60,7 +60,7 @@ export function Footer() {
               Feedback
             </button>
             <a
-              href="https://github.com/mishraprayash/web-tools"
+              href="https://github.com/mishraprayash/DevToolsPro"
               target="_blank"
               rel="noopener noreferrer"
               className="text-text-muted hover:text-text-primary transition-colors"

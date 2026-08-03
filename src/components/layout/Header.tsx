@@ -74,7 +74,7 @@ export function Header() {
             </button>
 
             <a
-              href="https://github.com/mishraprayash/web-tools"
+              href="https://github.com/mishraprayash/DevToolsPro"
               target="_blank"
               rel="noopener noreferrer"
               className="h-8 w-8 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all"
