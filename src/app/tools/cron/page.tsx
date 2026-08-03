@@ -149,7 +149,7 @@ export default function Page() {
                   ].map((p) => (
                     <button
                       key={p.value}
-                      onClick={() => setBuilderPeriod(p.value as any)}
+                      onClick={() => setBuilderPeriod(p.value as 'minute' | 'hour' | 'day' | 'week')}
                       className={cn(
                         'px-2 py-2 rounded-lg border text-xs font-semibold transition-all duration-200',
                         builderPeriod === p.value

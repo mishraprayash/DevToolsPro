@@ -53,13 +53,17 @@ export default function Page() {
         setError(res.error);
       }
     } else {
-      const res = dockerComposeToRun(input);
-      if (res.success) {
-        setOutput(res.data);
-        setError(null);
-      } else {
-        setError(res.error);
-      }
+      let cancelled = false;
+      dockerComposeToRun(input).then((res) => {
+        if (cancelled) return;
+        if (res.success) {
+          setOutput(res.data);
+          setError(null);
+        } else {
+          setError(res.error);
+        }
+      });
+      return () => { cancelled = true; };
     }
   }, [input, mode]);
 

@@ -158,7 +158,7 @@ export default function Page() {
             <Select
               label="Format Conversion"
               value={format}
-              onChange={(e) => setFormat(e.target.value as any)}
+              onChange={(e) => setFormat(e.target.value as 'original' | 'image/jpeg' | 'image/webp' | 'image/png')}
               options={[
                 { value: 'original', label: 'Keep Original Format' },
                 { value: 'image/webp', label: 'WebP (Smallest)' },

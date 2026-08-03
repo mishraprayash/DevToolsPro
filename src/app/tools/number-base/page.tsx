@@ -137,7 +137,7 @@ export default function Page() {
                   { label: 'Octal', key: 'octal', badge: 'OCT', color: 'text-purple-500 border-purple-500/30 bg-purple-500/10' },
                   ...(result.custom ? [{ label: `Custom Base ${customBase}`, key: 'custom', badge: `BASE ${customBase}`, color: 'text-accent border-accent/30 bg-accent/10' }] : [])
                 ].map((item) => {
-                  const val = (result as any)[item.key] as string;
+                  const val = (result as unknown as Record<string, string>)[item.key];
                   return (
                     <CopyButton 
                       key={item.key} 

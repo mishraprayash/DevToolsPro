@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Star, History } from 'lucide-react';
 import { useAppStore } from '@/lib/store/useStore';
 import { Modal } from '@/components/ui/Modal';
-import { tools } from '@/tools/registry';
+import { tools, searchTools } from '@/tools/registry';
 import { cn } from '@/lib/utils';
 
 export function CommandPalette() {
@@ -22,10 +22,7 @@ export function CommandPalette() {
       const rest = tools.filter(t => !favorites.includes(t.id) && !recentTools.includes(t.id));
       return [...favTools, ...recTools, ...rest];
     }
-    const lower = query.toLowerCase();
-    return tools.filter(
-      (t) => t.name.toLowerCase().includes(lower) || t.description.toLowerCase().includes(lower) || t.category.toLowerCase().includes(lower)
-    );
+    return searchTools(query);
   }, [query, favorites, recentTools]);
 
   React.useEffect(() => {

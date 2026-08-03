@@ -10,7 +10,7 @@ interface TableNodeProps {
   data: TableNodeData & {
     onColumnAdd?: (nodeId: string) => void;
     onColumnDelete?: (nodeId: string, colId: string) => void;
-    onColumnChange?: (nodeId: string, colId: string, field: string, value: any) => void;
+    onColumnChange?: (nodeId: string, colId: string, field: string, value: string | boolean) => void;
     onTableNameChange?: (nodeId: string, name: string) => void;
     onDeleteNode?: (nodeId: string) => void;
   };

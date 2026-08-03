@@ -12,42 +12,39 @@ export default function MaskConverterPage() {
   
   const [activeSource, setActiveSource] = React.useState<'cidr' | 'subnet' | 'wildcard'>('cidr');
   const [copiedType, setCopiedType] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
 
   // Derive conversions depending on active editing state
-  const derived = React.useMemo<MaskConversion | null>(() => {
-    setError(null);
+  const derived = React.useMemo<{ data: MaskConversion | null; error: string | null }>(() => {
     if (activeSource === 'cidr') {
       const parsed = parseInt(cidrInput, 10);
       const res = fromCidr(isNaN(parsed) ? 24 : parsed);
-      if (res.success) return res.data;
-      setError(res.error);
-    } else if (activeSource === 'subnet') {
-      const res = fromSubnetMask(subnetInput);
-      if (res.success) return res.data;
-      setError(res.error);
-    } else if (activeSource === 'wildcard') {
-      const res = fromWildcardMask(wildcardInput);
-      if (res.success) return res.data;
-      setError(res.error);
+      return res.success ? { data: res.data, error: null } : { data: null, error: res.error };
     }
-    return null;
+    if (activeSource === 'subnet') {
+      const res = fromSubnetMask(subnetInput);
+      return res.success ? { data: res.data, error: null } : { data: null, error: res.error };
+    }
+    const res = fromWildcardMask(wildcardInput);
+    return res.success ? { data: res.data, error: null } : { data: null, error: res.error };
   }, [activeSource, cidrInput, subnetInput, wildcardInput]);
+
+  const conversion = derived.data;
+  const error = derived.error;
 
   // Sync secondary outputs when active changes
   React.useEffect(() => {
-    if (derived) {
+    if (conversion) {
       if (activeSource !== 'cidr') {
-        setCidrInput(derived.cidr.toString());
+        setCidrInput(conversion.cidr.toString());
       }
       if (activeSource !== 'subnet') {
-        setSubnetInput(derived.subnetMask);
+        setSubnetInput(conversion.subnetMask);
       }
       if (activeSource !== 'wildcard') {
-        setWildcardInput(derived.wildcardMask);
+        setWildcardInput(conversion.wildcardMask);
       }
     }
-  }, [derived, activeSource]);
+  }, [conversion, activeSource]);
 
   const handleCopy = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
@@ -64,7 +61,7 @@ export default function MaskConverterPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left Interactive Form Column */}
         <div className="md:col-span-2 space-y-4">
-          <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-5">
+          <div className="bg-bg-secondary border border-border rounded-xl p-5 shadow-sm space-y-5">
             <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wide border-b border-border pb-2">
               Bidirectional Inputs
             </h2>
@@ -80,7 +77,7 @@ export default function MaskConverterPage() {
                   setCidrInput(e.target.value);
                 }}
                 placeholder="e.g. 24"
-                className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2 text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                className="w-full bg-bg-tertiary/50 border border-border rounded-lg px-3 py-2 text-text-primary font-mono focus:outline-none focus:ring-1 focus:ring-accent text-sm"
               />
             </div>
 
@@ -95,7 +92,7 @@ export default function MaskConverterPage() {
                   setSubnetInput(e.target.value);
                 }}
                 placeholder="e.g. 255.255.255.0"
-                className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2 text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                className="w-full bg-bg-tertiary/50 border border-border rounded-lg px-3 py-2 text-text-primary font-mono focus:outline-none focus:ring-1 focus:ring-accent text-sm"
               />
             </div>
 
@@ -110,12 +107,12 @@ export default function MaskConverterPage() {
                   setWildcardInput(e.target.value);
                 }}
                 placeholder="e.g. 0.0.0.255"
-                className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2 text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                className="w-full bg-bg-tertiary/50 border border-border rounded-lg px-3 py-2 text-text-primary font-mono focus:outline-none focus:ring-1 focus:ring-accent text-sm"
               />
             </div>
 
             {error && (
-              <div className="p-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded">
+              <div className="p-3 text-xs text-error bg-error/10 border border-error/20 rounded">
                 {error}
               </div>
             )}
@@ -124,28 +121,28 @@ export default function MaskConverterPage() {
 
         {/* Right Info Card Column */}
         <div className="md:col-span-1">
-          <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-6 h-full flex flex-col justify-between">
+          <div className="bg-bg-secondary border border-border rounded-xl p-5 shadow-sm space-y-6 h-full flex flex-col justify-between">
             <div>
               <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wide border-b border-border pb-2 mb-4">
                 Mask Statistics
               </h2>
 
-              {derived ? (
+              {conversion ? (
                 <div className="space-y-4 text-xs">
                   <div>
                     <span className="block text-text-muted font-medium mb-1">Prefix Bitcount</span>
-                    <span className="font-mono text-sm font-bold text-accent">/{derived.cidr}</span>
+                    <span className="font-mono text-sm font-bold text-accent">/{conversion.cidr}</span>
                   </div>
                   <div>
                     <span className="block text-text-muted font-medium mb-1">Total Network Host IPs</span>
                     <span className="font-mono text-sm font-bold text-text-primary">
-                      {derived.totalHosts.toLocaleString()}
+                      {conversion.totalHosts.toLocaleString()}
                     </span>
                   </div>
                   <div>
                     <span className="block text-text-muted font-medium mb-1">Usable Interface IPs</span>
                     <span className="font-mono text-xs text-text-secondary">
-                      {derived.cidr <= 30 ? (derived.totalHosts - 2).toLocaleString() : derived.totalHosts}
+                      {conversion.cidr <= 30 ? (conversion.totalHosts - 2).toLocaleString() : conversion.totalHosts}
                     </span>
                   </div>
                 </div>
@@ -154,11 +151,11 @@ export default function MaskConverterPage() {
               )}
             </div>
 
-            {derived && (
+            {conversion && (
               <div className="border-t border-border pt-4 mt-6">
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleCopy(`Subnet: ${derived.subnetMask} | Wildcard: ${derived.wildcardMask}`, 'all')}
+                    onClick={() => handleCopy(`Subnet: ${conversion.subnetMask} | Wildcard: ${conversion.wildcardMask}`, 'all')}
                     className="w-full text-center py-2 px-3 bg-accent hover:bg-accent-hover text-bg-primary font-bold rounded-lg text-xs transition-colors cursor-pointer flex items-center justify-center gap-1"
                   >
                     {copiedType === 'all' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}

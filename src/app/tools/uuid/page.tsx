@@ -80,7 +80,7 @@ export default function Page() {
               label="UUID Specification Version"
               options={versionOptions}
               value={version}
-              onChange={(e) => setVersion(e.target.value as any)}
+              onChange={(e) => setVersion(e.target.value as '1' | '4' | '7')}
             />
 
             <div>
@@ -118,7 +118,7 @@ export default function Page() {
               label="Brackets Wrap"
               options={bracketOptions}
               value={brackets}
-              onChange={(e) => setBrackets(e.target.value as any)}
+              onChange={(e) => setBrackets(e.target.value as 'none' | 'curly' | 'parentheses')}
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/60">

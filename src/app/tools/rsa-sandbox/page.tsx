@@ -303,7 +303,7 @@ export default function Page() {
                   <KeyRound className="h-8 w-8 opacity-30 animate-pulse-glow" />
                   <div>
                     <p className="font-semibold text-text-secondary not-italic text-sm">No Keypair Generated</p>
-                    <p className="text-xs text-text-muted max-w-xs mt-0.5">Click 'Generate New RSA Keypair' on the left to compute a secure key pair.</p>
+                    <p className="text-xs text-text-muted max-w-xs mt-0.5">Click &apos;Generate New RSA Keypair&apos; on the left to compute a secure key pair.</p>
                   </div>
                 </div>
               )}
@@ -338,7 +338,7 @@ export default function Page() {
                   label="Signature Hashing Algorithm"
                   options={hashOptions}
                   value={signHash}
-                  onChange={(e) => setSignHash(e.target.value as any)}
+                  onChange={(e) => setSignHash(e.target.value as 'SHA-256' | 'SHA-384' | 'SHA-512')}
                 />
               </div>
 
@@ -428,7 +428,7 @@ export default function Page() {
                   label="Hashing Signature Algorithm"
                   options={hashOptions}
                   value={verifyHash}
-                  onChange={(e) => setVerifyHash(e.target.value as any)}
+                  onChange={(e) => setVerifyHash(e.target.value as 'SHA-256' | 'SHA-384' | 'SHA-512')}
                 />
               </div>
 

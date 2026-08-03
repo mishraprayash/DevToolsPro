@@ -71,7 +71,7 @@ export default function Page() {
           ))}
           {Object.keys(groupedResults).length === 0 && (
             <div className="text-center py-12 text-text-muted">
-              No HTTP status codes found for "{query}".
+              No HTTP status codes found for &quot;{query}&quot;.
             </div>
           )}
         </div>

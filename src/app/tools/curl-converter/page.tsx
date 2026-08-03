@@ -94,7 +94,7 @@ export default function Page() {
   const handleRestore = (item: HistoryItem) => {
     setInput(item.input);
     if (item.metadata?.targetLang) {
-      setTargetLang(item.metadata.targetLang);
+      setTargetLang(item.metadata.targetLang as TargetLanguage);
     }
   };
 

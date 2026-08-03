@@ -11,9 +11,9 @@ import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store/useStore';
 import { toast } from '@/components/ui/Toast';
-import { tools, categories, type ToolDef } from '@/tools/registry';
+import { tools, categories, toolMatchesQuery, type ToolDef } from '@/tools/registry';
 
-const categoryPills = ['All', 'New', ...categories] as const;
+const categoryPills = ['All', 'Favorites', 'New', ...categories] as const;
 
 const container = {
   hidden: { opacity: 0 },
@@ -161,25 +161,30 @@ export function ToolGrid() {
   }, []);
 
   const filtered = React.useMemo(() => {
-    const q = query.toLowerCase().trim();
     return tools.filter((t) => {
       const matchesCat = activeCategory === 'All'
         ? true
         : activeCategory === 'New'
           ? t.isNew
-          : t.category === activeCategory;
-      const matchesQ = !q || t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q) || t.category.toLowerCase().includes(q);
+          : activeCategory === 'Favorites'
+            ? favorites.includes(t.id)
+            : t.category === activeCategory;
+      const matchesQ = toolMatchesQuery(t, query);
       return matchesCat && matchesQ;
     });
-  }, [query, activeCategory]);
+  }, [query, activeCategory, favorites]);
 
   const categoryCounts = React.useMemo(() => {
-    const counts: Record<string, number> = { All: tools.length, New: tools.filter(t => t.isNew).length };
+    const counts: Record<string, number> = {
+      All: tools.length,
+      New: tools.filter(t => t.isNew).length,
+      Favorites: tools.filter(t => favorites.includes(t.id)).length,
+    };
     for (const t of tools) {
       counts[t.category] = (counts[t.category] || 0) + 1;
     }
     return counts;
-  }, []);
+  }, [favorites]);
 
   const favoriteTools = React.useMemo(() => tools.filter((t) => favorites.includes(t.id)), [favorites]);
   const recentToolsData = React.useMemo(() => recentTools.map(id => tools.find(t => t.id === id)).filter(Boolean) as ToolDef[], [recentTools]);
@@ -257,6 +262,9 @@ export function ToolGrid() {
                     ? 'bg-accent text-bg-primary shadow-sm'
                     : 'bg-bg-tertiary text-text-secondary border border-border hover:border-border-hover hover:text-text-primary'
                 )}>
+                {cat === 'Favorites' && (
+                  <Star className={cn('h-3 w-3', activeCategory === cat && 'fill-current')} />
+                )}
                 {cat}
                 <span className={cn('text-[10px] px-1.5 py-0 rounded-full leading-5',
                   activeCategory === cat ? 'bg-white/25 text-bg-primary' : 'bg-bg-hover text-text-muted')}>
@@ -273,8 +281,17 @@ export function ToolGrid() {
           {filtered.length === 0 ? (
             <motion.div key="empty" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-32 text-center">
-              <Search className="h-8 w-8 text-text-muted mb-3" />
-              <p className="text-text-secondary text-sm">No tools match &ldquo;{query}&rdquo;</p>
+              {activeCategory === 'Favorites' && favorites.length === 0 && !query ? (
+                <>
+                  <Star className="h-8 w-8 text-text-muted mb-3" />
+                  <p className="text-text-secondary text-sm">No favorites yet. Star a tool to pin it here.</p>
+                </>
+              ) : (
+                <>
+                  <Search className="h-8 w-8 text-text-muted mb-3" />
+                  <p className="text-text-secondary text-sm">No tools match &ldquo;{query}&rdquo;</p>
+                </>
+              )}
               <button onClick={() => { setQuery(''); setActiveCategory('All'); }} className="mt-3 text-sm text-accent hover:underline">Clear filters</button>
             </motion.div>
           ) : (

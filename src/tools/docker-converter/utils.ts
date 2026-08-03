@@ -13,6 +13,16 @@ export interface DockerComposeConfig {
   };
 }
 
+interface ComposeService {
+  container_name?: string;
+  image?: string;
+  ports?: string[];
+  volumes?: string[];
+  environment?: string[] | Record<string, string>;
+  restart?: string;
+  networks?: string[];
+}
+
 export function dockerRunToCompose(runCommand: string): { success: true; data: string } | { success: false; error: string } {
   try {
     const cleanCmd = runCommand
@@ -144,13 +154,10 @@ export function dockerRunToCompose(runCommand: string): { success: true; data: s
   }
 }
 
-export function dockerComposeToRun(composeYaml: string): { success: true; data: string } | { success: false; error: string } {
+export async function dockerComposeToRun(composeYaml: string): Promise<{ success: true; data: string } | { success: false; error: string }> {
   try {
-    // A simplified YAML parser for compose configuration
-    // Since we don't have a robust YAML -> JSON library installed (wait, js-yaml IS installed!),
-    // we can use "js-yaml" to parse!
-    const yaml = require('js-yaml');
-    const parsed = yaml.load(composeYaml) as any;
+    const yaml = (await import('js-yaml')).default;
+    const parsed = yaml.load(composeYaml) as unknown as { services?: Record<string, ComposeService> };
 
     if (!parsed || !parsed.services) {
       return { success: false, error: 'Invalid docker-compose.yml structure: "services" key not found' };
@@ -158,7 +165,7 @@ export function dockerComposeToRun(composeYaml: string): { success: true; data: 
 
     const runCommands: string[] = [];
 
-    Object.entries(parsed.services).forEach(([serviceName, service]: [string, any]) => {
+    Object.entries(parsed.services).forEach(([serviceName, service]) => {
       let cmd = 'docker run -d';
       
       if (service.container_name) {

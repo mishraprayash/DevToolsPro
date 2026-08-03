@@ -29,7 +29,7 @@ export default function Page() {
   const [epochInput, setEpochInput] = React.useState('');
   const [liveEpoch, setLiveEpoch] = React.useState(0);
   const [targetTz, setTargetTz] = React.useState('UTC');
-  const [convResult, setConvResult] = React.useState<any>(null);
+  const [convResult, setConvResult] = React.useState<{ date: Date; sec: number; ms: number; relative: string; tzFormat: string } | null>(null);
 
   React.useEffect(() => {
     setLiveEpoch(Math.floor(Date.now() / 1000));
@@ -209,7 +209,7 @@ export default function Page() {
                     { value: 'difference', label: 'Calculate Date Difference Spans' }
                   ]}
                   value={calcAction}
-                  onChange={(e) => setCalcAction(e.target.value as any)}
+                  onChange={(e) => setCalcAction(e.target.value as 'add' | 'subtract' | 'difference')}
                 />
 
                 <div>

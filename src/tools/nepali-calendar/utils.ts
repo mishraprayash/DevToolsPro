@@ -1,4 +1,3 @@
-// @ts-ignore
 import NepaliDate from 'nepali-date-converter';
 
 export interface NepaliDateObj {
@@ -46,12 +45,15 @@ export const englishMonths = [
 // Helper to get number of days in a given BS Month/Year
 export function getBsMonthDays(year: number, month: number): number {
   try {
-    const map = (NepaliDate as any).dateConfigMap;
+    const map = (NepaliDate as unknown as { dateConfigMap: Record<string, Record<string, number>> }).dateConfigMap;
     const config = map[String(year)];
     if (config) {
       const keys = Object.keys(config);
       const key = keys[month - 1];
-      if (key) return config[key];
+      if (key) {
+        const days = config[key];
+        if (typeof days === 'number') return days;
+      }
     }
     return 30;
   } catch {

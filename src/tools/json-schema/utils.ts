@@ -7,7 +7,15 @@ export type SchemaResult =
   | { success: true; code: string }
   | { success: false; error: string };
 
-function generateFieldSchema(val: unknown, options: SchemaOptions): any {
+interface JsonSchemaNode {
+  type?: string;
+  format?: string;
+  items?: JsonSchemaNode | { anyOf: JsonSchemaNode[] };
+  properties?: Record<string, JsonSchemaNode>;
+  required?: string[];
+}
+
+function generateFieldSchema(val: unknown, options: SchemaOptions): JsonSchemaNode {
   if (val === null) {
     return { type: 'null' };
   }
@@ -19,7 +27,7 @@ function generateFieldSchema(val: unknown, options: SchemaOptions): any {
   }
   if (type === 'string') {
     const strVal = val as string;
-    const schema: any = { type: 'string' };
+    const schema: JsonSchemaNode = { type: 'string' };
     
     // Quick regex formats detection
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/i.test(strVal)) {
@@ -59,7 +67,7 @@ function generateFieldSchema(val: unknown, options: SchemaOptions): any {
   }
 
   if (type === 'object' && val !== null) {
-    const properties: Record<string, any> = {};
+    const properties: Record<string, JsonSchemaNode> = {};
     const required: string[] = [];
     const obj = val as Record<string, unknown>;
 
@@ -71,7 +79,7 @@ function generateFieldSchema(val: unknown, options: SchemaOptions): any {
       }
     }
 
-    const schema: any = {
+    const schema: JsonSchemaNode = {
       type: 'object',
       properties
     };

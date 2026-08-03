@@ -172,7 +172,7 @@ export default function Page() {
                     { value: 'words', label: 'Individual Words' }
                   ]}
                   value={genType}
-                  onChange={(e) => setGenType(e.target.value as any)}
+                  onChange={(e) => setGenType(e.target.value as 'paragraphs' | 'sentences' | 'words')}
                 />
                 
                 <div>
@@ -230,7 +230,7 @@ export default function Page() {
                     { value: 'trim', label: 'Trim Whitespaces' }
                   ]}
                   value={transformType}
-                  onChange={(e) => setTransformType(e.target.value as any)}
+                  onChange={(e) => setTransformType(e.target.value as 'slug' | 'upper' | 'lower' | 'title' | 'trim')}
                 />
               </div>
             </div>

@@ -1,7 +1,9 @@
 'use client';
 
-export function defineEditorThemes(monaco: any) {
-  if (!monaco.editor._definedThemes) {
+import type { Monaco } from '@monaco-editor/react';
+
+export function defineEditorThemes(monaco: Monaco) {
+  if (!(monaco.editor as typeof monaco.editor & { _definedThemes?: boolean })._definedThemes) {
     monaco.editor.defineTheme('app-dark', {
       base: 'vs-dark',
       inherit: true,
@@ -50,7 +52,7 @@ export function defineEditorThemes(monaco: any) {
         'editorIndentGuide.activeBackground': '#bfbfbf',
       },
     });
-    monaco.editor._definedThemes = true;
+    (monaco.editor as typeof monaco.editor & { _definedThemes?: boolean })._definedThemes = true;
   }
 }
 

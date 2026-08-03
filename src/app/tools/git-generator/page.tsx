@@ -164,7 +164,7 @@ export default function Page() {
                 <Select
                   label="Reset Mode"
                   value={state.resetMode || 'mixed'}
-                  onChange={e => updateState({ resetMode: e.target.value as any })}
+                  onChange={e => updateState({ resetMode: e.target.value as 'soft' | 'mixed' | 'hard' })}
                   options={[
                     { value: 'soft', label: '--soft (Keep all changes staged)' },
                     { value: 'mixed', label: '--mixed (Keep changes, but unstage them)' },
@@ -190,7 +190,7 @@ export default function Page() {
                 <Select
                   label="Action"
                   value={state.stashAction || 'save'}
-                  onChange={e => updateState({ stashAction: e.target.value as any })}
+                  onChange={e => updateState({ stashAction: e.target.value as 'save' | 'pop' | 'apply' | 'list' | 'clear' })}
                   options={[
                     { value: 'save', label: 'Save (Stash changes)' },
                     { value: 'pop', label: 'Pop (Apply and remove from stash)' },

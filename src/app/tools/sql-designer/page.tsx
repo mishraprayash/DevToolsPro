@@ -84,7 +84,7 @@ function FlowDesigner() {
     if (changes.some(c => c.type === 'remove')) {
       visualChangePending.current = true;
     }
-    setNodes((nds) => applyNodeChanges(changes, nds as any) as unknown as AppTableNode[]);
+    setNodes((nds) => applyNodeChanges(changes, nds as unknown as AppTableNode[]) as unknown as AppTableNode[]);
   }, []);
 
   const onEdgesChange = React.useCallback((changes: EdgeChange[]) => {
@@ -126,7 +126,7 @@ function FlowDesigner() {
     }));
   }, []);
 
-  const onColumnChange = React.useCallback((nodeId: string, colId: string, field: string, value: any) => {
+  const onColumnChange = React.useCallback((nodeId: string, colId: string, field: string, value: string | boolean) => {
     visualChangePending.current = true;
     setNodes((nds) => nds.map(node => {
       if (node.id === nodeId) {

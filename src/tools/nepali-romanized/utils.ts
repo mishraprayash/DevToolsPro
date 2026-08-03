@@ -11,23 +11,26 @@ export async function convertToNepali(text: string): Promise<Result<string>> {
       throw new Error(`API Error: ${response.status}`);
     }
 
-    const data = await response.json();
-    
-    if (data[0] === 'SUCCESS' && Array.isArray(data[1])) {
+    const data = await response.json() as unknown;
+
+    if (Array.isArray(data) && data[0] === 'SUCCESS' && Array.isArray(data[1])) {
       // data[1] is an array of translation blocks (split by punctuation usually)
       // Each block has the structure: [originalText, [translations], ...]
-      const translated = data[1].map((block: any) => {
-        if (Array.isArray(block[1]) && block[1].length > 0) {
-          return block[1][0]; // Pick the highest confidence translation
+      const blocks = data[1] as Array<[string, string[]]>;
+      const translated = blocks.map((block) => {
+        const [original, translations] = block;
+        if (Array.isArray(translations) && translations.length > 0) {
+          return translations[0]; // Pick the highest confidence translation
         }
-        return block[0]; // Fallback to original text
+        return original; // Fallback to original text
       }).join('');
 
       return { success: true, data: translated };
     }
 
     return { success: false, error: 'Unexpected response format from translation service.' };
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Failed to convert to Nepali. Check your connection.' };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Failed to convert to Nepali. Check your connection.';
+    return { success: false, error: msg };
   }
 }

@@ -103,7 +103,7 @@ export default function Page() {
             ))}
             {Object.keys(groupedTemplates).length === 0 && (
               <div className="text-center py-10 text-text-muted text-sm">
-                No templates found for "{query}".
+                No templates found for &quot;{query}&quot;.
               </div>
             )}
           </div>

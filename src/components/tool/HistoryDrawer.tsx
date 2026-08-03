@@ -84,9 +84,9 @@ export function HistoryDrawer({ toolId, onRestore }: HistoryDrawerProps) {
               >
                 <div className="flex justify-between items-center text-[10px] text-text-muted mb-1.5 font-mono">
                   <span>{new Date(item.timestamp).toLocaleTimeString()}</span>
-                  {item.metadata?.action && (
+                  {!!item.metadata?.action && (
                     <span className="bg-bg-hover border border-border px-1.5 py-0.5 rounded uppercase font-bold text-[9px] text-accent">
-                      {item.metadata.action}
+                      {String(item.metadata.action)}
                     </span>
                   )}
                 </div>

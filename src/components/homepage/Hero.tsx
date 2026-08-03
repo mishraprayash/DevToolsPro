@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, Command } from 'lucide-react';
 import { useAppStore } from '@/lib/store/useStore';
-import { tools } from '@/tools/registry';
+import { tools, categories } from '@/tools/registry';
 
 export function Hero() {
   const { setCommandPaletteOpen } = useAppStore();
@@ -87,7 +87,7 @@ export function Hero() {
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-success" />
-            <span>6 categories</span>
+            <span>{categories.length} categories</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-accent/50" />

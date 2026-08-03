@@ -144,7 +144,7 @@ export default function AESCryptoPage() {
                   { value: 'GCM', label: 'AES-GCM (Authenticated)' }
                 ]}
                 value={mode}
-                onChange={(e) => setMode(e.target.value as any)}
+                onChange={(e) => setMode(e.target.value as 'CBC' | 'CTR' | 'GCM')}
               />
 
               <Select
@@ -154,7 +154,7 @@ export default function AESCryptoPage() {
                   { value: 'hex', label: 'Hexadecimal Bytes' }
                 ]}
                 value={cipherFormat}
-                onChange={(e) => setCipherFormat(e.target.value as any)}
+                onChange={(e) => setCipherFormat(e.target.value as 'base64' | 'hex')}
               />
             </div>
 
@@ -171,7 +171,7 @@ export default function AESCryptoPage() {
                   />
                   <select
                     value={keyFormat}
-                    onChange={(e) => setKeyFormat(e.target.value as any)}
+                    onChange={(e) => setKeyFormat(e.target.value as 'utf8' | 'hex')}
                     className="w-24 h-10 px-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent cursor-pointer"
                   >
                     <option value="utf8">UTF-8</option>
@@ -193,7 +193,7 @@ export default function AESCryptoPage() {
                   />
                   <select
                     value={ivFormat}
-                    onChange={(e) => setIvFormat(e.target.value as any)}
+                    onChange={(e) => setIvFormat(e.target.value as 'utf8' | 'hex')}
                     className="w-24 h-10 px-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent cursor-pointer"
                   >
                     <option value="utf8">UTF-8</option>

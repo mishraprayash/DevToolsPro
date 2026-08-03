@@ -177,7 +177,7 @@ export default function Page() {
                 label="Source Unit"
                 options={unitOptions}
                 value={fromUnit}
-                onChange={(e) => setFromUnit(e.target.value as any)}
+                onChange={(e) => setFromUnit(e.target.value as 'px' | 'rem' | 'em' | 'vw' | 'vh' | '%')}
               />
             </div>
 

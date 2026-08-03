@@ -4,7 +4,7 @@
 
 **Project Name:** DevTools Pro  
 **Type:** Web Application (Next.js App Router)  
-**Core Functionality:** A premium, production-grade developer utilities platform featuring 16 interactive tools for encoding, decoding, formatting, hashing, and testing.  
+**Core Functionality:** A premium, production-grade developer utilities platform featuring **53+ interactive tools** for encoding, decoding, formatting, hashing, and testing.  
 **Target Users:** Backend engineers, frontend developers, DevOps engineers, security engineers, and computer science students.
 
 ---
@@ -103,7 +103,7 @@
 - GitHub link
 
 ### 2. Popular Tools Grid (ToolGrid)
-- 16 tool cards in a responsive grid (1→2→3→4 columns)
+- Tool cards in a responsive grid (1→2→3→4 columns), grouped by category, favorites, and recent tools
 - Search input with `/` shortcut
 - Category filter pills
 - Each card: icon, name, description, category badge, hover animation
@@ -157,6 +157,8 @@
 ---
 
 ## Tools Specification
+
+> The authoritative, always-current list of tools lives in `src/tools/registry.ts` (single source of truth for the homepage grid, command palette, header menu, and `/tools` page). The entries below document the original 16 tools plus notable additions.
 
 ### 1. JSON Beautifier & Validator
 - **Actions:** Beautify, Minify, Sort keys
@@ -233,6 +235,20 @@
 - **Input:** Image file upload
 - **Output:** Base64 data URL
 - **Features:** Preview thumbnail, copy to clipboard
+
+### 17. CSV ↔ JSON Converter
+- **Actions:** CSV → JSON, JSON → CSV
+- **Features:** Delimiter auto-detection (`,` `;` tab `|`), RFC 4180 quoted-field parsing, header-row toggle, number/boolean type inference, swap button
+
+### 18. Favicon Generator
+- **Input:** Text or emoji (≤ 6 chars), text/background hex colors
+- **Output:** SVG markup, `data:` URI, `<link rel="icon">` snippet
+- **Features:** Live preview at 16/32/180px, square/rounded/circle shapes, padding & font-size sliders, SVG + PNG export via canvas
+
+### 19. Sitemap Generator
+- **Input:** Base URL + one page path per line
+- **Output:** `sitemap.xml` or `robots.txt`
+- **Features:** URL validation, dedupe, changefreq/priority/lastmod options, 500-path cap, XML escape handling
 
 ---
 

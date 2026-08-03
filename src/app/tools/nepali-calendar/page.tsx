@@ -16,6 +16,7 @@ import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 
 const devnagariDigits = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+const DEFAULT_AD_DATE = new Date().toISOString().split('T')[0];
 const devnagariMonths = [
   'वैशाख', 'जेठ', 'असार', 'साउन', 'भदौ', 'असोज', 
   'कात्तिक', 'मंसिर', 'पुस', 'माघ', 'फागुन', 'चैत'
@@ -48,11 +49,18 @@ export default function Page() {
   const [adResult, setAdResult] = React.useState<Date | null>(null);
   const [bsToAdError, setBsToAdError] = React.useState<string | null>(null);
 
+  const [daysSince, setDaysSince] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!adResult) {
+      setDaysSince(null);
+      return;
+    }
+    setDaysSince(Math.max(0, Math.floor((Date.now() - adResult.getTime()) / (1000 * 60 * 60 * 24))).toLocaleString());
+  }, [adResult]);
+
   // --- AD to BS States ---
-  const [adDateStr, setAdDateStr] = React.useState<string>(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
+  const [adDateStr, setAdDateStr] = React.useState<string>(DEFAULT_AD_DATE);
   const [bsResult, setBsResult] = React.useState<NepaliDateObj | null>(null);
   const [adToBsError, setAdToBsError] = React.useState<string | null>(null);
 
@@ -231,7 +239,7 @@ export default function Page() {
                   </p>
 
                   <p className="text-xs text-text-muted mt-3 relative z-10 font-mono">
-                    Time elapsed: {Math.floor((Date.now() - adResult.getTime()) / (1000 * 60 * 60 * 24)).toLocaleString()} days ago
+                    Time elapsed: {daysSince} days ago
                   </p>
                 </div>
               </div>

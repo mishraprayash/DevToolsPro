@@ -44,15 +44,15 @@ function CardSection() {
   const [bulkCount, setBulkCount] = React.useState(5);
   const [bulkCards, setBulkCards] = React.useState<string[]>([]);
 
-  React.useEffect(() => {
-    generate();
-  }, [selectedBrand]);
-
   const generate = () => {
     const num = generateCardNumber(selectedBrand);
     setGeneratedCard(num);
     setGeneratedFormatted(formatCardNumber(num, selectedBrand));
   };
+
+  React.useEffect(() => {
+    generate();
+  }, [selectedBrand]);
 
   const generateBulk = () => {
     const cards: string[] = [];

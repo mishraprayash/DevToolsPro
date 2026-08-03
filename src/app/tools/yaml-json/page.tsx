@@ -12,7 +12,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import {
   jsonToYaml,
   yamlToJson,
-  validateYaml
+  validateYaml,
+  type ValidationResult
 } from '@/tools/yaml-json/utils';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
@@ -70,7 +71,7 @@ interface YamlJsonState {
   indent: string;
   activeExample: number;
   error: string | null;
-  validation: any;
+  validation: ValidationResult | null;
 }
 
 const defaultState: YamlJsonState = {

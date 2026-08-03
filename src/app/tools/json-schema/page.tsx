@@ -153,7 +153,7 @@ export default function Page() {
                 label="JSON Schema Specification"
                 options={draftOptions}
                 value={draftVersion}
-                onChange={(e) => setDraftVersion(e.target.value as any)}
+                onChange={(e) => setDraftVersion(e.target.value as 'draft-07' | 'draft-2020-12')}
               />
 
               <div className="flex flex-col justify-end pb-1.5">

@@ -223,10 +223,10 @@ export default function Page() {
     if (layoutMode === 'flex') {
       return {
         display: 'flex',
-        flexDirection: flexDir as any,
+        flexDirection: flexDir as React.CSSProperties['flexDirection'],
         justifyContent: justifyContent,
         alignItems: alignItems,
-        flexWrap: (flexWrap ? 'wrap' : 'nowrap') as any,
+        flexWrap: (flexWrap ? 'wrap' : 'nowrap') as React.CSSProperties['flexWrap'],
         gap: `${flexGap}px`,
         width: '100%',
         height: '100%',
@@ -380,7 +380,7 @@ export default function Page() {
                     {['fixed', 'auto-fill', 'auto-fit'].map((t) => (
                       <button
                         key={t}
-                        onClick={() => setGridTemplateType(t as any)}
+                        onClick={() => setGridTemplateType(t as 'fixed' | 'auto-fill' | 'auto-fit')}
                         className={cn(
                           'px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer',
                           gridTemplateType === t

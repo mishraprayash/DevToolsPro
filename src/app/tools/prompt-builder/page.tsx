@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { generateSystemPrompt, type PromptState } from '@/tools/prompt-builder/utils';
 
-const TextareaGroup = ({ label, icon: Icon, value, onChange, placeholder, rows = 2 }: { label: string, icon: any, value: string, onChange: (v: string) => void, placeholder: string, rows?: number }) => (
+const TextareaGroup = ({ label, icon: Icon, value, onChange, placeholder, rows = 2 }: { label: string, icon: React.ComponentType<{ className?: string }>, value: string, onChange: (v: string) => void, placeholder: string, rows?: number }) => (
   <div className="space-y-1">
     <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-1">
       <Icon className="h-4 w-4 text-accent" /> {label}

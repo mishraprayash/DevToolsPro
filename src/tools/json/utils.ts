@@ -161,7 +161,7 @@ export function repairJsonString(raw: string): { repaired: string; changes: stri
       } else if (c === stringChar) {
         inString = false;
         if (stringChar === "'") {
-          let content = wordBuffer;
+          const content = wordBuffer;
           let escapedContent = '';
           for (let k = 0; k < content.length; k++) {
             const ch = content[k];

@@ -7,7 +7,7 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { formatSql, type SqlFormatterOptions } from '@/tools/sql-prettify/utils';
+import { formatSql, type SqlFormatterOptions, type SqlKeywordCase } from '@/tools/sql-prettify/utils';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
 
@@ -55,7 +55,7 @@ export default function Page() {
               <Select
                 label="Dialect"
                 value={options.language}
-                onChange={(e) => setOptions({ ...options, language: e.target.value as any })}
+                onChange={(e) => setOptions({ ...options, language: e.target.value as 'sql' | 'postgresql' | 'mysql' | 'plsql' })}
                 options={[
                   { value: 'sql', label: 'Standard SQL' },
                   { value: 'postgresql', label: 'PostgreSQL' },
@@ -66,7 +66,7 @@ export default function Page() {
               <Select
                 label="Keyword Case"
                 value={options.keywordCase}
-                onChange={(e) => setOptions({ ...options, keywordCase: e.target.value as any })}
+                onChange={(e) => setOptions({ ...options, keywordCase: e.target.value as SqlKeywordCase })}
                 options={[
                   { value: 'upper', label: 'UPPERCASE' },
                   { value: 'lower', label: 'lowercase' },

@@ -8,7 +8,7 @@ export interface HistoryItem {
   timestamp: number;
   input: string;
   output: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface AppState {
@@ -24,7 +24,7 @@ interface AppState {
   feedbackOpen: boolean;
   setFeedbackOpen: (open: boolean) => void;
   history: Record<string, HistoryItem[]>;
-  addHistoryItem: (toolId: string, input: string, output: string, metadata?: Record<string, any>) => void;
+  addHistoryItem: (toolId: string, input: string, output: string, metadata?: Record<string, unknown>) => void;
   clearHistory: (toolId: string) => void;
 }
 

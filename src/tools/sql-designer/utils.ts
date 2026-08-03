@@ -79,8 +79,9 @@ export function generateSql(nodes: TableNode[], edges: Edge[], dialect: SqlDiale
     }
 
     return { success: true, data: sql.trim() };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Failed to generate SQL.';
+    return { success: false, error: msg };
   }
 }
 
@@ -132,7 +133,7 @@ export function parseSqlToNodes(sql: string, existingNodes: TableNode[] = []): {
   const edges: Edge[] = [];
   
   // Strip comments
-  let cleanSql = sql.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  const cleanSql = sql.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
   
   // Split by statements roughly
   const statements = cleanSql.split(';').map(s => s.trim()).filter(Boolean);

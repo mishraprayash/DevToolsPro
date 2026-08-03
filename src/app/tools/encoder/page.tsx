@@ -182,7 +182,7 @@ export default function Page() {
                 { value: 'binary', label: 'Raw Binary Bits' }
               ]}
               value={state.b64Mode}
-              onChange={(e) => updateActiveWorkspace({ b64Mode: e.target.value as any })}
+              onChange={(e) => updateActiveWorkspace({ b64Mode: e.target.value as 'utf8' | 'hex' | 'binary' })}
             />
             <label className="flex items-center gap-2.5 cursor-pointer select-none pt-7">
               <input
@@ -205,7 +205,7 @@ export default function Page() {
               { value: 'strict', label: 'Strict RFC-3986 (Includes all symbols)' }
             ]}
             value={state.urlMode}
-            onChange={(e) => updateActiveWorkspace({ urlMode: e.target.value as any })}
+            onChange={(e) => updateActiveWorkspace({ urlMode: e.target.value as 'component' | 'uri' | 'strict' })}
           />
         )}
 
@@ -219,7 +219,7 @@ export default function Page() {
                 { value: 'hex', label: 'Hexadecimal (&#x26;)' }
               ]}
               value={state.entMode}
-              onChange={(e) => updateActiveWorkspace({ entMode: e.target.value as any })}
+              onChange={(e) => updateActiveWorkspace({ entMode: e.target.value as 'named' | 'decimal' | 'hex' })}
               disabled={state.direction === 'decode'}
             />
             <Select
@@ -229,7 +229,7 @@ export default function Page() {
                 { value: 'all', label: 'All Non-ASCII characters' }
               ]}
               value={state.entScope}
-              onChange={(e) => updateActiveWorkspace({ entScope: e.target.value as any })}
+              onChange={(e) => updateActiveWorkspace({ entScope: e.target.value as 'markup' | 'all' })}
               disabled={state.direction === 'decode'}
             />
           </div>

@@ -81,7 +81,7 @@ export default function Page() {
   const handleEyeDropper = async () => {
     if (!supportsEyeDropper) return;
     try {
-      const eyeDropper = new (window as any).EyeDropper();
+      const eyeDropper = new (window as unknown as { EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> } }).EyeDropper();
       const result = await eyeDropper.open();
       if (result.sRGBHex) {
         setInput(result.sRGBHex);

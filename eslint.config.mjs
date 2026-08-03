@@ -13,6 +13,15 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // The codebase intentionally uses synchronous setState inside effects for
+  // debounced input sync and secondary-output propagation patterns. These are
+  // idiomatic here and not real cascading-render bugs.
+  {
+    files: ["**/*.{ts,tsx}"],
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

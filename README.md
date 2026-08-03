@@ -1,16 +1,17 @@
 # DevTools Pro
 
-A collection of 16 production-grade developer utilities in one beautiful platform.
+A collection of **53 production-grade developer utilities** in one beautiful, offline-first platform.
 
 ## Tools
 
 | Category | Tools |
 |---|---|
-| Formatting | JSON Beautifier, YAML ↔ JSON, Color Converter, HTML Preview |
-| Encoding | Base64 Encoder, URL Encoder/Decoder, Number Base Converter, Image to Base64 |
-| Security | JWT Decoder, Hash Generator, Password Generator |
-| Text | Regex Tester, UUID Generator, Lorem Ipsum Generator |
-| Date & Time | Timestamp Converter, Cron Parser |
+| **Formatting** (18) | JSON Beautifier, Color Converter, YAML ↔ JSON, XML ↔ JSON, CSV ↔ JSON, HTML Preview, CSS Flexbox & Grid Sandbox, CSS Unit & Fluid Typography, JSON to TypeScript, JSON Schema Generator, JSONPath Playground, SVG to JSX/React, SQL Formatter, SQL to ORM Entity Generator, Mock Data Generator, GraphQL to TypeScript, Docker Run ↔ Compose, SQL Schema Designer |
+| **Encoding** (6) | Encoder & Decoder Sandbox, Base Converter, Image to Base64, QR Code Generator, cURL Converter, Favicon Generator |
+| **Security** (8) | JWT Decoder & Generator, Hash Generator, Password Generator, AES Encrypt/Decrypt, RSA Sandbox, Bcrypt Generator & Checker, Chmod Calculator, Card & IBAN Helper |
+| **Network** (7) | IP Subnet Calculator, Subnet Mask Converter, IPv6 Address Helper, MAC Address Lookup, DNS Record Decoder, HTTP Status Code Glossary, User-Agent Parser |
+| **Text** (10) | Regex Tester, UUID Generator, Text & String Utilities, Diff Checker, Git Command Generator, System Prompt Builder, .gitignore Generator, LLM Pricing Calculator, Sitemap Generator, Romanized to Nepali |
+| **Date & Time** (4) | Date, Time & Epoch Sandbox, Cron Parser, Time Zone Converter, Nepali BS ↔ AD Calendar |
 
 ## Tech Stack
 
@@ -21,6 +22,7 @@ A collection of 16 production-grade developer utilities in one beautiful platfor
 - **Animations:** Framer Motion v12
 - **Validation:** Zod v4
 - **Icons:** Lucide React
+- **Testing:** Vitest v4
 
 ## Getting Started
 
@@ -44,11 +46,13 @@ A collection of 16 production-grade developer utilities in one beautiful platfor
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Build
+## Build & Test
 
 ```bash
-npm run build
-npm run start
+npm run lint   # ESLint
+npm run test   # Vitest unit tests
+npm run build  # Production build
+npm run start  # Start production server
 ```
 
 ## Contributing
@@ -61,9 +65,7 @@ To add a new tool, please follow this checklist:
 
 1. **Utility Functions:** Create pure TypeScript utility functions inside a new folder: `src/tools/<tool-name>/utils.ts` (e.g., `src/tools/json/utils.ts`). Avoid importing React or browser-only APIs here to keep them testable and pure.
 2. **Page View:** Create the Next.js page in `src/app/tools/<tool-name>/page.tsx`. Use `'use client'` at the top and wire the state to your utility functions.
-3. **Register the Tool:** Register your new tool in:
-   - `src/components/homepage/ToolGrid.tsx` (add to the appropriate category list)
-   - `src/components/layout/CommandPalette.tsx` (add to the searchable tools list)
+3. **Register the Tool:** Register your new tool in `src/tools/registry.ts`. The homepage grid, command palette, header menu, and all-tools page consume the registry automatically.
 
 ### Code Style Guidelines
 
@@ -91,15 +93,19 @@ To add a new tool, please follow this checklist:
    ```bash
    npm run lint
    ```
-4. Build the application locally to verify there are no TypeScript or compilation errors:
+4. Run the unit tests for your utility functions:
+   ```bash
+   npm run test
+   ```
+5. Build the application locally to verify there are no TypeScript or compilation errors:
    ```bash
    npm run build
    ```
-5. Commit your changes with descriptive and concise commit messages:
+6. Commit your changes with descriptive and concise commit messages:
    ```bash
    git commit -m "feat: add cron expression parser utility"
    ```
-6. Push to your fork and submit a Pull Request!
+7. Push to your fork and submit a Pull Request!
 
 ---
 

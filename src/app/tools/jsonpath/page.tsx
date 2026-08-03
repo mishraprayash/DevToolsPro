@@ -46,7 +46,7 @@ export default function Page() {
   const editorBg = theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white';
   const [jsonInput, setJsonInput] = React.useState(DEFAULT_JSON);
   const [path, setPath] = React.useState('$.store.book[*].author');
-  const [output, setOutput] = React.useState<any>(null);
+  const [output, setOutput] = React.useState<unknown>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -109,7 +109,7 @@ export default function Page() {
               <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
                 <Braces className="h-4 w-4 text-blue-500" /> Extraction Results
               </h2>
-              {output && (
+              {!!output && (
                 <div className="flex items-center gap-2 text-xs text-text-muted">
                   <span>{Array.isArray(output) ? `${output.length} matches` : ''}</span>
                   <CopyButton value={JSON.stringify(output, null, 2)} />

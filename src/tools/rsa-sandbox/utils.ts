@@ -15,7 +15,7 @@ function convertBinaryToPem(binaryBuffer: ArrayBuffer, label: string): string {
   for (let i = 0; i < bytes.length; i += chunkSize) {
     binaryString += String.fromCharCode.apply(
       null,
-      bytes.subarray(i, i + chunkSize) as any
+      bytes.subarray(i, i + chunkSize) as unknown as number[]
     );
   }
   const base64String = btoa(binaryString);

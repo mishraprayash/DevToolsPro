@@ -69,8 +69,9 @@ export async function processAES(
     let keyBytes: Uint8Array;
     try {
       keyBytes = keyFormat === 'hex' ? hexToUint8Array(key) : textToUint8Array(key);
-    } catch (e: any) {
-      return { success: false, error: `Invalid key: ${e.message}` };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return { success: false, error: `Invalid key: ${msg}` };
     }
 
     if (![16, 24, 32].includes(keyBytes.length)) {
@@ -96,8 +97,9 @@ export async function processAES(
     let ivBytes: Uint8Array;
     try {
       ivBytes = ivFormat === 'hex' ? hexToUint8Array(iv) : textToUint8Array(iv);
-    } catch (e: any) {
-      return { success: false, error: `Invalid IV: ${e.message}` };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return { success: false, error: `Invalid IV: ${msg}` };
     }
 
     const requiredIvLength = mode === 'GCM' ? 12 : 16;
@@ -105,7 +107,7 @@ export async function processAES(
       ivBytes = padOrTruncate(ivBytes, requiredIvLength);
     }
 
-    const algorithm: any = { name: `AES-${mode}` };
+    const algorithm: { name: string; iv?: BufferSource; counter?: BufferSource; length?: number } = { name: `AES-${mode}` };
     if (mode === 'CBC') {
       algorithm.iv = ivBytes as unknown as BufferSource;
     } else if (mode === 'CTR') {
@@ -117,7 +119,7 @@ export async function processAES(
 
     if (action === 'encrypt') {
       const inputBytes = textToUint8Array(input);
-      const encryptedBuffer = await crypto.subtle.encrypt(algorithm, cryptoKey, inputBytes as unknown as BufferSource);
+      const encryptedBuffer = await crypto.subtle.encrypt(algorithm as AlgorithmIdentifier, cryptoKey, inputBytes as unknown as BufferSource);
       const encryptedBytes = new Uint8Array(encryptedBuffer);
       const out = cipherFormat === 'hex' ? uint8ArrayToHex(encryptedBytes) : uint8ArrayToBase64(encryptedBytes);
       return { success: true, data: out };
@@ -125,15 +127,17 @@ export async function processAES(
       let inputBytes: Uint8Array;
       try {
         inputBytes = cipherFormat === 'hex' ? hexToUint8Array(input) : base64ToUint8Array(input);
-      } catch (e: any) {
-        return { success: false, error: `Invalid ciphertext format: ${e.message}` };
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return { success: false, error: `Invalid ciphertext format: ${msg}` };
       }
 
-      const decryptedBuffer = await crypto.subtle.decrypt(algorithm, cryptoKey, inputBytes as unknown as BufferSource);
+      const decryptedBuffer = await crypto.subtle.decrypt(algorithm as AlgorithmIdentifier, cryptoKey, inputBytes as unknown as BufferSource);
       const out = new TextDecoder().decode(decryptedBuffer);
       return { success: true, data: out };
     }
-  } catch (e: any) {
-    return { success: false, error: e.message || String(e) || "Crypto operation failed. Bad key, IV, or corrupted data." };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { success: false, error: msg || "Crypto operation failed. Bad key, IV, or corrupted data." };
   }
 }

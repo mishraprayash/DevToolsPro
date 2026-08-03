@@ -21,7 +21,7 @@ export async function validateYaml(input: string): Promise<ValidationResult> {
     yaml.load(input);
     return { valid: true };
   } catch (e) {
-    const err = e as any;
+    const err = e as unknown as { reason?: string; message?: string; mark?: { line: number } };
     return {
       valid: false,
       error: err.reason || err.message,

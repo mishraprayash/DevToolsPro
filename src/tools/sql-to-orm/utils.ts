@@ -58,7 +58,7 @@ export function parseSqlCreate(sql: string): { success: true; data: ColumnDef[];
     const columns: ColumnDef[] = [];
     const constraints: string[] = [];
 
-    for (let line of lines) {
+    for (const line of lines) {
       // Check for table level constraints
       if (/^(?:CONSTRAINT|PRIMARY\s+KEY|UNIQUE|FOREIGN\s+KEY|KEY|INDEX)\b/i.test(line)) {
         constraints.push(line);

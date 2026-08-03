@@ -11,6 +11,7 @@ import { CommandPalette } from '@/components/layout/CommandPalette';
 import { FeedbackModal } from '@/components/layout/FeedbackModal';
 import { Toaster } from '@/components/ui/Toast';
 import { ThemeSync } from "@/components/layout/ThemeSync";
+import { tools } from '@/tools/registry';
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -30,7 +31,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "DevTools Pro | Developer Utilities Platform",
-  description: "20+ production-grade developer utilities in one beautiful platform. JSON beautifier, Base64 encoder, JWT decoder, hash generator, and more.",
+  description: `${tools.length} production-grade developer utilities in one beautiful platform. JSON beautifier, Base64 encoder, JWT decoder, hash generator, and more.`,
   keywords: ["developer tools", "json beautifier", "base64 encoder", "jwt decoder", "hash generator", "regex tester", "devtools"],
   authors: [{ name: "DevTools Pro" }],
   manifest: "/manifest.json",
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "DevTools Pro | Developer Utilities Platform",
-    description: "20+ production-grade developer utilities in one beautiful platform.",
+    description: `${tools.length} production-grade developer utilities in one beautiful platform.`,
     type: "website",
   },
 };
