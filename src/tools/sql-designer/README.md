@@ -5,62 +5,78 @@ The **SQL Schema Designer** is a visual Entity-Relationship Diagram (ERD) and re
 
 ---
 
-## 2. Directory Structure
+## 2. Modular Architecture & Directory Structure
+Following Single Responsibility Architecture, the engine is organized into dedicated domain modules:
+
 ```
 src/tools/sql-designer/
-├── README.md           # Developer documentation
-└── utils.ts            # DDL generators, schema parsers, and type definitions
-
-src/app/tools/sql-designer/
-├── TableNode.tsx       # Custom interactive table node for ReactFlow
-└── page.tsx            # Main ERD canvas, toolbar, schema editor & export modal
+├── types/
+│   └── schema.types.ts       # Core domain types (ColumnDef, TableNode, SqlDialect, etc.)
+├── constants/
+│   └── datatypes.ts          # Dialect-specific SQL data type categories
+├── generators/
+│   ├── sql.generator.ts      # SQL DDL & Foreign Key generation (Postgres, MySQL, SQLite)
+│   ├── prisma.generator.ts   # Prisma schema model generator
+│   ├── typescript.generator.ts # TypeScript interfaces generator
+│   └── mermaid.generator.ts  # Mermaid ERD diagram generator
+├── parsers/
+│   └── sql.parser.ts         # Reverse-engineering parser (SQL DDL -> Diagram nodes)
+├── layout/
+│   └── auto-layout.ts        # Auto-layout matrix grid engine
+├── presets/
+│   └── presets.ts            # E-commerce, SaaS Auth, and starter schema presets
+├── index.ts                  # Barrel export of all domain modules
+├── utils.ts                  # Backwards-compatible barrel export
+└── README.md                 # Developer documentation
 ```
 
 ---
 
-## 3. Core Data Model (`utils.ts`)
+## 3. Core Domain Models (`types/schema.types.ts`)
 
 ```typescript
 export interface ColumnDef {
   id: string;
   name: string;
   type: string;
-  isPrimary?: boolean;
-  isNullable?: boolean;
+  isPrimary: boolean;
+  isNullable: boolean;
   isUnique?: boolean;
   defaultValue?: string;
-  references?: {
-    tableId: string;
-    columnId: string;
-  };
 }
 
-export interface TableDef {
-  id: string;
-  name: string;
+export interface TableNodeData extends Record<string, unknown> {
+  tableName: string;
   columns: ColumnDef[];
-  color?: string;
 }
-```
 
-### Key Functions
-| Function | Parameters | Returns | Description |
-|---|---|---|---|
-| `generatePostgreSql(tables)` | `TableDef[]` | `string` | Generates PostgreSQL DDL (`CREATE TABLE`, constraints, foreign keys). |
-| `generateMySql(tables)` | `TableDef[]` | `string` | Generates MySQL DDL with engine specifications. |
-| `generateSqlite(tables)` | `TableDef[]` | `string` | Generates SQLite compliant table definitions. |
-| `generatePrismaSchema(tables)`| `TableDef[]` | `string` | Generates Prisma schema models and relation bindings. |
-| `generateMermaidErd(tables)`  | `TableDef[]` | `string` | Generates Mermaid ER diagram code for Markdown documentation. |
+export type TableNode = Node<TableNodeData>;
+export type SqlDialect = 'postgresql' | 'mysql' | 'sqlite';
+export type ExportFormat = 'sql' | 'prisma' | 'typescript' | 'mermaid';
+```
 
 ---
 
-## 4. UI Architecture
-* **Canvas Engine**: Powered by `@xyflow/react` (React Flow) for pan/zoom, grid snapping, and draggable table nodes.
+## 4. Domain Generators & Functions
+
+| Module | Function | Returns | Description |
+|---|---|---|---|
+| `generators/sql.generator.ts` | `generateSql(nodes, edges, dialect)` | `Result<string>` | Generates dialect-specific DDL and foreign key alter statements. |
+| `generators/prisma.generator.ts` | `generatePrisma(nodes, edges)` | `string` | Generates schema-valid Prisma models and `@relation` bindings. |
+| `generators/typescript.generator.ts` | `generateTypeScript(nodes)` | `string` | Generates TypeScript interfaces from database table schemas. |
+| `generators/mermaid.generator.ts` | `generateMermaid(nodes, edges)` | `string` | Generates Mermaid ER diagram code for Markdown documentation. |
+| `parsers/sql.parser.ts` | `parseSqlToNodes(sql, existingNodes)` | `{ nodes, edges }` | Parses standard SQL DDL into visual nodes and foreign key edges. |
+| `layout/auto-layout.ts` | `autoLayoutNodes(nodes)` | `TableNode[]` | Arranges nodes in a non-overlapping grid layout. |
+
+---
+
+## 5. UI Architecture (`src/app/tools/sql-designer/`)
+* **Canvas Engine**: Powered by `@xyflow/react` (React Flow) for pan/zoom, grid snapping, and draggable table nodes (`TableNode.tsx`).
 * **Relationship Connecting**: Drag handles between primary and foreign key columns create typed edges.
 * **Live Export Tabs**: Instant SQL / Prisma syntax highlighting in the script viewer drawer.
 
 ---
 
-## 5. How to Contribute / Extend
-1. **Adding Dialects**: Add new dialect generators (e.g. MS SQL Server, Oracle, TypeORM) inside `src/tools/sql-designer/utils.ts`.
-2. **Importing SQL**: Enhance the reverse-engineering SQL parser in `utils.ts` to convert `CREATE TABLE` scripts back into visual diagram state.
+## 6. How to Contribute / Extend
+1. **Adding Dialects**: Create dialect logic in `generators/` and register datatypes in `constants/datatypes.ts`.
+2. **Improving SQL Parser**: Extend `parsers/sql.parser.ts` to support additional constraint syntax (e.g. `CHECK`, composite keys).
