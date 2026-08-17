@@ -23,6 +23,8 @@ interface AppState {
   setCommandPaletteOpen: (open: boolean) => void;
   feedbackOpen: boolean;
   setFeedbackOpen: (open: boolean) => void;
+  shortcutsOpen: boolean;
+  setShortcutsOpen: (open: boolean) => void;
   history: Record<string, HistoryItem[]>;
   addHistoryItem: (toolId: string, input: string, output: string, metadata?: Record<string, unknown>) => void;
   clearHistory: (toolId: string) => void;
@@ -66,6 +68,8 @@ export const useAppStore = create<AppState>()(
       setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
       feedbackOpen: false,
       setFeedbackOpen: (open) => set({ feedbackOpen: open }),
+      shortcutsOpen: false,
+      setShortcutsOpen: (open) => set({ shortcutsOpen: open }),
       history: {},
       addHistoryItem: (toolId, input, output, metadata) => {
         const currentHistory = get().history[toolId] || [];

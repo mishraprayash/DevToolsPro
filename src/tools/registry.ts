@@ -5,7 +5,7 @@ import {
   ImageUp, Earth, QrCode, Braces, Code, GitCompare, SunMoon,
   Laptop, Grid, Database, GitBranch, FileMinus,
   Paintbrush, ListTree, Languages,
-  FileSpreadsheet
+  FileSpreadsheet, Link2
 } from 'lucide-react';
 
 export type ToolCategory = 'Formatting' | 'Encoding' | 'Security' | 'Network' | 'Text' | 'Date & Time';
@@ -63,6 +63,7 @@ export const tools: ToolDef[] = [
   { id: 'dns-decoder', name: 'DNS Record Decoder', description: 'Parse DNS queries and responses from HEX streams', keywords: ['dns', 'packet', 'hex', 'query', 'response', 'parser'], category: 'Network', icon: Globe, color: 'from-emerald-500 to-teal-600' },
   { id: 'http-status', name: 'HTTP Status Code Glossary', description: 'Searchable reference for all HTTP status codes', keywords: ['404', '500', 'status codes', 'rest', 'api', 'reference'], category: 'Network', icon: Globe, color: 'from-blue-500 to-cyan-500' },
   { id: 'user-agent', name: 'User-Agent Parser', description: 'Parse browser UA strings and detect client specs', keywords: ['browser', 'ua', 'device', 'detect', 'client'], category: 'Network', icon: Laptop, color: 'from-teal-500 to-emerald-500' },
+  { id: 'url-parser', name: 'URL & Query Parameter Inspector', description: 'Inspect, dissect, edit, encode, and rebuild URLs & query strings', keywords: ['url', 'query string', 'params', 'url parser', 'query params', 'uri', 'encode', 'decode'], category: 'Network', icon: Link2, color: 'from-sky-500 to-indigo-500', isNew: true },
 
   // ── Text ───────────────────────────────────────────────────────
   { id: 'regex', name: 'Regex Tester', description: 'Live regex matching with group capture support', keywords: ['regular expression', 'pattern', 'match', 'capture', 'test'], category: 'Text', icon: Regex, color: 'from-violet-500 to-purple-500' },

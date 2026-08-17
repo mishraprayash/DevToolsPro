@@ -3,14 +3,14 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Sun, Moon, Menu, X, Command, MessageSquare } from 'lucide-react';
+import { Search, Sun, Moon, Menu, X, Command, MessageSquare, Keyboard } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { useAppStore } from '@/lib/store/useStore';
 import { tools, categories, type ToolCategory } from '@/tools/registry';
 import { cn } from '@/lib/utils';
 
 export function Header() {
-  const { theme, toggleTheme, setCommandPaletteOpen, setFeedbackOpen } = useAppStore();
+  const { theme, toggleTheme, setCommandPaletteOpen, setFeedbackOpen, setShortcutsOpen } = useAppStore();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -82,6 +82,15 @@ export function Header() {
             >
               <MessageSquare className="h-3.5 w-3.5 text-accent" />
               <span className="hidden md:inline">Feedback</span>
+            </button>
+
+            <button
+              onClick={() => setShortcutsOpen(true)}
+              className="hidden md:flex items-center justify-center h-8 w-8 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all"
+              title="Keyboard Shortcuts (⌘/)"
+              aria-label="Keyboard Shortcuts"
+            >
+              <Keyboard className="h-4 w-4" />
             </button>
 
             <a

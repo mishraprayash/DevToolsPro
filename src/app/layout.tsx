@@ -9,6 +9,8 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { CommandPalette } from '@/components/layout/CommandPalette';
 import { FeedbackModal } from '@/components/layout/FeedbackModal';
+import { ShortcutsModal } from '@/components/layout/ShortcutsModal';
+import { ServiceWorkerRegister } from '@/components/layout/ServiceWorkerRegister';
 import { Toaster } from '@/components/ui/Toast';
 import { ThemeSync } from "@/components/layout/ThemeSync";
 import { tools } from '@/tools/registry';
@@ -59,8 +61,10 @@ export default function RootLayout({
         {children}
         <Footer />
         <CommandPalette />
+        <ShortcutsModal />
         <FeedbackModal />
         <Toaster />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
