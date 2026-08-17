@@ -52,6 +52,17 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-1.5">
+            {/* Mobile Search Button */}
+            <button
+              onClick={() => setCommandPaletteOpen(true)}
+              className="flex sm:hidden items-center justify-center h-8 w-8 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all"
+              aria-label="Search tools"
+              title="Search tools (⌘K)"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+
+            {/* Desktop Search Button */}
             <button
               onClick={() => setCommandPaletteOpen(true)}
               className="hidden sm:flex items-center gap-2 h-8 px-3 text-xs text-text-muted bg-bg-tertiary border border-border rounded-lg hover:border-border-hover hover:text-text-primary transition-all duration-200"

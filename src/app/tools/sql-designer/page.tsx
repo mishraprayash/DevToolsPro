@@ -13,7 +13,9 @@ import {
   Connection,
   Edge,
   NodeChange,
-  EdgeChange
+  EdgeChange,
+  ConnectionMode,
+  MarkerType
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import Editor from '@monaco-editor/react';
@@ -25,8 +27,21 @@ import { Select } from '@/components/ui/Select';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
 import { TableNode } from './TableNode';
-import { initialNodes, initialEdges, generateSql, parseSqlToNodes, TableNode as AppTableNode, SqlDialect } from '@/tools/sql-designer/utils';
-import { Plus, Download, Maximize2, Minimize2, Trash2 } from 'lucide-react';
+import { 
+  initialNodes, 
+  initialEdges, 
+  generateSql, 
+  generatePrisma, 
+  generateTypeScript, 
+  generateMermaid, 
+  autoLayoutNodes,
+  parseSqlToNodes, 
+  PRESET_TEMPLATES,
+  TableNode as AppTableNode, 
+  SqlDialect,
+  ExportFormat 
+} from '@/tools/sql-designer/utils';
+import { Plus, Download, Maximize2, Minimize2, Trash2, LayoutGrid, Sparkles } from 'lucide-react';
 
 const nodeTypes = {
   tableNode: TableNode,
@@ -39,16 +54,13 @@ function FlowDesigner() {
 
   const [nodes, setNodes] = React.useState<AppTableNode[]>(initialNodes);
   const [edges, setEdges] = React.useState<Edge[]>(initialEdges);
-  const [sqlOutput, setSqlOutput] = React.useState('');
+  const [outputCode, setOutputCode] = React.useState('');
   const [dialect, setDialect] = React.useState<SqlDialect>('postgresql');
+  const [exportFormat, setExportFormat] = React.useState<ExportFormat>('sql');
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [isLoaded, setIsLoaded] = React.useState(false);
 
-  // We only want to generate SQL if the change originated from the VISUAL canvas.
-  // If the change originated from the EDITOR, we do not want to overwrite the editor text.
-  const visualChangePending = React.useRef(true); // true initially to generate first SQL
-  
-  // Track if user is actively typing in the editor
+  const visualChangePending = React.useRef(true);
   const isTypingRef = React.useRef(false);
   const typingTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -57,10 +69,11 @@ function FlowDesigner() {
     try {
       const saved = localStorage.getItem('sql-designer-state');
       if (saved) {
-        const { savedNodes, savedEdges, savedDialect } = JSON.parse(saved);
+        const { savedNodes, savedEdges, savedDialect, savedFormat } = JSON.parse(saved);
         if (savedNodes && savedNodes.length > 0) setNodes(savedNodes);
         if (savedEdges) setEdges(savedEdges);
         if (savedDialect) setDialect(savedDialect);
+        if (savedFormat) setExportFormat(savedFormat);
       }
     } catch (e) {
       console.error('Failed to load SQL designer state', e);
@@ -71,24 +84,27 @@ function FlowDesigner() {
   // Save to local storage
   React.useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem('sql-designer-state', JSON.stringify({
-        savedNodes: nodes,
-        savedEdges: edges,
-        savedDialect: dialect
-      }));
+      localStorage.setItem(
+        'sql-designer-state',
+        JSON.stringify({
+          savedNodes: nodes,
+          savedEdges: edges,
+          savedDialect: dialect,
+          savedFormat: exportFormat,
+        })
+      );
     }
-  }, [nodes, edges, dialect, isLoaded]);
+  }, [nodes, edges, dialect, exportFormat, isLoaded]);
 
   const onNodesChange = React.useCallback((changes: NodeChange[]) => {
-    // Only flag as visual change if it's a deletion, otherwise it's just drag/select/dimensions
-    if (changes.some(c => c.type === 'remove')) {
+    if (changes.some((c) => c.type === 'remove')) {
       visualChangePending.current = true;
     }
     setNodes((nds) => applyNodeChanges(changes, nds as unknown as AppTableNode[]) as unknown as AppTableNode[]);
   }, []);
 
   const onEdgesChange = React.useCallback((changes: EdgeChange[]) => {
-    if (changes.some(c => c.type === 'remove' || c.type === 'add')) {
+    if (changes.some((c) => c.type === 'remove' || c.type === 'add')) {
       visualChangePending.current = true;
     }
     setEdges((eds) => applyEdgeChanges(changes, eds));
@@ -96,68 +112,123 @@ function FlowDesigner() {
 
   const onConnect = React.useCallback((params: Connection) => {
     visualChangePending.current = true;
-    setEdges((eds) => addEdge({ ...params, animated: true, type: 'smoothstep', style: { stroke: '#818cf8', strokeWidth: 2 } }, eds));
+    setEdges((eds) =>
+      addEdge(
+        {
+          ...params,
+          animated: true,
+          type: 'smoothstep',
+          label: 'FK Relation',
+          markerEnd: { type: MarkerType.ArrowClosed, color: '#818cf8' },
+          style: { stroke: '#818cf8', strokeWidth: 2.5 },
+        },
+        eds
+      )
+    );
   }, []);
 
   const onTableNameChange = React.useCallback((nodeId: string, name: string) => {
     visualChangePending.current = true;
-    setNodes((nds) => nds.map(node => {
-      if (node.id === nodeId) {
-        return { ...node, data: { ...node.data, tableName: name } };
-      }
-      return node;
-    }));
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return { ...node, data: { ...node.data, tableName: name } };
+        }
+        return node;
+      })
+    );
   }, []);
 
   const onColumnAdd = React.useCallback((nodeId: string) => {
     visualChangePending.current = true;
-    setNodes((nds) => nds.map(node => {
-      if (node.id === nodeId) {
-        const newCol = {
-          id: `col-${Date.now()}`,
-          name: `col_${node.data.columns.length + 1}`,
-          type: 'VARCHAR(255)',
-          isPrimary: false,
-          isNullable: true
-        };
-        return { ...node, data: { ...node.data, columns: [...node.data.columns, newCol] } };
-      }
-      return node;
-    }));
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          const newCol = {
+            id: `col-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            name: `col_${node.data.columns.length + 1}`,
+            type: 'VARCHAR(255)',
+            isPrimary: false,
+            isNullable: true,
+          };
+          return { ...node, data: { ...node.data, columns: [...node.data.columns, newCol] } };
+        }
+        return node;
+      })
+    );
   }, []);
 
-  const onColumnChange = React.useCallback((nodeId: string, colId: string, field: string, value: string | boolean) => {
-    visualChangePending.current = true;
-    setNodes((nds) => nds.map(node => {
-      if (node.id === nodeId) {
-        const newCols = node.data.columns.map(col => {
-          if (col.id === colId) {
-            return { ...col, [field]: value };
+  const onColumnChange = React.useCallback(
+    (nodeId: string, colId: string, field: string, value: string | boolean) => {
+      visualChangePending.current = true;
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id === nodeId) {
+            const newCols = node.data.columns.map((col) => {
+              if (col.id === colId) {
+                return { ...col, [field]: value };
+              }
+              return col;
+            });
+            return { ...node, data: { ...node.data, columns: newCols } };
           }
-          return col;
-        });
-        return { ...node, data: { ...node.data, columns: newCols } };
-      }
-      return node;
-    }));
-  }, []);
+          return node;
+        })
+      );
+    },
+    []
+  );
 
   const onColumnDelete = React.useCallback((nodeId: string, colId: string) => {
     visualChangePending.current = true;
-    setNodes((nds) => nds.map(node => {
-      if (node.id === nodeId) {
-        return { ...node, data: { ...node.data, columns: node.data.columns.filter(c => c.id !== colId) } };
-      }
-      return node;
-    }));
-    setEdges(eds => eds.filter(e => e.sourceHandle !== colId && e.targetHandle !== colId));
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return { ...node, data: { ...node.data, columns: node.data.columns.filter((c) => c.id !== colId) } };
+        }
+        return node;
+      })
+    );
+    setEdges((eds) => eds.filter((e) => e.sourceHandle !== colId && e.targetHandle !== colId));
   }, []);
 
   const onDeleteNode = React.useCallback((nodeId: string) => {
     visualChangePending.current = true;
-    setNodes(nds => nds.filter(n => n.id !== nodeId));
-    setEdges(eds => eds.filter(e => e.source !== nodeId && e.target !== nodeId));
+    setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+    setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
   }, []);
+
+  const onDuplicateNode = React.useCallback(
+    (nodeId: string) => {
+      visualChangePending.current = true;
+      const targetNode = nodes.find((n) => n.id === nodeId);
+      if (!targetNode) return;
+
+      const newTableId = `tbl-${Date.now()}`;
+      const newTableName = `${targetNode.data.tableName}_copy`;
+
+      const duplicatedColumns = targetNode.data.columns.map((c) => ({
+        ...c,
+        id: `col-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      }));
+
+      const newNode: AppTableNode = {
+        ...targetNode,
+        id: newTableId,
+        position: {
+          x: targetNode.position.x + 80,
+          y: targetNode.position.y + 80,
+        },
+        data: {
+          tableName: newTableName,
+          columns: duplicatedColumns,
+        },
+      };
+
+      setNodes((nds) => [...nds, newNode]);
+    },
+    [nodes]
+  );
 
   const handleAddTable = React.useCallback(() => {
     visualChangePending.current = true;
@@ -168,11 +239,16 @@ function FlowDesigner() {
       data: {
         tableName: 'new_table',
         columns: [
-          { id: `c1-${Date.now()}`, name: 'id', type: 'SERIAL', isPrimary: true, isNullable: false }
-        ]
-      }
+          { id: `c1-${Date.now()}`, name: 'id', type: 'SERIAL', isPrimary: true, isNullable: false },
+        ],
+      },
     };
-    setNodes(nds => [...nds, newNode]);
+    setNodes((nds) => [...nds, newNode]);
+  }, []);
+
+  const handleAutoLayout = React.useCallback(() => {
+    visualChangePending.current = true;
+    setNodes((nds) => autoLayoutNodes(nds));
   }, []);
 
   const handleClear = React.useCallback(() => {
@@ -183,98 +259,145 @@ function FlowDesigner() {
     }
   }, []);
 
+  const handleLoadPreset = React.useCallback((presetKey: string) => {
+    if (!presetKey) return;
+    const preset = PRESET_TEMPLATES[presetKey];
+    if (preset) {
+      visualChangePending.current = true;
+      setNodes(preset.nodes);
+      setEdges(preset.edges);
+    }
+  }, []);
+
   const handleDownload = React.useCallback(() => {
-    const blob = new Blob([sqlOutput], { type: 'text/plain' });
+    const ext = exportFormat === 'prisma' ? 'prisma' : exportFormat === 'typescript' ? 'ts' : exportFormat === 'mermaid' ? 'mmd' : 'sql';
+    const blob = new Blob([outputCode], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `schema-${dialect}.sql`;
+    a.download = `schema.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [sqlOutput, dialect]);
+  }, [outputCode, exportFormat]);
 
-  // Sync Visual -> Code (only if the change originated visually)
+  // Regenerate Code based on current Export Format
   React.useEffect(() => {
     if (visualChangePending.current) {
       visualChangePending.current = false;
-      const res = generateSql(nodes, edges, dialect);
-      if (res.success && res.data !== sqlOutput) {
-        setSqlOutput(res.data);
+
+      let code = '';
+      if (exportFormat === 'sql') {
+        const res = generateSql(nodes, edges, dialect);
+        if (res.success) code = res.data;
+      } else if (exportFormat === 'prisma') {
+        code = generatePrisma(nodes, edges);
+      } else if (exportFormat === 'typescript') {
+        code = generateTypeScript(nodes);
+      } else if (exportFormat === 'mermaid') {
+        code = generateMermaid(nodes, edges);
+      }
+
+      if (code !== outputCode) {
+        setOutputCode(code);
       }
     }
-  }, [nodes, edges, dialect, sqlOutput]);
+  }, [nodes, edges, dialect, exportFormat, outputCode]);
 
   // Handle typing in editor
-  const handleEditorChange = React.useCallback((value: string | undefined) => {
-    const val = value || '';
-    setSqlOutput(val);
-    
-    // Set typing flag so we don't accidentally overwrite while they pause
-    isTypingRef.current = true;
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    
-    typingTimeoutRef.current = setTimeout(() => {
-      isTypingRef.current = false;
-    }, 1000);
+  const handleEditorChange = React.useCallback(
+    (value: string | undefined) => {
+      const val = value || '';
+      setOutputCode(val);
 
-    // Try parsing silently
-    try {
-      if (val.trim() === '') {
-        setNodes([]);
-        setEdges([]);
-        return;
+      if (exportFormat !== 'sql') return;
+
+      isTypingRef.current = true;
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+      typingTimeoutRef.current = setTimeout(() => {
+        isTypingRef.current = false;
+      }, 1000);
+
+      try {
+        if (val.trim() === '') {
+          setNodes([]);
+          setEdges([]);
+          return;
+        }
+        const { nodes: newNodes, edges: newEdges } = parseSqlToNodes(val, nodes);
+        if (newNodes.length > 0) {
+          setNodes(newNodes);
+          setEdges(newEdges);
+        }
+      } catch (e) {
+        // Ignore syntax parsing errors while typing
       }
-      const { nodes: newNodes, edges: newEdges } = parseSqlToNodes(val, nodes);
-      // We only update if we successfully parsed at least one table, 
-      // or if they explicitly cleared the editor (handled above).
-      // This prevents the canvas from vanishing while they are midway typing an invalid statement.
-      if (newNodes.length > 0) {
-        setNodes(newNodes);
-        setEdges(newEdges);
-      }
-    } catch (e) {
-      // Ignore intermediate parsing errors while typing
-    }
-  }, [nodes]);
+    },
+    [exportFormat, nodes]
+  );
 
   const nodesWithHandlers = React.useMemo(() => {
-    return nodes.map(node => ({
+    return nodes.map((node) => ({
       ...node,
       data: {
         ...node.data,
+        dialect,
         onTableNameChange,
         onColumnAdd,
         onColumnChange,
         onColumnDelete,
-        onDeleteNode
-      }
+        onDeleteNode,
+        onDuplicateNode,
+      },
     }));
-  }, [nodes, onTableNameChange, onColumnAdd, onColumnChange, onColumnDelete, onDeleteNode]);
-
-  // Trigger dialect change regeneration
-  const handleDialectChange = (newDialect: SqlDialect) => {
-    visualChangePending.current = true;
-    setDialect(newDialect);
-  };
+  }, [nodes, dialect, onTableNameChange, onColumnAdd, onColumnChange, onColumnDelete, onDeleteNode, onDuplicateNode]);
 
   if (!isLoaded) return null;
 
   return (
-    <div className={isFullscreen ? 'fixed inset-0 z-50 bg-bg-primary p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 h-screen overflow-hidden' : 'grid grid-cols-1 lg:grid-cols-12 gap-6 h-[700px]'}>
+    <div
+      className={
+        isFullscreen
+          ? 'fixed inset-0 z-50 bg-bg-primary p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 h-screen overflow-hidden'
+          : 'grid grid-cols-1 lg:grid-cols-12 gap-6 h-[720px]'
+      }
+    >
       {/* Canvas */}
       <div className="lg:col-span-8 flex flex-col h-full rounded-xl border border-border bg-bg-secondary overflow-hidden relative shadow-inner">
-        <div className="absolute top-4 left-4 z-10 flex gap-2">
-          <Button size="sm" onClick={handleAddTable} className="shadow-lg">
-            <Plus className="w-4 h-4 mr-1" /> Add Table
+        <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
+          <Button size="sm" onClick={handleAddTable} icon={<Plus className="w-4 h-4" />} className="shadow-lg">
+            Add Table
           </Button>
-          <Button variant="danger" size="sm" onClick={handleClear} className="shadow-lg">
-            <Trash2 className="w-4 h-4 mr-1" /> Clear
+          <Button variant="secondary" size="sm" onClick={handleAutoLayout} icon={<LayoutGrid className="w-4 h-4" />} className="shadow-lg bg-bg-elevated border border-border">
+            Auto Layout
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => setIsFullscreen(!isFullscreen)} className="shadow-lg bg-bg-elevated border border-border">
+          <Button variant="danger" size="sm" onClick={handleClear} icon={<Trash2 className="w-4 h-4" />} className="shadow-lg">
+            Clear
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="shadow-lg bg-bg-elevated border border-border"
+          >
             {isFullscreen ? <Minimize2 className="w-4 h-4 mr-1" /> : <Maximize2 className="w-4 h-4 mr-1" />}
-            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            {isFullscreen ? 'Exit' : 'Fullscreen'}
           </Button>
         </div>
+
+        {/* Preset Selector */}
+        <div className="absolute top-4 right-4 z-10 w-48">
+          <select
+            onChange={(e) => handleLoadPreset(e.target.value)}
+            defaultValue=""
+            className="w-full h-9 px-3 rounded-lg bg-bg-elevated/90 border border-border text-xs font-semibold text-text-primary focus:outline-none focus:border-accent cursor-pointer shadow-lg backdrop-blur"
+          >
+            <option value="" disabled>✨ Load Schema Preset...</option>
+            <option value="saasAuth">SaaS Auth & Users</option>
+            <option value="ecommerce">E-Commerce Store</option>
+          </select>
+        </div>
+
         <ReactFlow
           nodes={nodesWithHandlers}
           edges={edges}
@@ -282,7 +405,13 @@ function FlowDesigner() {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
-          defaultEdgeOptions={{ type: 'smoothstep', animated: true, style: { stroke: '#818cf8', strokeWidth: 2 } }}
+          connectionMode={ConnectionMode.Loose}
+          defaultEdgeOptions={{
+            type: 'smoothstep',
+            animated: true,
+            markerEnd: { type: MarkerType.ArrowClosed, color: '#818cf8' },
+            style: { stroke: '#818cf8', strokeWidth: 2.5 },
+          }}
           fitView
           minZoom={0.1}
           maxZoom={4}
@@ -290,56 +419,77 @@ function FlowDesigner() {
         >
           <Background gap={16} size={1} />
           <Controls className="!bg-bg-elevated !border-border !fill-text-primary" />
-          <MiniMap 
-            nodeColor={theme === 'dark' ? '#1a1a24' : '#ffffff'} 
+          <MiniMap
+            nodeColor={theme === 'dark' ? '#1a1a24' : '#ffffff'}
             maskColor={theme === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.1)'}
-            className="!bg-bg-secondary !border-border !border !rounded-lg overflow-hidden" 
+            className="!bg-bg-secondary !border-border !border !rounded-lg overflow-hidden"
           />
         </ReactFlow>
       </div>
 
-      {/* Code Editor */}
+      {/* Code Editor Side */}
       <div className="lg:col-span-4 flex flex-col h-full space-y-3">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-text-primary">
-              Generated SQL
+            <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-accent" /> Export Code
             </h2>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleDownload} className="h-8">
-                <Download className="w-4 h-4 mr-1" /> Download
+              <Button variant="ghost" size="sm" onClick={handleDownload} className="h-8 text-xs">
+                <Download className="w-3.5 h-3.5 mr-1" /> Export
               </Button>
-              <CopyButton value={sqlOutput} />
+              <CopyButton value={outputCode} />
             </div>
           </div>
-          
-          <div className="w-full">
+
+          <div className="grid grid-cols-2 gap-2">
             <Select
+              label="Format"
               options={[
-                { label: 'PostgreSQL', value: 'postgresql' },
-                { label: 'MySQL', value: 'mysql' },
-                { label: 'SQLite', value: 'sqlite' },
+                { label: 'SQL DDL Script', value: 'sql' },
+                { label: 'Prisma Schema', value: 'prisma' },
+                { label: 'TypeScript Types', value: 'typescript' },
+                { label: 'Mermaid ER Diagram', value: 'mermaid' },
               ]}
-              value={dialect}
-              onChange={(e) => handleDialectChange(e.target.value as SqlDialect)}
+              value={exportFormat}
+              onChange={(e) => {
+                visualChangePending.current = true;
+                setExportFormat(e.target.value as ExportFormat);
+              }}
             />
+
+            {exportFormat === 'sql' && (
+              <Select
+                label="SQL Dialect"
+                options={[
+                  { label: 'PostgreSQL', value: 'postgresql' },
+                  { label: 'MySQL', value: 'mysql' },
+                  { label: 'SQLite', value: 'sqlite' },
+                ]}
+                value={dialect}
+                onChange={(e) => {
+                  visualChangePending.current = true;
+                  setDialect(e.target.value as SqlDialect);
+                }}
+              />
+            )}
           </div>
         </div>
-        
+
         <div className={`flex-1 rounded-xl border border-border ${editorBg} overflow-hidden shadow-inner`}>
           <Editor
             height="100%"
-            defaultLanguage="sql"
+            defaultLanguage={exportFormat === 'typescript' ? 'typescript' : 'sql'}
             theme={monacoTheme}
             beforeMount={defineEditorThemes}
-            value={sqlOutput}
+            value={outputCode}
             onChange={handleEditorChange}
-            options={{ 
-              readOnly: false, 
-              minimap: { enabled: false }, 
-              fontSize: 13, 
+            options={{
+              readOnly: exportFormat !== 'sql',
+              minimap: { enabled: false },
+              fontSize: 13,
               wordWrap: 'on',
-              padding: { top: 16, bottom: 16 }
+              padding: { top: 16, bottom: 16 },
             }}
           />
         </div>
@@ -352,7 +502,7 @@ export default function Page() {
   return (
     <ToolLayout
       name="SQL Schema Designer"
-      description="Visually design database schemas, draw foreign key relationships, and generate SQL DDL scripts."
+      description="Visually design database schemas, draw relationships, auto-layout tables, and export SQL, Prisma, or TypeScript models."
       category="Formatting"
     >
       <ReactFlowProvider>

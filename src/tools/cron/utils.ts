@@ -85,7 +85,6 @@ export function getNextRuns(
     current.setMilliseconds(0);
     
     let iterations = 0;
-    // Walk forward second-by-second to find matching dates
     while (dates.length < count && iterations < 60000) {
       iterations++;
       current.setSeconds(current.getSeconds() + 1);
@@ -189,7 +188,6 @@ export function translateCronToEnglish(expr: string): string {
       desc.push(`during hour ${hour}`);
     }
   } else {
-    // Both are specific
     const formattedMin = minute.includes(',') || minute.includes('-') || minute.includes('/') 
       ? formatUnit(minute, 'minute') 
       : `at minute ${minute.padStart(2, '0')}`;
@@ -220,4 +218,20 @@ export function translateCronToEnglish(expr: string): string {
 
   const finalStr = desc.join(', ');
   return finalStr.charAt(0).toUpperCase() + finalStr.slice(1);
+}
+
+export function getRelativeTimeCountdown(targetDate: Date): string {
+  const now = Date.now();
+  const diffMs = targetDate.getTime() - now;
+  if (diffMs <= 0) return 'Just now';
+
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHr / 24);
+
+  if (diffSec < 60) return `in ${diffSec}s`;
+  if (diffMin < 60) return `in ${diffMin}m ${diffSec % 60}s`;
+  if (diffHr < 24) return `in ${diffHr}h ${diffMin % 60}m`;
+  return `in ${diffDays}d ${diffHr % 24}h`;
 }

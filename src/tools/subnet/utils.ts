@@ -98,9 +98,6 @@ export function calculateSubnet(ipStr: string, cidrInput: number): Result<Subnet
     else if (firstOctet >= 240 && firstOctet <= 255) ipClass = 'E (Experimental)';
 
     // Private address space detection
-    // Class A private: 10.0.0.0/8
-    // Class B private: 172.16.0.0/12
-    // Class C private: 192.168.0.0/16
     let isPrivate = false;
     if (firstOctet === 10) {
       isPrivate = true;
@@ -136,4 +133,51 @@ export function calculateSubnet(ipStr: string, cidrInput: number): Result<Subnet
       error: err instanceof Error ? err.message : 'Unknown subnet calculation error'
     };
   }
+}
+
+export interface ChildSubnet {
+  cidr: number;
+  networkAddress: string;
+  broadcastAddress: string;
+  firstUsable: string;
+  lastUsable: string;
+  usableHosts: number;
+}
+
+export function calculateSubnetSplits(
+  baseIp: string,
+  baseCidr: number,
+  targetCidr: number
+): Result<ChildSubnet[]> {
+  if (targetCidr <= baseCidr || targetCidr > 32) {
+    return { success: false, error: 'Target CIDR must be greater than base CIDR and <= 32.' };
+  }
+
+  const baseResult = calculateSubnet(baseIp, baseCidr);
+  if (!baseResult.success) return { success: false, error: baseResult.error };
+
+  const startLong = ipToLong(baseResult.data.networkAddress);
+  const endLong = ipToLong(baseResult.data.broadcastAddress);
+
+  const stepSize = Math.pow(2, 32 - targetCidr);
+  const children: ChildSubnet[] = [];
+
+  let current = startLong;
+  while (current <= endLong) {
+    const netAddr = longToIp(current);
+    const subRes = calculateSubnet(netAddr, targetCidr);
+    if (subRes.success) {
+      children.push({
+        cidr: targetCidr,
+        networkAddress: subRes.data.networkAddress,
+        broadcastAddress: subRes.data.broadcastAddress,
+        firstUsable: subRes.data.firstUsable,
+        lastUsable: subRes.data.lastUsable,
+        usableHosts: subRes.data.usableHosts,
+      });
+    }
+    current += stepSize;
+  }
+
+  return { success: true, data: children };
 }

@@ -44,12 +44,21 @@ export function CommandPalette() {
 
   return (
     <Modal open={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)}>
-      <div className="relative" onKeyDown={handleKeyDown}>
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
-        <input type="text" placeholder={`Search ${tools.length} tools...`} value={query} onChange={(e) => setQuery(e.target.value)}
-          className="w-full h-14 pl-12 pr-10 bg-transparent text-text-primary placeholder:text-text-muted focus:outline-none text-lg" autoFocus />
-        <button onClick={() => setCommandPaletteOpen(false)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors">
+      <div className="relative border-b border-border/80 pb-3" onKeyDown={handleKeyDown}>
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted pointer-events-none" />
+        <input
+          type="text"
+          placeholder={`Search ${tools.length} tools...`}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full h-12 pl-11 pr-10 bg-transparent text-text-primary placeholder:text-text-muted text-base font-medium border-0 outline-none focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0 shadow-none"
+          autoFocus
+        />
+        <button
+          onClick={() => setCommandPaletteOpen(false)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors cursor-pointer"
+          aria-label="Close command palette"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -98,5 +107,3 @@ export function CommandPalette() {
     </Modal>
   );
 }
-
-

@@ -3,17 +3,27 @@
 export type TargetLanguage = 
   | 'javascript-fetch'
   | 'javascript-axios'
+  | 'javascript-xhr'
   | 'python'
+  | 'python-httpx'
   | 'go'
   | 'rust'
   | 'php'
   | 'java'
+  | 'csharp'
   | 'ruby';
 
 export interface CurlConverterResult {
   success: boolean;
   code?: string;
   error?: string;
+}
+
+export interface CurlDetails {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  hasBody: boolean;
 }
 
 export async function convertCurl(curlCommand: string, target: TargetLanguage): Promise<CurlConverterResult> {
@@ -32,9 +42,13 @@ export async function convertCurl(curlCommand: string, target: TargetLanguage): 
       case 'javascript-axios':
         code = converter.toNodeAxios(curlCommand);
         break;
+      case 'javascript-xhr':
+        code = converter.toBrowser(curlCommand);
+        break;
       case 'python':
         code = converter.toPython(curlCommand);
         break;
+
       case 'go':
         code = converter.toGo(curlCommand);
         break;
@@ -46,6 +60,9 @@ export async function convertCurl(curlCommand: string, target: TargetLanguage): 
         break;
       case 'java':
         code = converter.toJava(curlCommand);
+        break;
+      case 'csharp':
+        code = converter.toCSharp(curlCommand);
         break;
       case 'ruby':
         code = converter.toRuby(curlCommand);
@@ -61,4 +78,42 @@ export async function convertCurl(curlCommand: string, target: TargetLanguage): 
       error: `Failed to parse cURL command: ${(error as Error).message}` 
     };
   }
+}
+
+export async function inspectCurl(curlCommand: string): Promise<CurlDetails> {
+  const urlMatch = curlCommand.match(/https?:\/\/[^\s"']+/);
+  const url = urlMatch ? urlMatch[0] : '';
+  
+  let method = 'GET';
+  if (/(-X|--request)\s+POST/i.test(curlCommand) || /(-d|--data|--data-raw|--data-binary)\s+/.test(curlCommand)) {
+    method = 'POST';
+  } else if (/(-X|--request)\s+PUT/i.test(curlCommand)) {
+    method = 'PUT';
+  } else if (/(-X|--request)\s+DELETE/i.test(curlCommand)) {
+    method = 'DELETE';
+  } else if (/(-X|--request)\s+PATCH/i.test(curlCommand)) {
+    method = 'PATCH';
+  } else if (/(-X|--request)\s+HEAD/i.test(curlCommand)) {
+    method = 'HEAD';
+  }
+
+  const headers: Record<string, string> = {};
+  const headerRegex = /(-H|--header)\s+["']?([^"'\n]+)["']?/gi;
+  let match: RegExpExecArray | null;
+  while ((match = headerRegex.exec(curlCommand)) !== null) {
+    const raw = match[2];
+    const parts = raw.split(':');
+    if (parts.length >= 2) {
+      headers[parts[0].trim()] = parts.slice(1).join(':').trim();
+    }
+  }
+
+  const hasBody = /(-d|--data|--data-raw|--data-binary)\s+/.test(curlCommand);
+
+  return {
+    url,
+    method,
+    headers,
+    hasBody,
+  };
 }
