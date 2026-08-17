@@ -35,6 +35,7 @@ import { useAppStore, type HistoryItem } from '@/lib/store/useStore';
 import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
 import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
 import { SplitPanesView } from '@/components/ui/SplitPanesView';
+import { useToolWorker } from '@/lib/workers/useToolWorker';
 
 const actions: { value: JsonAction; label: string }[] = [
   { value: 'beautify', label: 'Beautify' },
@@ -111,29 +112,44 @@ export default function Page() {
 
   const { state } = activeWorkspace;
   const { addHistoryItem } = useAppStore();
+  const { execute: runWorker } = useToolWorker();
 
-  const handleProcess = React.useCallback(() => {
+  const handleProcess = React.useCallback(async () => {
     if (!state.input.trim()) {
       updateActiveWorkspace({ output: '', error: null, parsedData: null });
       return;
     }
+
     try {
-      const processed = processJson(state.input, state.action, parseInt(state.indent, 10));
-      
+      // Offload heavy processing to Web Worker
+      const workerRes = await runWorker<string>({
+        type: 'json_process',
+        input: state.input,
+        options: {
+          action: state.action,
+          indent: parseInt(state.indent, 10),
+        },
+      });
+
+      if (!workerRes.success || !workerRes.data) {
+        throw new Error(workerRes.error || 'Failed to process JSON');
+      }
+
+      const processed = workerRes.data;
       let newParsedData: unknown | null = null;
       const parsed = parseJson(processed);
       if (parsed.success) {
         newParsedData = parsed.data;
       }
-      
+
       updateActiveWorkspace({ output: processed, error: null, parsedData: newParsedData });
-      
+
       // Dynamic Zustand history log
       addHistoryItem('json', state.input.slice(0, 1000), processed.slice(0, 1000), { action: state.action });
     } catch (e) {
       updateActiveWorkspace({ error: (e as Error).message, output: '', parsedData: null });
     }
-  }, [state.input, state.action, state.indent, addHistoryItem, updateActiveWorkspace]);
+  }, [state.input, state.action, state.indent, addHistoryItem, updateActiveWorkspace, runWorker]);
 
   React.useEffect(() => {
     const t = setTimeout(handleProcess, 100);
