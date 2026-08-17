@@ -40,9 +40,10 @@ export function parseUrlString(rawUrl: string): Result<ParsedUrlData> {
     const parsed = new URL(formatted);
     const queryParams: QueryParam[] = [];
 
+    let paramIndex = 0;
     parsed.searchParams.forEach((value, key) => {
       queryParams.push({
-        id: Math.random().toString(36).substring(2, 9),
+        id: `param-${++paramIndex}-${key}`,
         key,
         value,
         enabled: true,
