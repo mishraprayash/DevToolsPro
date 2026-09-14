@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FaGithub } from 'react-icons/fa';
 import { useAppStore } from '@/lib/store/useStore';
-import { tools, categories, type ToolCategory } from '@/tools/registry';
+import { tools, type ToolCategory } from '@/tools/registry';
 
 const categoryLinks: { cat: ToolCategory; ids: string[] }[] = [
   { cat: 'Formatting', ids: ['json', 'yaml-json', 'html-preview', 'css-sandbox'] },
@@ -11,10 +11,12 @@ const categoryLinks: { cat: ToolCategory; ids: string[] }[] = [
   { cat: 'Security', ids: ['jwt', 'hash', 'password', 'aes'] },
 ];
 
+const toolMap = new Map(tools.map(t => [t.id, t]));
+
 export function Footer() {
   const { setFeedbackOpen } = useAppStore();
 
-  const getTools = (ids: string[]) => ids.map(id => tools.find(t => t.id === id)).filter(Boolean) as typeof tools;
+  const getTools = (ids: string[]) => ids.map(id => toolMap.get(id)).filter(Boolean) as typeof tools;
 
   return (
     <footer className="border-t border-border bg-bg-secondary">
