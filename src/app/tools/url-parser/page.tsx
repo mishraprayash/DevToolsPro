@@ -56,8 +56,9 @@ export default function UrlParserPage() {
   // Add new param row
   const handleAddParam = () => {
     if (!parsed) return;
+    const nextIdx = parsed.queryParams.length + 1;
     const newParam: QueryParam = {
-      id: `param-${Date.now()}-${parsed.queryParams.length}`,
+      id: `param-${nextIdx}`,
       key: '',
       value: '',
       enabled: true,
