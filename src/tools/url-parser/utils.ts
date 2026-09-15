@@ -24,6 +24,48 @@ export interface ParsedUrlData {
   queryParams: QueryParam[];
 }
 
+function looksLikeDomain(input: string): boolean {
+  if (input.startsWith('//')) {
+    return true;
+  }
+  if (input.startsWith('/') || input.startsWith('.')) {
+    return false;
+  }
+
+  const hostWithAuthAndPort = input.split(/[/?#]/)[0];
+  if (!hostWithAuthAndPort) {
+    return false;
+  }
+
+  const hostWithPort = hostWithAuthAndPort.includes('@')
+    ? hostWithAuthAndPort.split('@').pop()!
+    : hostWithAuthAndPort;
+
+  if (hostWithPort.startsWith('[')) {
+    const closingBracketIndex = hostWithPort.indexOf(']');
+    if (closingBracketIndex > 1) {
+      return true;
+    }
+  }
+
+  const hostname = hostWithPort.split(':')[0].toLowerCase();
+  if (!hostname) {
+    return false;
+  }
+
+  if (hostname === 'localhost') {
+    return true;
+  }
+
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+  if (ipv4Regex.test(hostname)) {
+    return true;
+  }
+
+  const domainRegex = /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i;
+  return domainRegex.test(hostname);
+}
+
 export function parseUrlString(rawUrl: string): Result<ParsedUrlData> {
   const trimmed = rawUrl.trim();
   if (!trimmed) {
@@ -33,7 +75,11 @@ export function parseUrlString(rawUrl: string): Result<ParsedUrlData> {
   let formatted = trimmed;
   // If no protocol is provided, prefix https:// for parsing purposes if it looks like a domain
   if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//i.test(formatted)) {
-    formatted = `https://${formatted}`;
+    if (formatted.startsWith('//')) {
+      formatted = `https:${formatted}`;
+    } else if (looksLikeDomain(formatted)) {
+      formatted = `https://${formatted}`;
+    }
   }
 
   try {

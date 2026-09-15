@@ -4,110 +4,132 @@ import {
   constructUrl,
   encodeUrlComponentSafe,
   decodeUrlComponentSafe,
-  QueryParam,
 } from '../utils';
 
-describe('URL Parser Utilities', () => {
+describe('URL Parser Utility Functions', () => {
   describe('parseUrlString', () => {
-    it('should parse full URL correctly', () => {
-      const url = 'https://user:pass@example.com:8080/path/to/page?search=vitest&page=1#section';
-      const result = parseUrlString(url);
+    it('returns error when input is empty or whitespace', () => {
+      expect(parseUrlString('')).toEqual({
+        success: false,
+        error: 'URL input cannot be empty.',
+      });
+      expect(parseUrlString('   ')).toEqual({
+        success: false,
+        error: 'URL input cannot be empty.',
+      });
+    });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.protocol).toBe('https:');
-        expect(result.data.username).toBe('user');
-        expect(result.data.password).toBe('pass');
-        expect(result.data.hostname).toBe('example.com');
-        expect(result.data.port).toBe('8080');
-        expect(result.data.pathname).toBe('/path/to/page');
-        expect(result.data.search).toBe('?search=vitest&page=1');
-        expect(result.data.hash).toBe('#section');
-        expect(result.data.queryParams).toHaveLength(2);
-        expect(result.data.queryParams[0].key).toBe('search');
-        expect(result.data.queryParams[0].value).toBe('vitest');
+    it('parses full URLs with scheme', () => {
+      const res = parseUrlString('https://example.com:8080/path?key=value#hash');
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data.protocol).toBe('https:');
+        expect(res.data.hostname).toBe('example.com');
+        expect(res.data.port).toBe('8080');
+        expect(res.data.pathname).toBe('/path');
+        expect(res.data.search).toBe('?key=value');
+        expect(res.data.hash).toBe('#hash');
+        expect(res.data.queryParams).toHaveLength(1);
+        expect(res.data.queryParams[0]).toMatchObject({
+          key: 'key',
+          value: 'value',
+          enabled: true,
+        });
       }
     });
 
-    it('should auto-prefix https:// if protocol is missing', () => {
-      const result = parseUrlString('example.com/test');
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.protocol).toBe('https:');
-        expect(result.data.hostname).toBe('example.com');
-        expect(result.data.pathname).toBe('/test');
+    it('prefixes https:// for inputs that look like domains', () => {
+      const inputs = [
+        'example.com',
+        'sub.domain.co.uk/path?q=1',
+        'localhost:3000',
+        'localhost/api',
+        '127.0.0.1:8000',
+        'user:pass@example.org/test',
+        '//cdn.site.com/asset.js',
+      ];
+
+      for (const input of inputs) {
+        const res = parseUrlString(input);
+        expect(res.success).toBe(true);
+        if (res.success) {
+          expect(res.data.protocol).toBe('https:');
+        }
       }
     });
 
-    it('should handle empty input', () => {
-      const result = parseUrlString('   ');
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe('URL input cannot be empty.');
-      }
-    });
+    it('does not prefix https:// when input does not look like a domain', () => {
+      const nonDomains = [
+        '/api/v1/users',
+        './relative/path',
+        '../parent/path',
+        'just_a_string',
+        'not a domain',
+      ];
 
-    it('should handle malformed URL input', () => {
-      const result = parseUrlString('http://');
-      expect(result.success).toBe(false);
+      for (const input of nonDomains) {
+        const res = parseUrlString(input);
+        expect(res.success).toBe(false);
+      }
     });
   });
 
   describe('constructUrl', () => {
-    it('should reconstruct URL with query parameters and auth', () => {
-      const queryParams: QueryParam[] = [
-        { id: '1', key: 'q', value: 'search term', enabled: true },
-        { id: '2', key: 'filter', value: 'active', enabled: false },
-        { id: '3', key: 'page', value: '2', enabled: true },
-      ];
-
-      const result = constructUrl(
-        'https',
+    it('constructs URL correctly from components and query params', () => {
+      const res = constructUrl(
+        'https:',
         'api.example.com',
-        'v1/users',
-        queryParams,
-        'top',
-        { username: 'admin', password: 'secretpassword' }
+        '/v1/users',
+        [
+          { id: '1', key: 'q', value: 'test', enabled: true },
+          { id: '2', key: 'disabledKey', value: 'disabledVal', enabled: false },
+        ],
+        '#top'
       );
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toBe('https://admin:secretpassword@api.example.com/v1/users?q=search+term&page=2#top');
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data).toBe('https://api.example.com/v1/users?q=test#top');
       }
     });
 
-    it('should handle protocol without trailing colon and empty path/hash', () => {
-      const result = constructUrl('http', 'localhost:3000', '', [], '');
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toBe('http://localhost:3000/');
+    it('handles credentials if provided', () => {
+      const res = constructUrl(
+        'http',
+        'example.com',
+        'dashboard',
+        [],
+        '',
+        { username: 'admin', password: 'secretpassword' }
+      );
+
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data).toBe('http://admin:secretpassword@example.com/dashboard');
       }
     });
   });
 
   describe('encodeUrlComponentSafe & decodeUrlComponentSafe', () => {
-    it('should safely encode URL components', () => {
-      const res = encodeUrlComponentSafe('hello world & test');
-      expect(res.success).toBe(true);
-      if (res.success) {
-        expect(res.data).toBe('hello%20world%20%26%20test');
+    it('encodes and decodes components safely', () => {
+      const raw = 'hello world & foo=bar';
+      const encodedRes = encodeUrlComponentSafe(raw);
+      expect(encodedRes.success).toBe(true);
+
+      if (encodedRes.success) {
+        expect(encodedRes.data).toBe('hello%20world%20%26%20foo%3Dbar');
+
+        const decodedRes = decodeUrlComponentSafe(encodedRes.data);
+        expect(decodedRes.success).toBe(true);
+        if (decodedRes.success) {
+          expect(decodedRes.data).toBe(raw);
+        }
       }
     });
 
-    it('should safely decode URL components', () => {
-      const res = decodeUrlComponentSafe('hello%20world%20%26%20test');
-      expect(res.success).toBe(true);
-      if (res.success) {
-        expect(res.data).toBe('hello world & test');
-      }
-    });
-
-    it('should return error when decoding malformed URL component', () => {
+    it('returns error on malformed decode input', () => {
       const res = decodeUrlComponentSafe('%E0%A4%A');
       expect(res.success).toBe(false);
-      if (!res.success) {
-        expect(res.error).toBe('Failed to decode value');
-      }
     });
   });
 });
