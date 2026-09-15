@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import Editor from '@monaco-editor/react';
+import { CodeEditor as Editor } from '@/components/ui/CodeEditor';
 import { ArrowLeftRight, Code } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';

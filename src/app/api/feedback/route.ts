@@ -92,13 +92,9 @@ export async function POST(request: Request) {
       });
 
       if (!emailResponse.ok) {
-        const errText = await emailResponse.text();
-        console.error('Failed to send email via Resend:', errText);
-        // Fallback: log to console but still succeed locally
-        console.log('Logged feedback (Resend API failed):', feedbackData);
         return NextResponse.json({
           success: true,
-          message: 'Feedback received, but email delivery failed. Saved in server logs.',
+          message: 'Feedback received, but email delivery failed.',
         });
       }
 
@@ -108,22 +104,11 @@ export async function POST(request: Request) {
       });
     }
 
-    // Default mock behavior if no Resend API key is configured
-    console.log('\n--- NEW FEEDBACK RECEIVED ---');
-    console.log(`Sender:    ${feedbackData.name} (${feedbackData.email})`);
-    console.log(`Type:      ${feedbackData.type.toUpperCase()}`);
-    console.log(`Rating:    ${feedbackData.rating}/5 Stars`);
-    console.log(`Message:   ${feedbackData.message}`);
-    console.log(`Timestamp: ${feedbackData.timestamp}`);
-    console.log('------------------------------\n');
-
     return NextResponse.json({
       success: true,
-      message: 'Feedback logged successfully on Next.js server console!',
-      warning: 'Configure RESEND_API_KEY in your env file to receive actual email alerts.',
+      message: 'Feedback received successfully!',
     });
   } catch (error) {
-    console.error('Error in feedback route handler:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error while processing feedback' },
       { status: 500 }

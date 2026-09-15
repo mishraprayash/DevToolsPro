@@ -1,4 +1,3 @@
-import { format } from 'sql-formatter';
 
 export type SqlDialect = 
   | 'sql' 
@@ -29,12 +28,13 @@ export interface SqlQueryStats {
   tablesDetected: string[];
 }
 
-export function formatSql(query: string, options: SqlFormatterOptions): { success: true; data: string } | { success: false; error: string } {
+export async function formatSql(query: string, options: SqlFormatterOptions): Promise<{ success: true; data: string } | { success: false; error: string }> {
   try {
     if (!query.trim()) {
       return { success: true, data: '' };
     }
 
+    const { format } = await import('sql-formatter');
     const formatted = format(query, {
       language: options.language,
       keywordCase: options.keywordCase,
