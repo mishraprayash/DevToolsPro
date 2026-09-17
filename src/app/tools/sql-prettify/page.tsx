@@ -1,7 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import Editor from '@monaco-editor/react';
+import dynamic from 'next/dynamic';
+
+const Editor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full flex items-center justify-center text-text-muted text-xs font-mono">Loading editor...</div>,
+});
 import { Database, RefreshCcw, Minimize2, BarChart2, Table } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';
@@ -39,8 +44,8 @@ export default function Page() {
     useSpaces: true,
   });
 
-  const handleFormat = React.useCallback(() => {
-    const res = formatSql(input, options);
+  const handleFormat = React.useCallback(async () => {
+    const res = await formatSql(input, options);
     if (res.success) {
       setOutput(res.data);
       setError(null);

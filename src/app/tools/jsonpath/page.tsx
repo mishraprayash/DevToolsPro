@@ -1,7 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import Editor from '@monaco-editor/react';
+import dynamic from 'next/dynamic';
+
+const Editor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full flex items-center justify-center text-text-muted text-xs font-mono">Loading editor...</div>,
+});
 import { Search, Code, Braces } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { CopyButton } from '@/components/ui/CopyButton';
@@ -50,13 +55,17 @@ export default function Page() {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const res = evaluateJsonPath(jsonInput, path);
-    if (res.success) {
-      setOutput(res.data);
-      setError(null);
-    } else {
-      setError(res.error);
-    }
+    let cancelled = false;
+    evaluateJsonPath(jsonInput, path).then((res) => {
+      if (cancelled) return;
+      if (res.success) {
+        setOutput(res.data);
+        setError(null);
+      } else {
+        setError(res.error);
+      }
+    });
+    return () => { cancelled = true; };
   }, [jsonInput, path]);
 
   return (

@@ -64,15 +64,25 @@ export default function Page() {
   const [bsResult, setBsResult] = React.useState<NepaliDateObj | null>(null);
   const [adToBsError, setAdToBsError] = React.useState<string | null>(null);
 
-  // Dynamic days capping based on selected BS Year & Month
-  const availableBsDays = React.useMemo(() => {
+  const [availableBsDays, setAvailableBsDays] = React.useState<{ value: string; label: string }[]>(
+    Array.from({ length: 30 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))
+  );
+
+  React.useEffect(() => {
     const y = parseInt(bsYear, 10) || 2080;
     const m = parseInt(bsMonth, 10) || 1;
-    const daysCount = getBsMonthDays(y, m);
-    return Array.from({ length: daysCount }, (_, i) => ({
-      value: String(i + 1),
-      label: String(i + 1)
-    }));
+    let cancelled = false;
+    getBsMonthDays(y, m).then((daysCount) => {
+      if (!cancelled) {
+        setAvailableBsDays(
+          Array.from({ length: daysCount }, (_, i) => ({
+            value: String(i + 1),
+            label: String(i + 1)
+          }))
+        );
+      }
+    });
+    return () => { cancelled = true; };
   }, [bsYear, bsMonth]);
 
   // Adjust BS Day if it exceeds maximum month days
@@ -85,12 +95,12 @@ export default function Page() {
   }, [availableBsDays, bsDay]);
 
   // Execute BS to AD conversion
-  const handleBsToAd = React.useCallback(() => {
+  const handleBsToAd = React.useCallback(async () => {
     const y = parseInt(bsYear, 10);
     const m = parseInt(bsMonth, 10);
     const d = parseInt(bsDay, 10);
 
-    const res = convertBsToAd({ year: y, month: m, day: d });
+    const res = await convertBsToAd({ year: y, month: m, day: d });
 
     if (res.success) {
       setAdResult(res.date);
@@ -106,7 +116,7 @@ export default function Page() {
   }, [handleBsToAd]);
 
   // Execute AD to BS conversion
-  const handleAdToBs = React.useCallback(() => {
+  const handleAdToBs = React.useCallback(async () => {
     if (!adDateStr) {
       setBsResult(null);
       return;
@@ -117,7 +127,7 @@ export default function Page() {
     const m = parseInt(parts[1], 10) - 1; // JS Date Month is 0-indexed
     const d = parseInt(parts[2], 10);
 
-    const res = convertAdToBs(new Date(y, m, d));
+    const res = await convertAdToBs(new Date(y, m, d));
 
     if (res.success) {
       setBsResult(res.bsDate);
