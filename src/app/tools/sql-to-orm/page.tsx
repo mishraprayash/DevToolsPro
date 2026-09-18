@@ -8,8 +8,6 @@ const Editor = dynamic(() => import('@monaco-editor/react'), {
   loading: () => <div className="h-full w-full flex items-center justify-center text-text-muted text-xs font-mono">Loading editor...</div>,
 });
 import { Database, Code, Braces } from 'lucide-react';
-
-const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
