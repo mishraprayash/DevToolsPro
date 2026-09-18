@@ -18,7 +18,12 @@ import {
   MarkerType
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import Editor from '@monaco-editor/react';
+import dynamic from 'next/dynamic';
+
+const Editor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full flex items-center justify-center text-text-muted text-xs font-mono">Loading editor...</div>,
+});
 
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';

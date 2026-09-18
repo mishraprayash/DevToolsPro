@@ -138,12 +138,21 @@ export default function Page() {
   const { state } = activeWorkspace;
   const { addHistoryItem } = useAppStore();
 
-  const validation = React.useMemo(() => {
-    if (!state.input.trim() || state.mode !== 'xml') return null;
-    return validateXml(state.input);
+  const [validation, setValidation] = React.useState<{ valid: boolean; error?: string; line?: number } | null>(null);
+
+  React.useEffect(() => {
+    if (!state.input.trim() || state.mode !== 'xml') {
+      setValidation(null);
+      return;
+    }
+    let cancelled = false;
+    validateXml(state.input).then((res) => {
+      if (!cancelled) setValidation(res);
+    });
+    return () => { cancelled = true; };
   }, [state.input, state.mode]);
 
-  const handleProcess = React.useCallback(() => {
+  const handleProcess = React.useCallback(async () => {
     if (!state.input.trim()) {
       updateActiveWorkspace({ output: '' });
       return;
@@ -160,8 +169,8 @@ export default function Page() {
       };
 
       const result = state.mode === 'xml'
-        ? xmlToJson(state.input, opts)
-        : jsonToXml(state.input, opts);
+        ? await xmlToJson(state.input, opts)
+        : await jsonToXml(state.input, opts);
 
       updateActiveWorkspace({ output: result });
 

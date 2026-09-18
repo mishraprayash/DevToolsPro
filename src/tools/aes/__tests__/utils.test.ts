@@ -18,10 +18,8 @@ describe('AES Utilities', () => {
       'utf8',
       'base64'
     );
-    console.log(encryptResult);
     expect(encryptResult.success).toBe(true);
     if (!encryptResult.success) {
-      console.error(encryptResult.error);
       return;
     }
     expect(encryptResult.data).toBeTruthy();
@@ -54,7 +52,6 @@ describe('AES Utilities', () => {
       'utf8',
       'base64'
     );
-    console.log(encryptResult);
     expect(encryptResult.success).toBe(true);
   });
 
