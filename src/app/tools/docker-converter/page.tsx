@@ -2,6 +2,11 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
+
+const Editor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full flex items-center justify-center text-text-muted text-xs font-mono">Loading editor...</div>,
+});
 import { ArrowLeftRight, Code } from 'lucide-react';
 
 const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
