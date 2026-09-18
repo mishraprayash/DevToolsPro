@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { escapeHtml } from './utils';
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +34,12 @@ export async function POST(request: Request) {
     const emailTo = process.env.FEEDBACK_EMAIL_TO;
 
     if (resendApiKey) {
+      // Escape HTML in user-supplied values before rendering in email
+      const escapedName = escapeHtml(feedbackData.name);
+      const escapedEmail = escapeHtml(feedbackData.email);
+      const escapedType = escapeHtml(feedbackData.type);
+      const escapedMessage = escapeHtml(feedbackData.message);
+
       // Send real email using Resend API via zero-dependency native fetch
       const emailBody = {
         from: 'DevTools Pro Feedback <feedback@resend.dev>', // Resend sandbox default from address
@@ -49,15 +56,15 @@ export async function POST(request: Request) {
               <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                 <tr>
                   <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: bold; color: #4b5563; width: 120px;">Sender:</td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${feedbackData.name}</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${escapedName}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: bold; color: #4b5563;">Email:</td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${feedbackData.email}</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${escapedEmail}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: bold; color: #4b5563;">Type:</td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;"><span style="background-color: #ede9fe; color: #6d28d9; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase;">${feedbackData.type}</span></td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;"><span style="background-color: #ede9fe; color: #6d28d9; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase;">${escapedType}</span></td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: bold; color: #4b5563;">Rating:</td>
@@ -71,7 +78,7 @@ export async function POST(request: Request) {
 
               <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #8b5cf6; margin-top: 10px;">
                 <h4 style="margin: 0 0 10px 0; color: #4b5563; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Message</h4>
-                <p style="margin: 0; line-height: 1.6; white-space: pre-wrap; font-size: 15px;">${feedbackData.message}</p>
+                <p style="margin: 0; line-height: 1.6; white-space: pre-wrap; font-size: 15px;">${escapedMessage}</p>
               </div>
             </div>
             

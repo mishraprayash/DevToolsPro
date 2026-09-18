@@ -2,9 +2,14 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
+<<<<<<< HEAD
 
 const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
+=======
+>>>>>>> origin/main
 import { Database, RefreshCcw, Minimize2, BarChart2, Table } from 'lucide-react';
+
+const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
