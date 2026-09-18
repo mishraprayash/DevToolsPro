@@ -2,11 +2,6 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
-<<<<<<< HEAD
-
-const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
-=======
->>>>>>> origin/main
 import { Search, Code, Braces } from 'lucide-react';
 
 const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
