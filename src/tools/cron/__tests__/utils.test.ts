@@ -7,62 +7,82 @@ import {
 
 describe('Cron Utilities', () => {
   describe('getNextRuns', () => {
-    it('should parse valid minute-based cron expression and return next runs', () => {
-      const res = getNextRuns('*/5 * * * *', 5);
+    it('should parse 5-field cron expression and return next runs', () => {
+      const res = getNextRuns('*/15 * * * *', 3);
       expect(res.success).toBe(true);
       if (res.success) {
-        expect(res.dates).toHaveLength(5);
+        expect(res.dates).toHaveLength(3);
         expect(res.dates[0]).toBeInstanceOf(Date);
       }
     });
 
-    it('should parse valid 6-field cron expression with seconds', () => {
-      const res = getNextRuns('*/10 * * * * *', 3);
+    it('should parse 6-field cron expression with seconds', () => {
+      const res = getNextRuns('*/10 * * * * *', 2); // Every 10 seconds
       expect(res.success).toBe(true);
       if (res.success) {
-        expect(res.dates).toHaveLength(3);
+        expect(res.dates).toHaveLength(2);
       }
     });
 
-    it('should return error for invalid field counts or malformed input', () => {
-      expect(getNextRuns('0 0 *').success).toBe(false);
-      expect(getNextRuns('0 0 * * * * * *').success).toBe(false);
+    it('should handle ranges and step values in fields', () => {
+      const res = getNextRuns('*/5 * * * *', 2);
+      expect(res.success).toBe(true);
+    });
+
+    it('should fail on invalid expression field count', () => {
+      const res = getNextRuns('* * *');
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.error).toBe('Cron expression must have exactly 5 or 6 fields.');
+      }
     });
   });
 
   describe('translateCronToEnglish', () => {
-    it('should translate common cron expressions to English', () => {
-      expect(translateCronToEnglish('0 0 * * *')).toContain('at 00:00');
-      expect(translateCronToEnglish('* * * * *')).toContain('Every minute');
-      expect(translateCronToEnglish('0 12 * * 1-5')).toContain('from Monday through Friday');
+    it('should translate basic wildcard cron', () => {
+      const english = translateCronToEnglish('* * * * *');
+      expect(english).toContain('Every minute, every day of the week');
+    });
+
+    it('should translate cron with minute and hour', () => {
+      const english = translateCronToEnglish('30 14 * * *');
+      expect(english).toContain('At minute 30 of at 14:00, every day of the week');
+    });
+
+    it('should translate cron with step and list', () => {
+      const english = translateCronToEnglish('*/5 8,12 * * 1-5');
+      expect(english).toContain('Every 5 minutes');
+      expect(english).toContain('at hour(s): 8,12');
+      expect(english).toContain('from Monday through Friday');
     });
 
     it('should translate 6-field cron with seconds', () => {
-      const result = translateCronToEnglish('30 0 12 * * *');
-      expect(result).toBeDefined();
-      expect(result).not.toContain('Invalid');
+      const english = translateCronToEnglish('15 * * * * *');
+      expect(english).toContain('At second 15');
     });
 
-    it('should return error string for invalid field length', () => {
-      expect(translateCronToEnglish('invalid')).toContain('Invalid cron expression');
+    it('should handle invalid cron input', () => {
+      const english = translateCronToEnglish('invalid cron');
+      expect(english).toBe('Invalid cron expression: must have exactly 5 or 6 fields');
     });
   });
 
   describe('getRelativeTimeCountdown', () => {
-    it('should format future dates into human relative time strings', () => {
+    it('should format future dates into human readable countdowns', () => {
       const now = Date.now();
-      const future30s = new Date(now + 30 * 1000);
-      const future5m = new Date(now + 5 * 60 * 1000);
-      const future2h = new Date(now + 2 * 3600 * 1000);
+      const targetSec = new Date(now + 30 * 1000 + 500);
+      const targetMin = new Date(now + (5 * 60 + 10) * 1000 + 500);
+      const targetHr = new Date(now + (2 * 3600 + 15 * 60) * 1000 + 500);
+      const targetDays = new Date(now + (3 * 86400 + 4 * 3600) * 1000 + 500);
 
-      expect(getRelativeTimeCountdown(future30s)).toMatch(/in \d+s/);
-      expect(getRelativeTimeCountdown(future5m)).toMatch(/in 5m \d+s/);
-      expect(getRelativeTimeCountdown(future2h)).toMatch(/in 2h 0m/);
+      expect(getRelativeTimeCountdown(targetSec)).toBe('in 30s');
+      expect(getRelativeTimeCountdown(targetMin)).toBe('in 5m 10s');
+      expect(getRelativeTimeCountdown(targetHr)).toBe('in 2h 15m');
+      expect(getRelativeTimeCountdown(targetDays)).toBe('in 3d 4h');
     });
 
-    it('should return "Just now" for past dates', () => {
-      const pastDate = new Date(Date.now() - 10000);
-      expect(getRelativeTimeCountdown(pastDate)).toBe('Just now');
+    it('should return "Just now" for past or immediate dates', () => {
+      expect(getRelativeTimeCountdown(new Date(Date.now() - 1000))).toBe('Just now');
     });
   });
 });

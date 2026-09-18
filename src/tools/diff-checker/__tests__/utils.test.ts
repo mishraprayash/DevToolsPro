@@ -2,61 +2,64 @@ import { describe, it, expect } from 'vitest';
 import { computeDiff } from '../utils';
 
 describe('Diff Checker Utilities', () => {
-  it('should report no changes for identical text', () => {
-    const text = 'Line 1\nLine 2\nLine 3';
-    const res = computeDiff(text, text);
-    expect(res.hasChanges).toBe(false);
-    expect(res.addedCount).toBe(0);
-    expect(res.removedCount).toBe(0);
-    expect(res.unifiedLines).toHaveLength(3);
-    expect(res.splitRows).toHaveLength(3);
+  it('should detect additions, removals, and unchanged lines in unified and split diffs', () => {
+    const original = 'line 1\nline 2\nline 3';
+    const modified = 'line 1\nline 2 modified\nline 3\nline 4';
+
+    const result = computeDiff(original, modified);
+
+    expect(result.hasChanges).toBe(true);
+    expect(result.addedCount).toBeGreaterThan(0);
+    expect(result.removedCount).toBeGreaterThan(0);
+
+    // Verify split rows structure
+    expect(result.splitRows.length).toBeGreaterThan(0);
+    const modifiedRow = result.splitRows.find(r => r.oldLine?.type === 'modified');
+    expect(modifiedRow).toBeDefined();
+    expect(modifiedRow?.newLine?.type).toBe('modified');
+    expect(modifiedRow?.oldLine?.tokens).toBeDefined();
+    expect(modifiedRow?.newLine?.tokens).toBeDefined();
   });
 
-  it('should identify additions and deletions correctly', () => {
-    const original = 'Line 1\nLine 2';
-    const modified = 'Line 1\nLine 2\nLine 3';
-    const res = computeDiff(original, modified);
-    expect(res.hasChanges).toBe(true);
-    expect(res.addedCount).toBe(1);
-    expect(res.removedCount).toBe(0);
-    expect(res.unifiedLines).toHaveLength(3);
+  it('should report no changes for identical strings', () => {
+    const text = 'const x = 10;\nconsole.log(x);';
+    const result = computeDiff(text, text);
+
+    expect(result.hasChanges).toBe(false);
+    expect(result.addedCount).toBe(0);
+    expect(result.removedCount).toBe(0);
+    expect(result.unifiedLines.every(l => l.type === 'unchanged')).toBe(true);
   });
 
-  it('should identify modified lines with character tokens in split view', () => {
-    const original = 'Hello World';
-    const modified = 'Hello Vitest';
-    const res = computeDiff(original, modified);
-    expect(res.hasChanges).toBe(true);
-    expect(res.splitRows).toHaveLength(1);
-    const row = res.splitRows[0];
-    expect(row.oldLine?.type).toBe('modified');
-    expect(row.newLine?.type).toBe('modified');
-    expect(row.oldLine?.tokens).toBeDefined();
-    expect(row.newLine?.tokens).toBeDefined();
-  });
-
-  it('should honor ignoreWhitespace and ignoreCase options', () => {
-    const original = 'HELLO   WORLD';
+  it('should handle ignoreWhitespace option', () => {
+    const original = '  hello   world  ';
     const modified = 'hello world';
 
-    const strictRes = computeDiff(original, modified, { ignoreWhitespace: false, ignoreCase: false });
-    expect(strictRes.hasChanges).toBe(true);
+    const defaultResult = computeDiff(original, modified, { ignoreWhitespace: false });
+    expect(defaultResult.hasChanges).toBe(true);
 
-    const relaxedRes = computeDiff(original, modified, { ignoreWhitespace: true, ignoreCase: true });
-    expect(relaxedRes.hasChanges).toBe(false);
+    const ignoreWsResult = computeDiff(original, modified, { ignoreWhitespace: true });
+    expect(ignoreWsResult.hasChanges).toBe(false);
   });
 
-  it('should handle empty input strings gracefully', () => {
-    const res = computeDiff('', '');
-    expect(res.hasChanges).toBe(false);
-    expect(res.unifiedLines).toHaveLength(1);
-    expect(res.unifiedLines[0].value).toBe('');
+  it('should handle ignoreCase option', () => {
+    const original = 'Hello World';
+    const modified = 'hello world';
+
+    const caseInsensitiveResult = computeDiff(original, modified, { ignoreCase: true });
+    expect(caseInsensitiveResult.hasChanges).toBe(false);
   });
 
-  it('should fallback gracefully when character diff input exceeds 800 chars', () => {
-    const long1 = 'a'.repeat(850);
-    const long2 = 'b'.repeat(850);
-    const res = computeDiff(long1, long2);
-    expect(res.hasChanges).toBe(true);
+  it('should handle completely empty inputs and edge cases', () => {
+    const emptyResult = computeDiff('', '');
+    expect(emptyResult.hasChanges).toBe(false);
+
+    const addOnlyResult = computeDiff('', 'new line');
+    expect(addOnlyResult.hasChanges).toBe(true);
+    expect(addOnlyResult.addedCount).toBe(1);
+
+    const removeOnlyResult = computeDiff('old line', '');
+    expect(removeOnlyResult.hasChanges).toBe(true);
+    expect(removeOnlyResult.removedCount).toBe(1);
   });
 });

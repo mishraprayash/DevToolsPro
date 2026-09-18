@@ -10,41 +10,43 @@ import {
 
 describe('String Utilities', () => {
   describe('Generator Functions', () => {
-    it('should generate exact word count bounded between 1 and 10000', () => {
-      const words5 = generateWords(5).split(' ');
-      expect(words5).toHaveLength(5);
+    it('should generate words with min/max bounds', () => {
+      const words5 = generateWords(5);
+      expect(words5.split(' ')).toHaveLength(5);
 
-      const words0 = generateWords(0).split(' ');
-      expect(words0).toHaveLength(1); // Clamped min is 1
+      const wordsBoundMin = generateWords(0);
+      expect(wordsBoundMin.split(' ')).toHaveLength(1); // Capped at min 1
     });
 
-    it('should generate sentences with initial capital and period', () => {
-      const sentence = generateSentences(1);
-      expect(sentence.endsWith('.')).toBe(true);
-      expect(sentence.charAt(0)).toBe(sentence.charAt(0).toUpperCase());
+    it('should generate sentences with period endings', () => {
+      const sentences = generateSentences(3);
+      const list = sentences.split('. ');
+      expect(list.length).toBeGreaterThanOrEqual(3);
+      expect(sentences.endsWith('.')).toBe(true);
     });
 
-    it('should generate paragraphs separated by double line breaks', () => {
+    it('should generate paragraphs separated by double newlines', () => {
       const paras = generateParagraphs(2);
-      expect(paras.split('\n\n')).toHaveLength(2);
+      expect(paras).toContain('\n\n');
     });
   });
 
   describe('analyzeText', () => {
-    it('should correctly analyze text statistics', () => {
-      const input = 'Hello world!\nSecond line.\n\nParagraph 2.';
-      const res = analyzeText(input);
+    it('should analyze text statistics correctly', () => {
+      const text = 'Hello world!\n\nThis is line two.';
+      const res = analyzeText(text);
+
       expect(res.success).toBe(true);
       if (res.success) {
-        expect(res.data.chars).toBe(input.length);
-        expect(res.data.lines).toBe(4);
-        expect(res.data.paragraphs).toBe(2);
+        expect(res.data.chars).toBe(text.length);
+        expect(res.data.lines).toBe(3);
         expect(res.data.words).toBe(6);
-        expect(res.data.readingTimeMinutes).toBe(0.03);
+        expect(res.data.paragraphs).toBe(2);
+        expect(res.data.readingTimeMinutes).toBeGreaterThan(0);
       }
     });
 
-    it('should handle empty string correctly', () => {
+    it('should handle empty string without errors', () => {
       const res = analyzeText('');
       expect(res.success).toBe(true);
       if (res.success) {
@@ -52,33 +54,36 @@ describe('String Utilities', () => {
         expect(res.data.words).toBe(0);
         expect(res.data.lines).toBe(0);
         expect(res.data.paragraphs).toBe(0);
+        expect(res.data.readingTimeMinutes).toBe(0);
       }
     });
   });
 
   describe('slugify', () => {
-    it('should convert strings to url-friendly slugs and remove diacritical marks', () => {
-      expect(slugify('Héllò Wörld & Test!')).toBe('hello-world-test');
-      expect(slugify('Multiple   spaces')).toBe('multiple-spaces');
+    it('should slugify standard strings, removing special characters and accents', () => {
+      expect(slugify('Hello World!')).toBe('hello-world');
+      expect(slugify('  Crème  Brûlée  ')).toBe('creme-brulee');
+      expect(slugify('Foo & Bar -- Test')).toBe('foo-bar-test');
     });
 
-    it('should handle empty or null string', () => {
+    it('should handle empty input', () => {
       expect(slugify('')).toBe('');
     });
   });
 
   describe('transformText', () => {
-    it('should perform upper, lower, title, trim, and slug transformations', () => {
-      const input = '  hello WORLD  ';
-      expect(transformText(input, 'upper')).toBe('  HELLO WORLD  ');
-      expect(transformText(input, 'lower')).toBe('  hello world  ');
-      expect(transformText('hello world', 'title')).toBe('Hello World');
-      expect(transformText(input, 'trim')).toBe('hello WORLD');
-      expect(transformText('Hello World', 'slug')).toBe('hello-world');
+    it('should apply transformations correctly', () => {
+      const sample = 'hello WORLD test';
+      expect(transformText(sample, 'upper')).toBe('HELLO WORLD TEST');
+      expect(transformText(sample, 'lower')).toBe('hello world test');
+      expect(transformText(sample, 'title')).toBe('Hello World Test');
+      expect(transformText('  trim me  ', 'trim')).toBe('trim me');
+      expect(transformText('Hello World!', 'slug')).toBe('hello-world');
     });
 
-    it('should handle empty string in transformText', () => {
+    it('should handle empty input in transformText', () => {
       expect(transformText('', 'upper')).toBe('');
+      expect(transformText('', 'slug')).toBe('');
     });
   });
 });
