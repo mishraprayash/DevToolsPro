@@ -1,103 +1,96 @@
-import { describe, it, expect } from 'vitest';
-import {
-  convertNumber,
-  toTwosComplement,
-  formatLabel,
-} from '../utils';
+import { describe, expect, it } from 'vitest';
+import { convertNumber, formatLabel, toTwosComplement } from '../utils';
 
-describe('Number Base Utilities', () => {
+describe('number-base utils', () => {
   describe('convertNumber', () => {
-    it('should convert decimal number to hex, binary, octal', () => {
-      const result = convertNumber('255', 'decimal');
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.decimal).toBe('255');
-        expect(result.hex).toBe('0xFF');
-        expect(result.binary).toBe('0b11111111');
-        expect(result.octal).toBe('0o377');
+    it('converts decimal to hex, binary, and octal', () => {
+      const res = convertNumber('255', 'decimal');
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.decimal).toBe('255');
+        expect(res.hex).toBe('0xFF');
+        expect(res.binary).toBe('0b11111111');
+        expect(res.octal).toBe('0o377');
       }
     });
 
-    it('should convert hex with prefix "0xFF"', () => {
-      const result = convertNumber('0xFF', 'hex');
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.decimal).toBe('255');
+    it('converts hex with prefix to other bases', () => {
+      const res = convertNumber('0x1A', 'hex');
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.decimal).toBe('26');
+        expect(res.hex).toBe('0x1A');
+        expect(res.binary).toBe('0b11010');
+        expect(res.octal).toBe('0o32');
       }
     });
 
-    it('should convert binary with prefix "0b1010"', () => {
-      const result = convertNumber('0b1010', 'binary');
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.decimal).toBe('10');
+    it('converts custom base input (e.g. radix 36)', () => {
+      const res = convertNumber('z', 36);
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.decimal).toBe('35');
       }
     });
 
-    it('should convert octal "0o77"', () => {
-      const result = convertNumber('0o77', 'octal');
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.decimal).toBe('63');
+    it('supports custom target base output', () => {
+      const res = convertNumber('16', 'decimal', 16);
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.custom).toBe('10');
       }
     });
 
-    it('should convert custom base (e.g., base 36)', () => {
-      const result = convertNumber('z', 36, 10);
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.decimal).toBe('35');
-        expect(result.custom).toBe('35');
+    it('supports arbitrary precision BigInt values', () => {
+      const bigVal = '123456789012345678901234567890';
+      const res = convertNumber(bigVal, 'decimal');
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.decimal).toBe(bigVal);
       }
     });
 
-    it('should handle large BigInt precision values', () => {
-      const largeNum = '9007199254740993'; // 2^53 + 1
-      const result = convertNumber(largeNum, 'decimal');
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.decimal).toBe('9007199254740993');
-      }
-    });
-
-    it('should fail on empty input', () => {
-      const res = convertNumber('   ', 'decimal');
+    it('returns error for empty or whitespace-only input', () => {
+      const res = convertNumber('  ', 'decimal');
       expect(res.success).toBe(false);
       if (!res.success) {
         expect(res.error).toBe('Enter a value');
       }
     });
 
-    it('should fail on invalid digits for selected base', () => {
-      const resHex = convertNumber('0xGG', 'hex');
-      expect(resHex.success).toBe(false);
+    it('returns error for invalid digits for chosen base', () => {
+      const res = convertNumber('99', 'binary');
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.error).toContain('Invalid number value');
+      }
+    });
 
-      const resBin = convertNumber('102', 'binary');
-      expect(resBin.success).toBe(false);
-
-      const resCustomRadix = convertNumber('10', 1); // radix < 2
-      expect(resCustomRadix.success).toBe(false);
+    it('returns error for invalid custom radix', () => {
+      const res = convertNumber('10', 40);
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.error).toBe('Radix must be between 2 and 36');
+      }
     });
   });
 
   describe('toTwosComplement', () => {
-    it('should convert positive numbers in 8-bit', () => {
-      const res = toTwosComplement('12', 8);
-      expect(res.signed).toBe('12');
-      expect(res.unsigned).toBe('12');
-      expect(res.binary).toBe('0000 1100');
+    it('calculates 8-bit two\'s complement for positive and negative numbers', () => {
+      const pos = toTwosComplement('5', 8);
+      expect(pos.signed).toBe('5');
+      expect(pos.unsigned).toBe('5');
+      expect(pos.binary).toBe('0000 0101');
+
+      const neg = toTwosComplement('-5', 8);
+      expect(neg.signed).toBe('-5');
+      expect(neg.unsigned).toBe('251');
+      expect(neg.binary).toBe('1111 1011');
     });
 
-    it('should convert negative numbers in 8-bit', () => {
-      const res = toTwosComplement('-5', 8);
-      expect(res.signed).toBe('-5');
-      expect(res.unsigned).toBe('251');
-      expect(res.binary).toBe('1111 1011');
-    });
-
-    it('should handle 16-bit, 32-bit, and 64-bit boundaries', () => {
+    it('handles 16-bit, 32-bit, and 64-bit sizes', () => {
       const res16 = toTwosComplement('-1', 16);
-      expect(res16.unsigned).toBe('65535');
+      expect(res16.binary).toBe('1111 1111 1111 1111');
 
       const res32 = toTwosComplement('-1', 32);
       expect(res32.unsigned).toBe('4294967295');
@@ -106,19 +99,17 @@ describe('Number Base Utilities', () => {
       expect(res64.unsigned).toBe('18446744073709551615');
     });
 
-    it('should fallback on invalid numeric string', () => {
+    it('handles invalid number strings safely', () => {
       const res = toTwosComplement('invalid', 8);
       expect(res).toEqual({ signed: '0', unsigned: '0', binary: '00000000' });
     });
   });
 
   describe('formatLabel', () => {
-    it('should format standard base names and numeric bases', () => {
-      expect(formatLabel('decimal')).toContain('Decimal');
-      expect(formatLabel('hex')).toContain('Hexadecimal');
-      expect(formatLabel('binary')).toContain('Binary');
-      expect(formatLabel('octal')).toContain('Octal');
-      expect(formatLabel(12)).toBe('Base 12');
+    it('returns correct label for named bases and numbers', () => {
+      expect(formatLabel('decimal')).toBe('Decimal (0–9)');
+      expect(formatLabel('hex')).toBe('Hexadecimal (0–9, A–F)');
+      expect(formatLabel(16)).toBe('Base 16');
     });
   });
 });

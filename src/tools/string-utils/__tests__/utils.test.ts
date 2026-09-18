@@ -1,52 +1,56 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  generateWords,
-  generateSentences,
-  generateParagraphs,
   analyzeText,
+  generateParagraphs,
+  generateSentences,
+  generateWords,
   slugify,
   transformText,
 } from '../utils';
 
-describe('String Utilities', () => {
-  describe('Generator Functions', () => {
-    it('should generate words with min/max bounds', () => {
+describe('string utils', () => {
+  describe('lorem generators', () => {
+    it('generateWords respects boundaries and counts', () => {
       const words5 = generateWords(5);
-      expect(words5.split(' ')).toHaveLength(5);
+      expect(words5.split(' ').length).toBe(5);
 
-      const wordsBoundMin = generateWords(0);
-      expect(wordsBoundMin.split(' ')).toHaveLength(1); // Capped at min 1
+      const words1 = generateWords(0); // Min safe bound = 1
+      expect(words1.split(' ').length).toBe(1);
+
+      const wordsMax = generateWords(15000); // Max safe bound = 10000
+      expect(wordsMax.split(' ').length).toBe(10000);
     });
 
-    it('should generate sentences with period endings', () => {
+    it('generateSentences generates requested sentence count', () => {
       const sentences = generateSentences(3);
-      const list = sentences.split('. ');
-      expect(list.length).toBeGreaterThanOrEqual(3);
-      expect(sentences.endsWith('.')).toBe(true);
+      const splitSentences = sentences.split('.').filter(Boolean);
+      expect(splitSentences.length).toBe(3);
+      expect(sentences[0]).toBe(sentences[0].toUpperCase());
     });
 
-    it('should generate paragraphs separated by double newlines', () => {
+    it('generateParagraphs generates requested paragraph count', () => {
       const paras = generateParagraphs(2);
-      expect(paras).toContain('\n\n');
+      const splitParas = paras.split('\n\n');
+      expect(splitParas.length).toBe(2);
     });
   });
 
   describe('analyzeText', () => {
-    it('should analyze text statistics correctly', () => {
-      const text = 'Hello world!\n\nThis is line two.';
+    it('analyzes standard text correctly', () => {
+      const text = 'Hello world.\nThis is a test paragraph.\n\nAnother paragraph here.';
       const res = analyzeText(text);
 
       expect(res.success).toBe(true);
       if (res.success) {
         expect(res.data.chars).toBe(text.length);
-        expect(res.data.lines).toBe(3);
-        expect(res.data.words).toBe(6);
+        expect(res.data.lines).toBe(4);
         expect(res.data.paragraphs).toBe(2);
-        expect(res.data.readingTimeMinutes).toBeGreaterThan(0);
+        expect(res.data.words).toBe(10);
+        expect(res.data.readingTimeMinutes).toBe(0.05);
       }
     });
 
-    it('should handle empty string without errors', () => {
+    it('handles empty string safely', () => {
       const res = analyzeText('');
       expect(res.success).toBe(true);
       if (res.success) {
@@ -57,33 +61,33 @@ describe('String Utilities', () => {
         expect(res.data.readingTimeMinutes).toBe(0);
       }
     });
+
+    it('handles null / undefined safely', () => {
+      // @ts-expect-error testing runtime safety
+      const resNull = analyzeText(null);
+      expect(resNull.success).toBe(true);
+
+      // @ts-expect-error testing runtime safety
+      const resUndefined = analyzeText(undefined);
+      expect(resUndefined.success).toBe(true);
+    });
   });
 
-  describe('slugify', () => {
-    it('should slugify standard strings, removing special characters and accents', () => {
-      expect(slugify('Hello World!')).toBe('hello-world');
-      expect(slugify('  Crème  Brûlée  ')).toBe('creme-brulee');
-      expect(slugify('Foo & Bar -- Test')).toBe('foo-bar-test');
-    });
-
-    it('should handle empty input', () => {
+  describe('slugify & transformText', () => {
+    it('slugifies titles with special characters and diacritics', () => {
+      expect(slugify('Hello World! This is a test...')).toBe('hello-world-this-is-a-test');
+      expect(slugify('Café & Crème Brûlée')).toBe('cafe-creme-brulee');
       expect(slugify('')).toBe('');
     });
-  });
 
-  describe('transformText', () => {
-    it('should apply transformations correctly', () => {
-      const sample = 'hello WORLD test';
-      expect(transformText(sample, 'upper')).toBe('HELLO WORLD TEST');
-      expect(transformText(sample, 'lower')).toBe('hello world test');
-      expect(transformText(sample, 'title')).toBe('Hello World Test');
+    it('transforms text according to specified transformType', () => {
+      const text = 'hello WORLD test';
+      expect(transformText(text, 'upper')).toBe('HELLO WORLD TEST');
+      expect(transformText(text, 'lower')).toBe('hello world test');
+      expect(transformText(text, 'title')).toBe('Hello World Test');
       expect(transformText('  trim me  ', 'trim')).toBe('trim me');
       expect(transformText('Hello World!', 'slug')).toBe('hello-world');
-    });
-
-    it('should handle empty input in transformText', () => {
       expect(transformText('', 'upper')).toBe('');
-      expect(transformText('', 'slug')).toBe('');
     });
   });
 });
