@@ -1,5 +1,3 @@
-import { XMLParser, XMLBuilder, XMLValidator } from 'fast-xml-parser';
-
 export interface XmlJsonOptions {
   ignoreAttributes?: boolean;
   attributePrefix?: string;
@@ -14,10 +12,11 @@ export interface ValidationResult {
   line?: number;
 }
 
-export function validateXml(input: string): ValidationResult {
+export async function validateXml(input: string): Promise<ValidationResult> {
   if (!input.trim()) {
     return { valid: false, error: 'Input is empty' };
   }
+  const { XMLValidator } = await import('fast-xml-parser');
   const result = XMLValidator.validate(input);
   if (result === true) {
     return { valid: true };
@@ -30,13 +29,14 @@ export function validateXml(input: string): ValidationResult {
   }
 }
 
-export function xmlToJson(xmlStr: string, options: XmlJsonOptions = {}): string {
+export async function xmlToJson(xmlStr: string, options: XmlJsonOptions = {}): Promise<string> {
   try {
-    const validation = validateXml(xmlStr);
+    const validation = await validateXml(xmlStr);
     if (!validation.valid) {
       return `Invalid XML: ${validation.error} ${validation.line ? `(Line: ${validation.line})` : ''}`;
     }
 
+    const { XMLParser } = await import('fast-xml-parser');
     const parser = new XMLParser({
       ignoreAttributes: options.ignoreAttributes ?? false,
       attributeNamePrefix: options.attributePrefix ?? '@_',
@@ -51,9 +51,10 @@ export function xmlToJson(xmlStr: string, options: XmlJsonOptions = {}): string 
   }
 }
 
-export function jsonToXml(jsonStr: string, options: XmlJsonOptions = {}): string {
+export async function jsonToXml(jsonStr: string, options: XmlJsonOptions = {}): Promise<string> {
   try {
     const parsed = JSON.parse(jsonStr);
+    const { XMLBuilder } = await import('fast-xml-parser');
     const builder = new XMLBuilder({
       ignoreAttributes: options.ignoreAttributes ?? false,
       attributeNamePrefix: options.attributePrefix ?? '@_',

@@ -16,17 +16,17 @@ export default function Page() {
   const [compareHashStr, setCompareHashStr] = React.useState('');
   const [isMatch, setIsMatch] = React.useState<boolean | null>(null);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!password) return;
-    const res = generateBcryptHash(password, rounds);
+    const res = await generateBcryptHash(password, rounds);
     if (res.success) {
       setHash(res.data);
     }
   };
 
-  const handleCompare = () => {
+  const handleCompare = async () => {
     if (!comparePassword || !compareHashStr) return;
-    const res = compareBcryptHash(comparePassword, compareHashStr);
+    const res = await compareBcryptHash(comparePassword, compareHashStr);
     if (res.success) {
       setIsMatch(res.data);
     } else {
