@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sun, Moon, Menu, X, Command, MessageSquare, Keyboard } from 'lucide-react';
+
 import { useAppStore } from '@/lib/store/useStore';
 import { GithubIcon } from '@/components/ui/GithubIcon';
 import { tools, categories, type ToolCategory } from '@/tools/registry';
