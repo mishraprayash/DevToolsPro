@@ -23,6 +23,7 @@ describe('cURL Converter Utilities', () => {
 
   it('should convert curl to JavaScript Fetch', async () => {
     const result = await convertCurl(sampleCurl, 'javascript-fetch');
+    if (!result.success) console.error(result.error);
     expect(result.success).toBe(true);
     expect(result.code).toContain('fetch(');
     expect(result.code).toContain('Authorization');

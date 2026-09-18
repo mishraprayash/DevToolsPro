@@ -1,6 +1,7 @@
-export async function generateBcryptHash(password: string, saltRounds: number = 10): Promise<{ success: true; data: string } | { success: false; error: string }> {
+import * as bcrypt from 'bcryptjs';
+
+export function generateBcryptHash(password: string, saltRounds: number = 10): { success: true; data: string } | { success: false; error: string } {
   try {
-    const bcrypt = await import('bcryptjs');
     const salt = bcrypt.genSaltSync(saltRounds);
     const hash = bcrypt.hashSync(password, salt);
     return { success: true, data: hash };
@@ -9,9 +10,8 @@ export async function generateBcryptHash(password: string, saltRounds: number = 
   }
 }
 
-export async function compareBcryptHash(password: string, hash: string): Promise<{ success: true; data: boolean } | { success: false; error: string }> {
+export function compareBcryptHash(password: string, hash: string): { success: true; data: boolean } | { success: false; error: string } {
   try {
-    const bcrypt = await import('bcryptjs');
     const match = bcrypt.compareSync(password, hash);
     return { success: true, data: match };
   } catch (error: unknown) {

@@ -1,4 +1,6 @@
-export async function evaluateJsonPath(jsonString: string, path: string): Promise<{ success: true; data: unknown } | { success: false; error: string }> {
+import { JSONPath } from 'jsonpath-plus';
+
+export function evaluateJsonPath(jsonString: string, path: string): { success: true; data: unknown } | { success: false; error: string } {
   try {
     if (!jsonString.trim() || !path.trim()) {
       return { success: true, data: null };
@@ -11,7 +13,6 @@ export async function evaluateJsonPath(jsonString: string, path: string): Promis
       return { success: false, error: 'Invalid JSON input' };
     }
 
-    const { JSONPath } = await import('jsonpath-plus');
     const result = JSONPath({ path, json: parsedJson as object });
     return { success: true, data: result };
   } catch (error: unknown) {

@@ -1,3 +1,5 @@
+import NepaliDate from 'nepali-date-converter';
+
 export interface NepaliDateObj {
   year: number;
   month: number; // 1-indexed (1 = Baishakh, 12 = Chaitra)
@@ -41,9 +43,8 @@ export const englishMonths = [
 ];
 
 // Helper to get number of days in a given BS Month/Year
-export async function getBsMonthDays(year: number, month: number): Promise<number> {
+export function getBsMonthDays(year: number, month: number): number {
   try {
-    const NepaliDate = (await import('nepali-date-converter')).default;
     const map = (NepaliDate as unknown as { dateConfigMap: Record<string, Record<string, number>> }).dateConfigMap;
     const config = map[String(year)];
     if (config) {
@@ -61,7 +62,7 @@ export async function getBsMonthDays(year: number, month: number): Promise<numbe
 }
 
 // Convert BS (Bikram Sambat) to AD (Gregorian)
-export async function convertBsToAd(bs: NepaliDateObj): Promise<{ success: true; date: Date } | { success: false; error: string }> {
+export function convertBsToAd(bs: NepaliDateObj): { success: true; date: Date } | { success: false; error: string } {
   const { year, month, day } = bs;
   
   if (year < 2000 || year > 2100) {
@@ -70,13 +71,12 @@ export async function convertBsToAd(bs: NepaliDateObj): Promise<{ success: true;
   if (month < 1 || month > 12) {
     return { success: false, error: 'Invalid month (must be between 1 and 12)' };
   }
-  const maxDays = await getBsMonthDays(year, month);
+  const maxDays = getBsMonthDays(year, month);
   if (day < 1 || day > maxDays) {
     return { success: false, error: `Invalid day (Month ${month} of year ${year} has max ${maxDays} days)` };
   }
 
   try {
-    const NepaliDate = (await import('nepali-date-converter')).default;
     const nd = new NepaliDate(year, month - 1, day);
     const jsDate = nd.toJsDate();
     return { success: true, date: jsDate };
@@ -86,13 +86,12 @@ export async function convertBsToAd(bs: NepaliDateObj): Promise<{ success: true;
 }
 
 // Convert AD (Gregorian) to BS (Bikram Sambat)
-export async function convertAdToBs(adDate: Date): Promise<{ success: true; bsDate: NepaliDateObj } | { success: false; error: string }> {
+export function convertAdToBs(adDate: Date): { success: true; bsDate: NepaliDateObj } | { success: false; error: string } {
   try {
     const date = new Date(adDate.getTime());
     // Normalize date to midday to avoid local timezone hour shifts
     date.setHours(12, 0, 0, 0);
 
-    const NepaliDate = (await import('nepali-date-converter')).default;
     const nd = new NepaliDate(date);
     const bs = nd.getBS();
     

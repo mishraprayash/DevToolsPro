@@ -8,11 +8,6 @@ export function parseSqlToNodes(
   const nodes: TableNode[] = [];
   const edges: Edge[] = [];
 
-  const existingNodesMap = new Map<string, TableNode>();
-  existingNodes.forEach((node) => {
-    existingNodesMap.set(node.data.tableName, node);
-  });
-
   const cleanSql = sql.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
   const statements = cleanSql.split(';').map((s) => s.trim()).filter(Boolean);
 
@@ -43,7 +38,7 @@ export function parseSqlToNodes(
       }
       if (currentPart.trim()) parts.push(currentPart.trim());
 
-      const existingNode = existingNodesMap.get(tableName);
+      const existingNode = existingNodes.find((n) => n.data.tableName === tableName);
       const usedIds = new Set<string>();
 
       parts.forEach((part) => {
@@ -159,28 +154,14 @@ export function parseSqlToNodes(
     }
   });
 
-  const nodeMap = new Map<string, TableNode>();
-  const columnMap = new Map<string, Map<string, ColumnDef>>();
-
-  nodes.forEach((node) => {
-    nodeMap.set(node.data.tableName, node);
-    const colMap = new Map<string, ColumnDef>();
-    node.data.columns.forEach((col) => {
-      colMap.set(col.name, col);
-    });
-    columnMap.set(node.data.tableName, colMap);
-  });
-
   const resolvedEdges: Edge[] = [];
   edges.forEach((edge) => {
-    const parentNode = nodeMap.get(edge.source);
-    const childNode = nodeMap.get(edge.target);
+    const parentNode = nodes.find((n) => n.data.tableName === edge.source);
+    const childNode = nodes.find((n) => n.data.tableName === edge.target);
 
     if (parentNode && childNode) {
-      const parentColMap = columnMap.get(edge.source);
-      const childColMap = columnMap.get(edge.target);
-      const parentCol = edge.sourceHandle ? parentColMap?.get(edge.sourceHandle) : undefined;
-      const childCol = edge.targetHandle ? childColMap?.get(edge.targetHandle) : undefined;
+      const parentCol = parentNode.data.columns.find((c) => c.name === edge.sourceHandle);
+      const childCol = childNode.data.columns.find((c) => c.name === edge.targetHandle);
 
       if (parentCol && childCol) {
         resolvedEdges.push({
