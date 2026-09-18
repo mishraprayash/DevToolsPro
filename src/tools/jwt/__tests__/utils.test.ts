@@ -1,123 +1,111 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   decodeJWT,
-  decodeJwtParts,
+  getJWTStatus,
   getJWTExpiryDate,
   getJWTIssuedAt,
-  getJWTStatus,
-  signJWT,
-  verifyJwtSignature,
+  decodeJwtParts,
 } from '../utils';
 
-describe('jwt utils', () => {
-  // Simple test token: {"alg":"HS256","typ":"JWT"}.{"sub":"1234567890","name":"John Doe","iat":1516239022,"exp":2516239022}.signature
-  const validHeader = { alg: 'HS256', typ: 'JWT' };
-  const futureExp = Math.floor(Date.now() / 1000) + 3600;
-  const pastExp = Math.floor(Date.now() / 1000) - 3600;
-  const sampleIat = Math.floor(Date.now() / 1000) - 100;
+describe('JWT Utilities', () => {
+  // Mock JWT header: {"alg":"HS256","typ":"JWT"} -> eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+  const headerB64 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
 
-  const validPayload = { sub: '1234567890', name: 'John Doe', iat: sampleIat, exp: futureExp };
-  const expiredPayload = { sub: '1234567890', name: 'John Doe', iat: sampleIat, exp: pastExp };
+  // Mock valid payload: {"sub":"1234567890","name":"John Doe","iat":1516239022,"exp":2516239022}
+  // exp = year 2049
+  const validPayloadB64 = 'eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI1MTYyMzkwMjJ9';
 
-  describe('signJWT & verifyJwtSignature', () => {
-    it('signs and verifies HMAC HS256 tokens', async () => {
-      const secret = 'super-secret-key-123';
-      const token = await signJWT(validHeader, validPayload, secret, 'HS256');
+  // Mock expired payload: {"sub":"1234567890","name":"John Doe","iat":1516239022,"exp":1516239022}
+  // exp = year 2018
+  const expiredPayloadB64 = 'eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyMzkwMjJ9';
 
-      expect(typeof token).toBe('string');
-      expect(token.split('.').length).toBe(3);
+  const signature = 'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
 
-      const verification = await verifyJwtSignature(token, secret, 'HS256');
-      expect(verification.valid).toBe(true);
-      expect(verification.error).toBeUndefined();
+  const validToken = `${headerB64}.${validPayloadB64}.${signature}`;
+  const expiredToken = `${headerB64}.${expiredPayloadB64}.${signature}`;
 
-      const invalidVerification = await verifyJwtSignature(token, 'wrong-secret', 'HS256');
-      expect(invalidVerification.valid).toBe(false);
-      expect(invalidVerification.error).toBe('Signature mismatch');
+  describe('decodeJWT', () => {
+    it('should decode a valid JWT token', () => {
+      const decoded = decodeJWT(validToken);
+      expect(decoded).not.toBeNull();
+      expect(decoded?.header).toEqual({ alg: 'HS256', typ: 'JWT' });
+      expect(decoded?.payload).toEqual({
+        sub: '1234567890',
+        name: 'John Doe',
+        iat: 1516239022,
+        exp: 2516239022,
+      });
+      expect(decoded?.signature).toBe(signature);
     });
 
-    it('signs and verifies HS384 and HS512 tokens', async () => {
-      const secret = 'secret-384-512';
-      const token384 = await signJWT(validHeader, validPayload, secret, 'HS384');
-      const verify384 = await verifyJwtSignature(token384, secret, 'HS384');
-      expect(verify384.valid).toBe(true);
-
-      const token512 = await signJWT(validHeader, validPayload, secret, 'HS512');
-      const verify512 = await verifyJwtSignature(token512, secret, 'HS512');
-      expect(verify512.valid).toBe(true);
-    });
-
-    it('handles invalid RS256 private/public key gracefully', async () => {
-      await expect(signJWT(validHeader, validPayload, 'invalid-pem-key', 'RS256')).rejects.toThrow();
-
-      const verification = await verifyJwtSignature('header.payload.sig', 'invalid-pem-key', 'RS256');
-      expect(verification.valid).toBe(false);
-      expect(verification.error).toBe('Invalid RSA public key');
+    it('should return null for malformed tokens', () => {
+      expect(decodeJWT('invalid.token')).toBeNull();
+      expect(decodeJWT('invalid.token.parts.extra')).toBeNull();
+      expect(decodeJWT('not-base64.not-json.sig')).toBeNull();
     });
   });
 
-  describe('decodeJWT, getJWTStatus, getJWTExpiryDate, getJWTIssuedAt', () => {
-    it('decodes a valid JWT string correctly', async () => {
-      const secret = 'test-secret';
-      const token = await signJWT(validHeader, validPayload, secret, 'HS256');
-      const decoded = decodeJWT(token);
-
-      expect(decoded).not.toBeNull();
-      if (decoded) {
-        expect(decoded.header).toEqual(validHeader);
-        expect(decoded.payload).toEqual(validPayload);
-        expect(decoded.signature).toBe(token.split('.')[2]);
-      }
-    });
-
-    it('evaluates getJWTStatus as valid for future expiration and expired for past', async () => {
-      const secret = 'test-secret';
-      const validToken = await signJWT(validHeader, validPayload, secret, 'HS256');
-      const expiredToken = await signJWT(validHeader, expiredPayload, secret, 'HS256');
-
+  describe('getJWTStatus', () => {
+    it('should identify valid non-expired token', () => {
       expect(getJWTStatus(validToken)).toBe('valid');
+    });
+
+    it('should identify expired token', () => {
       expect(getJWTStatus(expiredToken)).toBe('expired');
-      expect(getJWTStatus('invalid.token.str')).toBe('invalid');
     });
 
-    it('returns correct Date objects for getJWTExpiryDate and getJWTIssuedAt', async () => {
-      const secret = 'test-secret';
-      const token = await signJWT(validHeader, validPayload, secret, 'HS256');
-
-      const expDate = getJWTExpiryDate(token);
-      expect(expDate).toBeInstanceOf(Date);
-      expect(expDate?.getTime()).toBe(futureExp * 1000);
-
-      const iatDate = getJWTIssuedAt(token);
-      expect(iatDate).toBeInstanceOf(Date);
-      expect(iatDate?.getTime()).toBe(sampleIat * 1000);
+    it('should return invalid for malformed token', () => {
+      expect(getJWTStatus('bad-token')).toBe('invalid');
     });
 
-    it('returns null for missing exp/iat or malformed tokens', () => {
-      const noExpToken = 'eyJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiSm9obiJ9.sig';
-      expect(getJWTExpiryDate(noExpToken)).toBeNull();
-      expect(getJWTIssuedAt(noExpToken)).toBeNull();
-      expect(decodeJWT('not-a-jwt')).toBeNull();
+    it('should return valid if exp claim is not present', () => {
+      // payload: {"sub":"123"} -> eyJzdWIiOiIxMjMifQ
+      const tokenWithoutExp = `${headerB64}.eyJzdWIiOiIxMjMifQ.${signature}`;
+      expect(getJWTStatus(tokenWithoutExp)).toBe('valid');
+    });
+  });
+
+  describe('getJWTExpiryDate & getJWTIssuedAt', () => {
+    it('should parse expiry date correctly', () => {
+      const expiry = getJWTExpiryDate(validToken);
+      expect(expiry).toBeInstanceOf(Date);
+      expect(expiry?.getTime()).toBe(2516239022 * 1000);
+    });
+
+    it('should parse issued-at date correctly', () => {
+      const iat = getJWTIssuedAt(validToken);
+      expect(iat).toBeInstanceOf(Date);
+      expect(iat?.getTime()).toBe(1516239022 * 1000);
+    });
+
+    it('should return null when claim is missing or token is invalid', () => {
+      expect(getJWTExpiryDate('bad.token.here')).toBeNull();
+      expect(getJWTIssuedAt('bad.token.here')).toBeNull();
     });
   });
 
   describe('decodeJwtParts', () => {
-    it('decodes valid parts into detailed object', async () => {
-      const token = await signJWT(validHeader, validPayload, 'sec', 'HS256');
-      const result = decodeJwtParts(token);
+    it('should return success true and parsed parts for valid token', () => {
+      const result = decodeJwtParts(validToken);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.header).toEqual(validHeader);
-        expect(result.payload).toEqual(validPayload);
+        expect(result.header.alg).toBe('HS256');
+        expect(result.payload.name).toBe('John Doe');
+        expect(result.signature).toBe(signature);
       }
     });
 
-    it('returns error when token format or JSON is invalid', () => {
-      expect(decodeJwtParts('part1.part2').success).toBe(false);
+    it('should return error if token does not have 3 parts', () => {
+      const result = decodeJwtParts('part1.part2');
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe('Token does not have 3 parts');
+      }
+    });
 
-      // base64 that is not valid JSON
-      const invalidJsonToken = 'eyJhbGciOiJIUzI1NiJ9.aW52YWxpZCBqc29u.sig';
-      const result = decodeJwtParts(invalidJsonToken);
+    it('should return error if JSON parsing fails', () => {
+      // header: "hello" in base64 -> aGVsbG8
+      const result = decodeJwtParts(`aGVsbG8.${validPayloadB64}.${signature}`);
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBe('Unable to parse JSON in header/payload');

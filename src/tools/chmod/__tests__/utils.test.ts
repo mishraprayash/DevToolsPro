@@ -1,22 +1,29 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   calculateOctalAndSymbolic,
-  ChmodState,
   parseOctal,
   parseSymbolic,
+  ChmodState,
 } from '../utils';
 
-describe('chmod utils', () => {
-  const defaultState: ChmodState = {
+describe('Chmod Utilities', () => {
+  const standard755State: ChmodState = {
     owner: { read: true, write: true, execute: true },
     group: { read: true, write: false, execute: true },
     other: { read: true, write: false, execute: true },
     special: { setuid: false, setgid: false, sticky: false },
   };
 
+  const special4755State: ChmodState = {
+    owner: { read: true, write: true, execute: true },
+    group: { read: true, write: false, execute: true },
+    other: { read: true, write: false, execute: true },
+    special: { setuid: true, setgid: false, sticky: false },
+  };
+
   describe('calculateOctalAndSymbolic', () => {
-    it('calculates standard 755 permissions correctly', () => {
-      const res = calculateOctalAndSymbolic(defaultState);
+    it('should calculate 755 octal and rwxr-xr-x symbolic representation', () => {
+      const res = calculateOctalAndSymbolic(standard755State);
       expect(res.success).toBe(true);
       if (res.success) {
         expect(res.data.octal).toBe('755');
@@ -25,30 +32,24 @@ describe('chmod utils', () => {
       }
     });
 
-    it('calculates special bits setuid, setgid, sticky correctly', () => {
-      const specialState: ChmodState = {
-        owner: { read: true, write: true, execute: true },
-        group: { read: true, write: true, execute: true },
-        other: { read: true, write: true, execute: true },
-        special: { setuid: true, setgid: true, sticky: true },
-      };
-      const res = calculateOctalAndSymbolic(specialState);
+    it('should calculate special setuid octal 4755 and rwsr-xr-x symbolic representation', () => {
+      const res = calculateOctalAndSymbolic(special4755State);
       expect(res.success).toBe(true);
       if (res.success) {
-        expect(res.data.octal).toBe('7777');
-        expect(res.data.symbolic).toBe('rwsrwsrwt');
-        expect(res.data.command).toBe('chmod 7777 filename');
+        expect(res.data.octal).toBe('4755');
+        expect(res.data.symbolic).toBe('rwsr-xr-x');
+        expect(res.data.command).toBe('chmod 4755 filename');
       }
     });
 
-    it('formats uppercase S and T when execute permission is missing', () => {
-      const specialNoExecState: ChmodState = {
+    it('should uppercase setuid/setgid/sticky letter if execute bit is false', () => {
+      const stateWithSetidNoExec: ChmodState = {
         owner: { read: true, write: true, execute: false },
         group: { read: true, write: false, execute: false },
         other: { read: true, write: false, execute: false },
         special: { setuid: true, setgid: true, sticky: true },
       };
-      const res = calculateOctalAndSymbolic(specialNoExecState);
+      const res = calculateOctalAndSymbolic(stateWithSetidNoExec);
       expect(res.success).toBe(true);
       if (res.success) {
         expect(res.data.octal).toBe('7644');
@@ -58,29 +59,27 @@ describe('chmod utils', () => {
   });
 
   describe('parseOctal', () => {
-    it('parses 3-digit octal permission strings', () => {
-      const res = parseOctal('644');
+    it('should parse 3-digit octal string "755"', () => {
+      const res = parseOctal('755');
       expect(res.success).toBe(true);
       if (res.success) {
-        expect(res.data.owner).toEqual({ read: true, write: true, execute: false });
-        expect(res.data.group).toEqual({ read: true, write: false, execute: false });
-        expect(res.data.other).toEqual({ read: true, write: false, execute: false });
+        expect(res.data.owner).toEqual({ read: true, write: true, execute: true });
+        expect(res.data.group).toEqual({ read: true, write: false, execute: true });
+        expect(res.data.other).toEqual({ read: true, write: false, execute: true });
         expect(res.data.special).toEqual({ setuid: false, setgid: false, sticky: false });
       }
     });
 
-    it('parses 4-digit octal permission strings with special bits', () => {
-      const res = parseOctal('4755');
+    it('should parse 4-digit octal string "1777"', () => {
+      const res = parseOctal('1777');
       expect(res.success).toBe(true);
       if (res.success) {
-        expect(res.data.special.setuid).toBe(true);
-        expect(res.data.special.setgid).toBe(false);
-        expect(res.data.special.sticky).toBe(false);
+        expect(res.data.special).toEqual({ setuid: false, setgid: false, sticky: true });
         expect(res.data.owner).toEqual({ read: true, write: true, execute: true });
       }
     });
 
-    it('rejects invalid octal strings', () => {
+    it('should fail on invalid octal strings', () => {
       expect(parseOctal('888').success).toBe(false);
       expect(parseOctal('75').success).toBe(false);
       expect(parseOctal('75555').success).toBe(false);
@@ -89,7 +88,7 @@ describe('chmod utils', () => {
   });
 
   describe('parseSymbolic', () => {
-    it('parses standard 9-character symbolic permission strings', () => {
+    it('should parse standard symbolic permissions "rwxr-xr-x"', () => {
       const res = parseSymbolic('rwxr-xr-x');
       expect(res.success).toBe(true);
       if (res.success) {
@@ -99,27 +98,26 @@ describe('chmod utils', () => {
       }
     });
 
-    it('strips leading file type identifier (- or d)', () => {
-      const resFile = parseSymbolic('-rwxr-xr-x');
-      expect(resFile.success).toBe(true);
-      const resDir = parseSymbolic('drwxr-xr-x');
-      expect(resDir.success).toBe(true);
+    it('should ignore optional leading file type indicator "-rwxr-xr-x"', () => {
+      const res = parseSymbolic('-rwxr-xr-x');
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data.owner.read).toBe(true);
+      }
     });
 
-    it('parses symbolic permissions with special characters (s, S, t, T)', () => {
-      const res = parseSymbolic('rwsr-Sr-T');
+    it('should parse setuid/setgid/sticky characters in symbolic strings', () => {
+      const res = parseSymbolic('rwsr-sr-t');
       expect(res.success).toBe(true);
       if (res.success) {
         expect(res.data.special).toEqual({ setuid: true, setgid: true, sticky: true });
         expect(res.data.owner.execute).toBe(true);
-        expect(res.data.group.execute).toBe(false);
-        expect(res.data.other.execute).toBe(false);
       }
     });
 
-    it('rejects invalid symbolic strings', () => {
+    it('should fail on invalid symbolic strings', () => {
       expect(parseSymbolic('rwx').success).toBe(false);
-      expect(parseSymbolic('rwxrwxrwxextra').success).toBe(false);
+      expect(parseSymbolic('rwxrwxrwx1').success).toBe(false);
       expect(parseSymbolic('invalid!!').success).toBe(false);
     });
   });

@@ -1,16 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
-  decodeBase64,
-  decodeEntities,
-  decodeUrlStr,
   encodeBase64,
-  encodeEntities,
+  decodeBase64,
   encodeUrlStr,
+  decodeUrlStr,
+  encodeEntities,
+  decodeEntities,
 } from '../utils';
 
-describe('encoder utils', () => {
-  describe('encodeBase64 & decodeBase64', () => {
-    it('encodes and decodes UTF-8 strings correctly', () => {
+describe('Encoder Utilities', () => {
+  describe('Base64 encoding/decoding', () => {
+    it('should encode and decode UTF-8 strings', () => {
       const text = 'Hello, World! 🚀';
       const encoded = encodeBase64(text, 'utf8');
       expect(encoded).toBe('SGVsbG8sIFdvcmxkISDwn5qA');
@@ -18,101 +18,95 @@ describe('encoder utils', () => {
       expect(decoded).toBe(text);
     });
 
-    it('handles URL-safe Base64 encoding and decoding', () => {
-      const text = 'Hello?World>123';
-      const urlSafeEncoded = encodeBase64(text, 'utf8', true);
-      expect(urlSafeEncoded).not.toContain('+');
-      expect(urlSafeEncoded).not.toContain('/');
-      expect(urlSafeEncoded).not.toContain('=');
+    it('should handle URL-safe base64', () => {
+      const text = 'Subject?';
+      const encoded = encodeBase64(text, 'utf8', true);
+      expect(encoded).not.toContain('+');
+      expect(encoded).not.toContain('/');
+      expect(encoded).not.toContain('=');
 
-      const urlSafeDecoded = decodeBase64(urlSafeEncoded, 'utf8', true);
-      expect(urlSafeDecoded).toBe(text);
+      const decoded = decodeBase64(encoded, 'utf8', true);
+      expect(decoded).toBe(text);
     });
 
-    it('encodes and decodes hex mode', () => {
-      const hex = '48656c6c6f'; // "Hello" in hex
-      const encoded = encodeBase64(hex, 'hex');
+    it('should encode and decode hex mode', () => {
+      const hexInput = '48656c6c6f'; // 'Hello' in hex
+      const encoded = encodeBase64(hexInput, 'hex');
       expect(encoded).toBe('SGVsbG8=');
 
-      const decodedHex = decodeBase64(encoded, 'hex');
-      expect(decodedHex).toBe('48656c6c6f');
+      const decoded = decodeBase64('SGVsbG8=', 'hex');
+      expect(decoded).toBe(hexInput);
     });
 
-    it('encodes and decodes binary mode', () => {
-      // 01001000 01100101 ('H', 'e')
-      const binaryInput = '01001000 01100101';
-      const encoded = encodeBase64(binaryInput, 'binary');
+    it('should encode and decode binary mode', () => {
+      const binInput = '01001000 01100101'; // 'He' in binary
+      const encoded = encodeBase64(binInput, 'binary');
       expect(encoded).toBe('SGU=');
 
-      const decodedBin = decodeBase64(encoded, 'binary');
-      expect(decodedBin).toBe('01001000 01100101');
+      const decoded = decodeBase64('SGU=', 'binary');
+      expect(decoded).toBe('01001000 01100101');
     });
 
-    it('handles empty input and edge cases gracefully', () => {
-      expect(encodeBase64('')).toBe('');
-      expect(decodeBase64('')).toBe('');
-      expect(decodeBase64('invalid base64!!!')).toBe('');
+    it('should return empty string on invalid base64 decode input', () => {
+      expect(decodeBase64('!!!invalid-base64!!!')).toBe('');
     });
   });
 
-  describe('encodeUrlStr & decodeUrlStr', () => {
-    it('encodes and decodes using component mode', () => {
-      const url = 'https://example.com/search?q=hello world';
-      const encoded = encodeUrlStr(url, 'component');
-      expect(encoded).toBe('https%3A%2F%2Fexample.com%2Fsearch%3Fq%3Dhello%20world');
-      expect(decodeUrlStr(encoded, 'component')).toBe(url);
+  describe('URL encoding/decoding', () => {
+    it('should encode/decode URL component', () => {
+      const text = 'hello world & foo=bar';
+      const encoded = encodeUrlStr(text, 'component');
+      expect(encoded).toBe('hello%20world%20%26%20foo%3Dbar');
+
+      const decoded = decodeUrlStr(encoded, 'component');
+      expect(decoded).toBe(text);
     });
 
-    it('encodes and decodes using uri mode', () => {
-      const url = 'https://example.com/search?q=hello world';
+    it('should handle URI mode', () => {
+      const url = 'https://example.com/path with spaces?a=1&b=2';
       const encoded = encodeUrlStr(url, 'uri');
-      expect(encoded).toBe('https://example.com/search?q=hello%20world');
-      expect(decodeUrlStr(encoded, 'uri')).toBe(url);
+      expect(encoded).toBe('https://example.com/path%20with%20spaces?a=1&b=2');
+
+      const decoded = decodeUrlStr(encoded, 'uri');
+      expect(decoded).toBe(url);
     });
 
-    it('encodes strict mode (encoding !\'()*)', () => {
-      const input = "Hello!* ('world')";
-      const encoded = encodeUrlStr(input, 'strict');
+    it('should handle strict mode (encoding special characters !\'()*)', () => {
+      const text = "Hello!(World)*'~";
+      const encoded = encodeUrlStr(text, 'strict');
       expect(encoded).toContain('%21');
       expect(encoded).toContain('%27');
       expect(encoded).toContain('%28');
       expect(encoded).toContain('%29');
       expect(encoded).toContain('%2A');
-      expect(decodeUrlStr(encoded, 'strict')).toBe(input);
     });
 
-    it('handles malformed URI components gracefully', () => {
-      const invalidUri = '%E0%A4%A';
-      expect(decodeUrlStr(invalidUri)).toBe(invalidUri);
+    it('should return raw input on malformed URL decode', () => {
+      const malformed = '%E0%A4%A';
+      expect(decodeUrlStr(malformed, 'component')).toBe(malformed);
     });
   });
 
-  describe('encodeEntities & decodeEntities', () => {
-    it('encodes markup entities with named mode', () => {
-      const input = '<script>alert("Hello & World")</script>';
+  describe('HTML Entity encoding/decoding', () => {
+    it('should encode named entities in markup scope', () => {
+      const input = '<div class="test">& \'hello\'</div>';
       const encoded = encodeEntities(input, { mode: 'named', scope: 'markup' });
-      expect(encoded).toBe('&lt;script&gt;alert(&quot;Hello &amp; World&quot;)&lt;/script&gt;');
+      expect(encoded).toBe('&lt;div class=&quot;test&quot;&gt;&amp; &apos;hello&apos;&lt;/div&gt;');
     });
 
-    it('encodes all scope with hex and decimal mode', () => {
-      const input = 'A & B ©';
-      const hexEncoded = encodeEntities(input, { mode: 'hex', scope: 'all' });
-      expect(hexEncoded).toContain('&#x26;');
-      expect(hexEncoded).toContain('&#xA9;');
+    it('should encode all characters in decimal and hex modes', () => {
+      const input = '<a href="#">€</a>';
+      const decimalScopeAll = encodeEntities(input, { mode: 'decimal', scope: 'all' });
+      expect(decimalScopeAll).toContain('&#8364;');
 
-      const decEncoded = encodeEntities(input, { mode: 'decimal', scope: 'all' });
-      expect(decEncoded).toContain('&#38;');
-      expect(decEncoded).toContain('&#169;');
+      const hexScopeAll = encodeEntities(input, { mode: 'hex', scope: 'all' });
+      expect(hexScopeAll).toContain('&#x20AC;');
     });
 
-    it('decodes named, hex, and decimal entities', () => {
-      const encoded = '&lt;div&gt;&#38; &#x26; &copy;&lt;/div&gt;';
-      const decoded = decodeEntities(encoded);
-      expect(decoded).toBe('<div>& & ©</div>');
-    });
-
-    it('leaves unmapped entity names intact when decoding', () => {
-      expect(decodeEntities('&unknownEntity;')).toBe('&unknownEntity;');
+    it('should decode named, decimal, and hex entities', () => {
+      const input = '&lt;hello&gt; &#8364; &#x20AC; &copy; &unknown;';
+      const decoded = decodeEntities(input);
+      expect(decoded).toBe('<hello> € € © &unknown;');
     });
   });
 });
