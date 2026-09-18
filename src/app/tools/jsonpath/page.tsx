@@ -50,13 +50,17 @@ export default function Page() {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const res = evaluateJsonPath(jsonInput, path);
-    if (res.success) {
-      setOutput(res.data);
-      setError(null);
-    } else {
-      setError(res.error);
-    }
+    let cancelled = false;
+    evaluateJsonPath(jsonInput, path).then((res) => {
+      if (cancelled) return;
+      if (res.success) {
+        setOutput(res.data);
+        setError(null);
+      } else {
+        setError(res.error);
+      }
+    });
+    return () => { cancelled = true; };
   }, [jsonInput, path]);
 
   return (

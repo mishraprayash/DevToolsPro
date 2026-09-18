@@ -12,13 +12,29 @@ export interface ConversionResult {
   error?: string;
 }
 
+const VALID_IDENTIFIER_REGEX = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
+
 function toPascalCase(str: string): string {
-  const clean = str.replace(/[^a-zA-Z0-9_]/g, '_');
-  return clean
-    .split('_')
-    .filter(Boolean)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join('');
+  let result = '';
+  let capitalizeNext = true;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    const isAlphanumeric =
+      (ch >= 'a' && ch <= 'z') ||
+      (ch >= 'A' && ch <= 'Z') ||
+      (ch >= '0' && ch <= '9');
+    if (isAlphanumeric) {
+      if (capitalizeNext) {
+        result += ch.toUpperCase();
+        capitalizeNext = false;
+      } else {
+        result += ch;
+      }
+    } else {
+      capitalizeNext = true;
+    }
+  }
+  return result;
 }
 
 function getSafeRootName(name: string): string {
@@ -142,7 +158,7 @@ function generateType(
     for (const key of keys) {
       const propValue = (val as Record<string, unknown>)[key];
       const isOptional = opts.makeOptional || propValue === null;
-      const cleanKeyName = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key) ? key : `"${key}"`;
+      const cleanKeyName = VALID_IDENTIFIER_REGEX.test(key) ? key : `"${key}"`;
       
       const subTypeName = toPascalCase(currentKeyName) + toPascalCase(key);
       const propType = generateType(propValue, subTypeName, opts, extractedTypes);
