@@ -79,6 +79,7 @@ export function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-text-muted hover:text-text-primary transition-colors"
+              aria-label="GitHub"
             >
               <GithubIcon className="h-4 w-4" />
             </a>
