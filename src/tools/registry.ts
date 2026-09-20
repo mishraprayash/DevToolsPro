@@ -94,21 +94,44 @@ export const categoryLabels: Record<ToolCategory, string> = {
   'Date & Time': 'Date & Time',
 };
 
+const toolsMap = new Map<string, ToolDef>(tools.map((t) => [t.id, t]));
+
+const categoryToolsMap = new Map<ToolCategory, ToolDef[]>();
+for (const cat of categories) {
+  categoryToolsMap.set(
+    cat,
+    tools.filter((t) => t.category === cat)
+  );
+}
+
+const newToolsList = tools.filter((t) => t.isNew);
+
+const searchIndexMap = new Map<string, string>();
+for (const tool of tools) {
+  const keywords = (tool.keywords ?? []).join(' ');
+  const fullText = `${tool.name} ${tool.description} ${tool.category} ${keywords}`.toLowerCase();
+  searchIndexMap.set(tool.id, fullText);
+}
+
 export function getToolById(id: string): ToolDef | undefined {
-  return tools.find((t) => t.id === id);
+  return toolsMap.get(id);
 }
 
 export function getToolsByCategory(category: ToolCategory): ToolDef[] {
-  return tools.filter((t) => t.category === category);
+  return categoryToolsMap.get(category) ?? [];
 }
 
 export function getNewTools(): ToolDef[] {
-  return tools.filter((t) => t.isNew);
+  return newToolsList;
 }
 
 export function toolMatchesQuery(tool: ToolDef, query: string): boolean {
   const q = query.toLowerCase().trim();
   if (!q) return true;
+  const searchable = searchIndexMap.get(tool.id);
+  if (searchable) {
+    return searchable.includes(q);
+  }
   return (
     tool.name.toLowerCase().includes(q) ||
     tool.description.toLowerCase().includes(q) ||

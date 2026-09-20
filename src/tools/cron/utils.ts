@@ -81,13 +81,13 @@ export function getNextRuns(
     const dows = parseField(normalizedDowExpr, 0, 6);
 
     const dates: Date[] = [];
-    const current = new Date();
+    const startTime = Date.now();
+    const current = new Date(startTime);
     current.setMilliseconds(0);
-    
+
     let iterations = 0;
-    while (dates.length < count && iterations < 60000) {
+    while (dates.length < count && iterations < 10000) {
       iterations++;
-      current.setSeconds(current.getSeconds() + 1);
 
       const m = current.getMonth() + 1;
       if (!months.has(m)) {
@@ -123,7 +123,7 @@ export function getNextRuns(
       const sec = current.getSeconds();
       if (!seconds.has(sec)) continue;
 
-      dates.push(new Date(current.getTime()));
+      current.setSeconds(current.getSeconds() + 1);
     }
 
     if (dates.length === 0) {
