@@ -21,7 +21,7 @@ import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store/useStore';
 import { toast } from '@/components/ui/Toast';
-import { tools, categories, toolMatchesQuery, type ToolDef } from '@/tools/registry';
+import { tools, categories, toolMatchesQuery, getToolById, type ToolDef } from '@/tools/registry';
 
 const categoryPills = ['All', 'Favorites', 'New', ...categories] as const;
 
@@ -297,7 +297,7 @@ export function ToolGrid() {
   const recentToolsData = React.useMemo(
     () =>
       recentTools
-        .map((id) => tools.find((t) => t.id === id))
+        .map((id) => getToolById(id))
         .filter(Boolean) as ToolDef[],
     [recentTools]
   );

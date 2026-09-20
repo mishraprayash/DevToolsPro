@@ -83,11 +83,11 @@ export function getNextRuns(
     const dates: Date[] = [];
     const current = new Date();
     current.setMilliseconds(0);
-    
+    current.setSeconds(current.getSeconds() + 1);
+
     let iterations = 0;
-    while (dates.length < count && iterations < 60000) {
+    while (dates.length < count && iterations < 50000) {
       iterations++;
-      current.setSeconds(current.getSeconds() + 1);
 
       const m = current.getMonth() + 1;
       if (!months.has(m)) {
@@ -124,6 +124,7 @@ export function getNextRuns(
       if (!seconds.has(sec)) continue;
 
       dates.push(new Date(current.getTime()));
+      current.setSeconds(current.getSeconds() + 1);
     }
 
     if (dates.length === 0) {
