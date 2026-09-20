@@ -92,7 +92,8 @@ export function getNextRuns(
       const m = current.getMonth() + 1;
       if (!months.has(m)) {
         current.setMonth(current.getMonth() + 1, 1);
-        current.setHours(0, 0, 0, 0);
+        current.setHours(0, 0, 0);
+        current.setSeconds(-1);
         continue;
       }
 
@@ -100,31 +101,27 @@ export function getNextRuns(
       const dow = current.getDay();
       if (!days.has(day) || !dows.has(dow)) {
         current.setDate(current.getDate() + 1);
-        current.setHours(0, 0, 0, 0);
+        current.setHours(0, 0, 0);
+        current.setSeconds(-1);
         continue;
       }
 
       const hr = current.getHours();
       if (!hours.has(hr)) {
-        current.setHours(current.getHours() + 1, 0, 0, 0);
+        current.setHours(current.getHours() + 1, 0, 0);
+        current.setSeconds(-1);
         continue;
       }
 
       const min = current.getMinutes();
       if (!minutes.has(min)) {
-        current.setMinutes(current.getMinutes() + 1, 0, 0);
+        current.setMinutes(current.getMinutes() + 1, 0);
+        current.setSeconds(-1);
         continue;
       }
 
       const sec = current.getSeconds();
-      if (!seconds.has(sec)) {
-        current.setSeconds(current.getSeconds() + 1);
-        continue;
-      }
-
-      if (current.getTime() > startTime) {
-        dates.push(new Date(current.getTime()));
-      }
+      if (!seconds.has(sec)) continue;
 
       current.setSeconds(current.getSeconds() + 1);
     }
