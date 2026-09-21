@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store/useStore';
 import { GithubIcon } from '@/components/ui/GithubIcon';
-import { tools, type ToolCategory } from '@/tools/registry';
+import { tools, toolsMap, type ToolCategory } from '@/tools/registry';
 
 const categoryLinks: { cat: ToolCategory; ids: string[] }[] = [
   { cat: 'Formatting', ids: ['json', 'yaml-json', 'html-preview', 'css-sandbox'] },
@@ -12,15 +12,13 @@ const categoryLinks: { cat: ToolCategory; ids: string[] }[] = [
   { cat: 'Security', ids: ['jwt', 'hash', 'password', 'aes'] },
 ];
 
-const toolMap = new Map(tools.map(t => [t.id, t]));
-
 export function Footer() {
   const { setFeedbackOpen } = useAppStore();
 
   const categoryToolsMap = React.useMemo(() => {
     return categoryLinks.map(({ cat, ids }) => ({
       cat,
-      tools: ids.map(id => toolMap.get(id)).filter(Boolean) as typeof tools,
+      tools: ids.map(id => toolsMap.get(id)).filter(Boolean) as typeof tools,
     }));
   }, []);
 
