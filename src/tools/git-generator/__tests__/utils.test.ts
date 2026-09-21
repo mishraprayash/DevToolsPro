@@ -37,4 +37,53 @@ describe('Git Generator Utilities', () => {
     expect(remote.success).toBe(true);
     if (remote.success) expect(remote.data.command).toBe('git remote add origin https://github.com/a/b.git');
   });
+
+  it('should handle amend commit options', () => {
+    const amendWithAddAll = generateGitCommand({ type: 'commit', amend: true, addAll: true });
+    expect(amendWithAddAll.success).toBe(true);
+    if (amendWithAddAll.success) {
+      expect(amendWithAddAll.data.command).toBe('git add . && git commit --amend --no-edit');
+    }
+
+    const amendWithMessage = generateGitCommand({ type: 'commit', amend: true, message: 'updated' });
+    expect(amendWithMessage.success).toBe(true);
+    if (amendWithMessage.success) {
+      expect(amendWithMessage.data.command).toBe('git commit --amend -m "updated"');
+    }
+  });
+
+  it('should fallback to defaults when options are missing', () => {
+    const defaultCommit = generateGitCommand({ type: 'commit' });
+    expect(defaultCommit.success).toBe(true);
+    if (defaultCommit.success) expect(defaultCommit.data.command).toBe('git commit -m "commit message"');
+
+    const defaultCheckout = generateGitCommand({ type: 'branch' });
+    expect(defaultCheckout.success).toBe(true);
+    if (defaultCheckout.success) expect(defaultCheckout.data.command).toBe('git checkout branch-name');
+
+    const defaultRemoteList = generateGitCommand({ type: 'remote' });
+    expect(defaultRemoteList.success).toBe(true);
+    if (defaultRemoteList.success) expect(defaultRemoteList.data.command).toBe('git remote -v');
+
+    const defaultReset = generateGitCommand({ type: 'reset' });
+    expect(defaultReset.success).toBe(true);
+    if (defaultReset.success) expect(defaultReset.data.command).toBe('git reset --mixed HEAD~1');
+  });
+
+  it('should handle all stash actions correctly', () => {
+    const actions = ['save', 'pop', 'apply', 'list', 'clear'] as const;
+    for (const action of actions) {
+      const res = generateGitCommand({ type: 'stash', stashAction: action });
+      expect(res.success).toBe(true);
+    }
+  });
+
+  it('should return error for unknown command type', () => {
+    // @ts-expect-error - testing invalid command type
+    const res = generateGitCommand({ type: 'unknown-type' });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error).toBe('Unknown command type');
+    }
+  });
 });

@@ -5,6 +5,8 @@ import {
   getJWTExpiryDate,
   getJWTIssuedAt,
   decodeJwtParts,
+  signJWT,
+  verifyJwtSignature,
 } from '../utils';
 
 describe('JWT Utilities', () => {
@@ -110,6 +112,59 @@ describe('JWT Utilities', () => {
       if (!result.success) {
         expect(result.error).toBe('Unable to parse JSON in header/payload');
       }
+    });
+  });
+
+  describe('signJWT & verifyJwtSignature', () => {
+    it('should sign and verify JWT using HS256', async () => {
+      const header = { alg: 'HS256', typ: 'JWT' };
+      const payload = { sub: 'user123', role: 'admin' };
+      const secret = 'super-secret-key';
+
+      const token = await signJWT(header, payload, secret, 'HS256');
+      expect(token).toBeDefined();
+      expect(token.split('.').length).toBe(3);
+
+      const verification = await verifyJwtSignature(token, secret, 'HS256');
+      expect(verification.valid).toBe(true);
+
+      const invalidVerification = await verifyJwtSignature(token, 'wrong-secret', 'HS256');
+      expect(invalidVerification.valid).toBe(false);
+      expect(invalidVerification.error).toBe('Signature mismatch');
+    });
+
+    it('should sign and verify JWT using HS384 and HS512', async () => {
+      const header = { typ: 'JWT' };
+      const payload = { test: true };
+      const secret = 'secret';
+
+      const token384 = await signJWT(header, payload, secret, 'HS384');
+      const verify384 = await verifyJwtSignature(token384, secret, 'HS384');
+      expect(verify384.valid).toBe(true);
+
+      const token512 = await signJWT(header, payload, secret, 'HS512');
+      const verify512 = await verifyJwtSignature(token512, secret, 'HS512');
+      expect(verify512.valid).toBe(true);
+    });
+
+    it('should handle invalid RS256 keys gracefully', async () => {
+      const header = { alg: 'RS256', typ: 'JWT' };
+      const payload = { sub: 'user' };
+
+      await expect(signJWT(header, payload, 'invalid-pem-key', 'RS256')).rejects.toThrow('Invalid RSA private key');
+
+      const verification = await verifyJwtSignature('header.payload.sig', 'invalid-pem-key', 'RS256');
+      expect(verification.valid).toBe(false);
+      expect(verification.error).toBe('Invalid RSA public key');
+    });
+
+    it('should return error when verifying malformed tokens or invalid base64 signature', async () => {
+      const res1 = await verifyJwtSignature('part1.part2', 'secret', 'HS256');
+      expect(res1.valid).toBe(false);
+      expect(res1.error).toBe('Token does not have 3 parts');
+
+      const res2 = await verifyJwtSignature('p1.p2.invalid!@#$b64', 'secret', 'HS256');
+      expect(res2.valid).toBe(false);
     });
   });
 });
