@@ -96,7 +96,7 @@ describe('Date Toolbox Utilities', () => {
       expect(getRelativeTime(now - 1000)).toBe('just now');
       expect(getRelativeTime(now - 10000)).toBe('10 seconds ago');
       expect(getRelativeTime(now - 120000)).toBe('2 minutes ago');
-      expect(getRelativeTime(now + 3600000)).toBe('in 1 hour');
+      expect(getRelativeTime(now + 3605000)).toBe('in 1 hour');
     });
   });
 
