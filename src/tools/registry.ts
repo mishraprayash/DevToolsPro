@@ -94,8 +94,10 @@ export const categoryLabels: Record<ToolCategory, string> = {
   'Date & Time': 'Date & Time',
 };
 
+export const toolsMap = new Map<string, ToolDef>(tools.map((t) => [t.id, t]));
+
 export function getToolById(id: string): ToolDef | undefined {
-  return tools.find((t) => t.id === id);
+  return toolsMap.get(id);
 }
 
 export function getToolsByCategory(category: ToolCategory): ToolDef[] {

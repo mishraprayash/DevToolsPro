@@ -77,10 +77,10 @@ export function getRelativeTime(timestampMs: number): string {
   const now = Date.now();
   const diff = now - timestampMs;
   const absDiff = Math.abs(diff);
-  const seconds = Math.floor(absDiff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
+  const seconds = Math.round(absDiff / 1000);
+  const minutes = Math.round(seconds / 60);
+  const hours = Math.round(minutes / 60);
+  const days = Math.round(hours / 24);
 
   const isFuture = diff < 0;
   const prefix = isFuture ? 'in ' : '';
