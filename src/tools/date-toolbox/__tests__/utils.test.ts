@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   toTimestamp,
   fromTimestamp,
@@ -91,6 +91,15 @@ describe('Date Toolbox Utilities', () => {
   });
 
   describe('getRelativeTime', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(1600000000000));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('should format relative times for past and future', () => {
       const now = Date.now();
       expect(getRelativeTime(now - 1000)).toBe('just now');
