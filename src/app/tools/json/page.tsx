@@ -23,9 +23,8 @@ import { Select } from '@/components/ui/Select';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { toast } from '@/components/ui/Toast';
 import {
-  processJson,
   validateJson,
-  JsonAction,
+  type JsonAction,
   repairJsonString,
   parseJson
 } from '@/tools/json/utils';
@@ -54,19 +53,22 @@ interface Example {
   input: string;
 }
 
-const examples: Example[] = [
+const examples: (Example & { hint: string })[] = [
   {
     label: 'User object',
+    hint: 'Beautify • nested',
     action: 'beautify',
     input: '{"name":"Alice","age":30,"address":{"city":"New York","zip":"10001"},"tags":["admin","user"]}',
   },
   {
     label: 'Sort keys',
+    hint: 'Sort • alphabetical',
     action: 'sort',
     input: '{"zebra":1,"apple":2,"mango":3,"banana":4}',
   },
   {
     label: 'Minify',
+    hint: 'Minify • compact',
     action: 'minify',
     input: '{\n  "id": 1,\n  "product": "Widget",\n  "price": 9.99,\n  "inStock": true\n}',
   }
@@ -150,6 +152,16 @@ export default function Page() {
       updateActiveWorkspace({ error: (e as Error).message, output: '', parsedData: null });
     }
   }, [state.input, state.action, state.indent, addHistoryItem, updateActiveWorkspace, runWorker]);
+
+  // Keyboard: Cmd/Ctrl+Enter to re-format, Esc to clear
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); handleProcess(); }
+      if (e.key === 'Escape' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') { /* let modal handle */ }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleProcess]);
 
   React.useEffect(() => {
     const t = setTimeout(handleProcess, 100);
@@ -314,31 +326,62 @@ export default function Page() {
         </Button>
       </div>
 
-      <Input
-        value={state.input}
-        onChange={(e) => updateActiveWorkspace({ input: e.target.value, activeExample: -1 })}
-        onDropText={(text) => updateActiveWorkspace({ input: text, activeExample: -1 })}
-        placeholder='{"key": "value"}'
-        monospace
-        className="w-full h-full"
-        wrapperClassName="flex-1 min-h-[200px]"
-      />
-
-      <div className="flex flex-wrap items-center gap-4 bg-bg-secondary p-4 rounded-xl border border-border shrink-0">
-        <Select
-          label="Format Action"
-          options={actions}
-          value={state.action}
-          onChange={(e) => updateActiveWorkspace({ action: e.target.value as JsonAction })}
+      <div className="relative flex-1 min-h-[200px] flex flex-col">
+        <Input
+          value={state.input}
+          onChange={(e) => updateActiveWorkspace({ input: e.target.value, activeExample: -1 })}
+          onDropText={(text) => updateActiveWorkspace({ input: text, activeExample: -1 })}
+          placeholder='{"key": "value"} — paste JSON or try an example below'
+          monospace
+          className="w-full h-full"
+          wrapperClassName="flex-1 min-h-[200px]"
         />
+        {!state.input.trim() && (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-4">
+            <div className="pointer-events-auto bg-bg-secondary/95 backdrop-blur border border-border rounded-xl p-4 shadow-lg max-w-sm w-full">
+              <p className="text-xs font-bold flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-accent" /> How to use</p>
+              <ol className="mt-2 text-xs text-text-secondary list-decimal list-inside space-y-1">
+                <li>Paste JSON (or drop a .json file)</li>
+                <li>Pick <span className="font-semibold text-text-primary">Beautify / Minify / Sort</span> — updates instantly</li>
+                <li>Copy, download, or share the tab</li>
+              </ol>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {examples.map((ex, i) => (
+                  <button key={ex.label} type="button" onClick={() => applyExample(i)} className="px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs font-medium hover:bg-accent/15">
+                    Try {ex.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-text-muted">Tip: <kbd className="px-1 py-0.5 bg-bg-tertiary border border-border rounded">⌘+Enter</kbd> to format</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 bg-bg-secondary p-3 rounded-xl border border-border shrink-0">
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-bg-tertiary border border-border" role="group" aria-label="Format action">
+          {actions.map(a => (
+            <button
+              key={a.value}
+              type="button"
+              onClick={() => updateActiveWorkspace({ action: a.value })}
+              aria-pressed={state.action === a.value}
+              className={cn('px-3 py-1.5 text-xs font-semibold rounded-md transition-all', state.action === a.value ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary')}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
+        <div className="h-6 w-px bg-border hidden sm:block" />
         {state.action === 'beautify' && (
           <Select
-            label="Indent Size"
+            label="Indent"
             options={indentOptions}
             value={state.indent}
             onChange={(e) => updateActiveWorkspace({ indent: e.target.value })}
           />
         )}
+        <span className="ml-auto hidden sm:inline text-[11px] text-text-muted">Auto-updates • <kbd className="px-1 py-0.5 bg-bg-tertiary border border-border rounded">⌘+Enter</kbd></span>
       </div>
 
       {/* Smart Auto-Repair Section */}
@@ -408,11 +451,21 @@ export default function Page() {
 
       {/* Active Tab Viewport */}
       <div className="flex-1 min-h-[200px] flex flex-col h-full">
-        {state.activeTab === 'json_text' && (
-          <JsonViewer value={state.output} className="flex-1 h-full min-h-[200px]" />
-        )}
-        {state.activeTab === 'tree' && state.parsedData !== null && (
-          <JsonTreeViewer data={state.parsedData} className="flex-1 h-full min-h-[200px]" />
+        {!state.output && !state.error ? (
+          <div className="flex-1 min-h-[200px] border border-dashed border-border rounded-xl flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center"><FileCode className="h-5 w-5 text-accent" /></div>
+            <p className="mt-2 text-sm font-semibold">Output will appear here</p>
+            <p className="text-xs text-text-muted mt-1 max-w-xs">Paste JSON on the left and pick Beautify / Minify / Sort. Use <kbd className="px-1 py-0.5 bg-bg-tertiary border border-border rounded text-[10px]">⌘+Enter</kbd> to run.</p>
+          </div>
+        ) : (
+          <>
+            {state.activeTab === 'json_text' && (
+              <JsonViewer value={state.output} className="flex-1 h-full min-h-[200px]" />
+            )}
+            {state.activeTab === 'tree' && state.parsedData !== null && (
+              <JsonTreeViewer data={state.parsedData} className="flex-1 h-full min-h-[200px]" />
+            )}
+          </>
         )}
       </div>
 

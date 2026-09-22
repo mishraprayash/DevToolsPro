@@ -37,10 +37,11 @@ const WORD_LIST = [
   'vessel', 'vortex', 'whisper', 'willow', 'zenith', 'zephyr'
 ];
 
-export function generatePassword(options: PasswordOptions): string {
-  if (options.mode === 'passphrase') {
-    return generatePassphrase(options.wordCount || 4, options.separator || '-');
-  }
+import type { Result } from '@/types';
+import { ok, err } from '@/types';
+
+export function generatePasswordResult(options: PasswordOptions): Result<string> {
+  if (options.mode === 'passphrase') return ok(generatePassphrase(options.wordCount || 4, options.separator || '-'));
 
   let lower = LOWERCASE;
   let upper = UPPERCASE;
@@ -61,18 +62,23 @@ export function generatePassword(options: PasswordOptions): string {
   if (options.numbers) chars += num;
   if (options.symbols) chars += sym;
 
-  if (!chars) return '';
+  if (!chars) return err('Select at least one character set (lower/upper/numbers/symbols).');
   const safeLen = Math.max(4, Math.min(options.length, 128));
 
-  const array = new Uint32Array(safeLen);
-  crypto.getRandomValues(array);
-
-  let password = '';
-  for (let i = 0; i < safeLen; i++) {
-    password += chars[array[i] % chars.length];
+  try {
+    const array = new Uint32Array(safeLen);
+    crypto.getRandomValues(array);
+    let password = '';
+    for (let i = 0; i < safeLen; i++) password += chars[array[i] % chars.length];
+    return ok(password);
+  } catch (e) {
+    return err((e as Error).message || 'Failed to generate password');
   }
+}
 
-  return password;
+export function generatePassword(options: PasswordOptions): string {
+  const r = generatePasswordResult(options);
+  return r.success ? r.data : '';
 }
 
 export function generatePassphrase(count: number = 4, separator: string = '-'): string {

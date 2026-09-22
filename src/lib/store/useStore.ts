@@ -30,7 +30,21 @@ interface AppState {
   clearHistory: (toolId: string) => void;
 }
 
+function canUseDOM(): boolean {
+  return typeof document !== 'undefined' && typeof window !== 'undefined';
+}
+
+function generateId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+  } catch {}
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function applyTheme(theme: Theme) {
+  if (!canUseDOM()) return;
   const root = document.documentElement;
   root.classList.remove('dark', 'light');
   root.classList.add(theme);
@@ -74,7 +88,7 @@ export const useAppStore = create<AppState>()(
       addHistoryItem: (toolId, input, output, metadata) => {
         const currentHistory = get().history[toolId] || [];
         const newItem: HistoryItem = {
-          id: Math.random().toString(36).substring(2, 9),
+          id: generateId(),
           timestamp: Date.now(),
           input,
           output,

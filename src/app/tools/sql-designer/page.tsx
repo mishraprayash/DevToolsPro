@@ -81,7 +81,7 @@ function FlowDesigner() {
         if (savedFormat) setExportFormat(savedFormat);
       }
     } catch (e) {
-      console.error('Failed to load SQL designer state', e);
+      if (process.env.NODE_ENV !== 'production') console.error('Failed to load SQL designer state', e);
     }
     setIsLoaded(true);
   }, []);
@@ -149,8 +149,9 @@ function FlowDesigner() {
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === nodeId) {
+          const suffix = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID().slice(0, 6) : Math.random().toString(36).substring(2, 6);
           const newCol = {
-            id: `col-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            id: `col-${Date.now()}-${suffix}`,
             name: `col_${node.data.columns.length + 1}`,
             type: 'VARCHAR(255)',
             isPrimary: false,
@@ -214,7 +215,7 @@ function FlowDesigner() {
 
       const duplicatedColumns = targetNode.data.columns.map((c) => ({
         ...c,
-        id: `col-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        id: `col-${Date.now()}-${typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID().slice(0, 6) : Math.random().toString(36).substring(2, 6)}`,
       }));
 
       const newNode: AppTableNode = {
@@ -240,7 +241,7 @@ function FlowDesigner() {
     const newNode: AppTableNode = {
       id: `tbl-${Date.now()}`,
       type: 'tableNode',
-      position: { x: Math.random() * 200 + 100, y: Math.random() * 200 + 100 },
+      position: { x: Math.floor(Math.random() * 200) + 100, y: Math.floor(Math.random() * 200) + 100 },
       data: {
         tableName: 'new_table',
         columns: [

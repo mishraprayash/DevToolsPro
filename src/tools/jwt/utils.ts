@@ -129,21 +129,21 @@ function base64UrlDecodeToBytes(input: string): { success: true; data: Uint8Arra
   }
 }
 
-export async function signJWT(
+export async function signJWTResult(
   headerObj: Record<string, unknown>,
   payloadObj: Record<string, unknown>,
   secret: string,
   algorithm: JWTAlgorithm = 'HS256'
-): Promise<string> {
+): Promise<{ success: true; data: string } | { success: false; error: string }> {
   try {
     const headerStr = JSON.stringify(headerObj);
     const payloadStr = JSON.stringify(payloadObj);
-    
+
     const headerB64 = base64UrlEncode(headerStr);
     const payloadB64 = base64UrlEncode(payloadStr);
-    
+
     const tokenData = `${headerB64}.${payloadB64}`;
-    
+
     const encoder = new TextEncoder();
     const messageData = encoder.encode(tokenData);
 
@@ -151,9 +151,7 @@ export async function signJWT(
 
     if (algorithm === 'RS256') {
       const keyBytes = pemToArrayBuffer(secret);
-      if (!keyBytes.success) {
-        throw new Error('Invalid RSA private key');
-      }
+      if (!keyBytes.success) return { success: false, error: 'Invalid RSA private key' };
       const cryptoKey = await crypto.subtle.importKey(
         'pkcs8',
         keyBytes.data,
@@ -174,22 +172,31 @@ export async function signJWT(
       );
       signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
     }
-    
+
     const signatureBytes = new Uint8Array(signatureBuffer);
     let signatureBin = '';
-    for (let i = 0; i < signatureBytes.length; i++) {
-      signatureBin += String.fromCharCode(signatureBytes[i]);
-    }
-    
+    for (let i = 0; i < signatureBytes.length; i++) signatureBin += String.fromCharCode(signatureBytes[i]);
+
     const signatureB64 = btoa(signatureBin)
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=+$/, '');
-      
-    return `${tokenData}.${signatureB64}`;
+
+    return { success: true, data: `${tokenData}.${signatureB64}` };
   } catch (e) {
-    throw new Error(`Failed to sign JWT: ${(e as Error).message}`);
+    return { success: false, error: `Failed to sign JWT: ${(e as Error).message}` };
   }
+}
+
+export async function signJWT(
+  headerObj: Record<string, unknown>,
+  payloadObj: Record<string, unknown>,
+  secret: string,
+  algorithm: JWTAlgorithm = 'HS256'
+): Promise<string> {
+  const r = await signJWTResult(headerObj, payloadObj, secret, algorithm);
+  if (!r.success) throw new Error(r.error);
+  return r.data;
 }
 
 export async function verifyJwtSignature(

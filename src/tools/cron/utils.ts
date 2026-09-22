@@ -136,6 +136,15 @@ export function getNextRuns(
   }
 }
 
+import type { Result } from '@/types';
+import { ok, err } from '@/types';
+
+export function translateCronToEnglishResult(expr: string): Result<string> {
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length !== 5 && parts.length !== 6) return err('Invalid cron expression: must have exactly 5 or 6 fields');
+  return ok(translateCronToEnglish(expr));
+}
+
 export function translateCronToEnglish(expr: string): string {
   const parts = expr.trim().split(/\s+/);
   if (parts.length !== 5 && parts.length !== 6) {

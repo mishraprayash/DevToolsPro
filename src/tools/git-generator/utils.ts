@@ -100,7 +100,7 @@ export function generateGitCommand(state: GitCommandState): { success: true; dat
         break;
 
       default:
-        throw new Error('Unknown command type');
+        return { success: false, error: `Unknown command type: ${String(state.type)}` };
     }
 
     return { success: true, data: { command, explanation } };

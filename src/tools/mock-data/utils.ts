@@ -69,14 +69,9 @@ function generateValue(type: MockFieldType, index: number): unknown {
 }
 
 export function generateMockData(schema: MockSchema[], count: number = 10, format: 'json' | 'csv' = 'json'): { success: true; data: string } | { success: false; error: string } {
+  if (count < 1 || count > 1000) return { success: false, error: 'Count must be between 1 and 1000' };
+  if (schema.length === 0) return { success: false, error: 'Schema must contain at least one field' };
   try {
-    if (count < 1 || count > 1000) {
-      throw new Error('Count must be between 1 and 1000');
-    }
-    
-    if (schema.length === 0) {
-      throw new Error('Schema must contain at least one field');
-    }
 
     const rows = [];
     for (let i = 0; i < count; i++) {

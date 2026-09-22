@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from '@/components/ui/Toast';
 
@@ -7,13 +8,20 @@ export interface Workspace<T> {
   state: T;
 }
 
+function deepClone<T>(v: T): T {
+  try {
+    if (typeof structuredClone === 'function') return structuredClone(v);
+  } catch {}
+  return JSON.parse(JSON.stringify(v));
+}
+
 export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', storageKey?: string) {
   const [mounted, setMounted] = useState(false);
 
   const createNewWorkspace = useCallback((id: string, name: string): Workspace<T> => ({
     id,
     name,
-    state: { ...defaultState }
+    state: deepClone(defaultState)
   }), [defaultState]);
 
   const [workspaces, setWorkspaces] = useState<Workspace<T>[]>([
@@ -22,64 +30,92 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
 
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>('default-ssr-id');
 
-  // Hydrate from localStorage and URL Hash once on client
+  // Hydrate from localStorage and URL Hash once on client (with IndexedDB fallback)
   useEffect(() => {
-    let hydratedWorkspaces = [createNewWorkspace(crypto.randomUUID(), `${defaultNamePrefix} 1`)];
-    let hydratedActiveId = hydratedWorkspaces[0].id;
+    let cancelled = false;
+    (async () => {
+      let hydratedWorkspaces = [createNewWorkspace(crypto.randomUUID(), `${defaultNamePrefix} 1`)];
+      let hydratedActiveId = hydratedWorkspaces[0].id;
 
-    let hasSharedState = false;
+      let hasSharedState = false;
 
-    // Check for shared URL hash
-    try {
-      const hash = window.location.hash;
-      if (hash.startsWith('#share=')) {
-        const encoded = hash.replace('#share=', '');
-        const decoded = JSON.parse(decodeURIComponent(atob(encoded)));
-        if (decoded) {
-          const newId = crypto.randomUUID();
-          hydratedWorkspaces = [{ id: newId, name: 'Shared Tab', state: { ...defaultState, ...decoded } }];
-          hydratedActiveId = newId;
-          hasSharedState = true;
-          // Clear hash so it doesn't persist on reload
-          window.history.replaceState(null, '', window.location.pathname + window.location.search);
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to parse shared state from URL hash', e);
-    }
-
-    if (storageKey && !hasSharedState) {
+      // Check for shared URL hash
       try {
-        const stored = localStorage.getItem(`devtools-workspaces-${storageKey}`);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            hydratedWorkspaces = parsed;
-            hydratedActiveId = parsed[0].id;
+        const hash = window.location.hash;
+        if (hash.startsWith('#share=')) {
+          const encoded = hash.replace('#share=', '');
+          const decoded = JSON.parse(decodeURIComponent(atob(encoded)));
+          if (decoded) {
+            const newId = crypto.randomUUID();
+            hydratedWorkspaces = [{ id: newId, name: 'Shared Tab', state: { ...deepClone(defaultState), ...decoded } }];
+            hydratedActiveId = newId;
+            hasSharedState = true;
+            // Clear hash so it doesn't persist on reload
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
           }
         }
-        const storedActive = localStorage.getItem(`devtools-active-workspace-${storageKey}`);
-        if (storedActive && hydratedWorkspaces.find(w => w.id === storedActive)) {
-          hydratedActiveId = storedActive;
-        }
       } catch (e) {
-        console.warn(`Failed to parse workspaces for ${storageKey}`, e);
+        if (process.env.NODE_ENV !== 'production') console.warn('Failed to parse shared state from URL hash', e);
       }
-    }
 
-    setWorkspaces(hydratedWorkspaces);
-    setActiveWorkspaceId(hydratedActiveId);
-    setMounted(true);
+      if (storageKey && !hasSharedState) {
+        try {
+          const stored = localStorage.getItem(`devtools-workspaces-${storageKey}`);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              hydratedWorkspaces = parsed;
+              hydratedActiveId = parsed[0].id;
+            }
+          } else {
+            // Fallback: try IndexedDB if localStorage was empty (quota-fallback path)
+            try {
+              const { idbGet } = await import('@/lib/storage/idbStorage');
+              const idbData = await idbGet<Workspace<T>[]>(`devtools-workspaces-${storageKey}`);
+              if (Array.isArray(idbData) && idbData.length > 0) {
+                hydratedWorkspaces = idbData;
+                hydratedActiveId = idbData[0].id;
+              }
+            } catch {}
+          }
+          const storedActive = localStorage.getItem(`devtools-active-workspace-${storageKey}`);
+          if (storedActive && hydratedWorkspaces.find(w => w.id === storedActive)) {
+            hydratedActiveId = storedActive;
+          }
+        } catch (e) {
+          if (process.env.NODE_ENV !== 'production') console.warn(`Failed to parse workspaces for ${storageKey}`, e);
+        }
+      }
+
+      if (!cancelled) {
+        setWorkspaces(hydratedWorkspaces);
+        setActiveWorkspaceId(hydratedActiveId);
+        setMounted(true);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [storageKey, createNewWorkspace, defaultNamePrefix, defaultState]);
 
-  // Persist workspaces
+  // Persist workspaces — debounced + IndexedDB fallback when localStorage quota exceeded
+  const persistTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!mounted || !storageKey) return;
-    try {
-      localStorage.setItem(`devtools-workspaces-${storageKey}`, JSON.stringify(workspaces));
-    } catch (e) {
-      console.warn(`Failed to save workspaces for ${storageKey}. Quota exceeded?`, e);
-    }
+    if (persistTimer.current) clearTimeout(persistTimer.current);
+    persistTimer.current = setTimeout(async () => {
+      const payload = JSON.stringify(workspaces);
+      try {
+        localStorage.setItem(`devtools-workspaces-${storageKey}`, payload);
+      } catch (e) {
+        if (process.env.NODE_ENV !== 'production') console.warn(`Failed to save workspaces for ${storageKey}. Trying IndexedDB fallback.`, e);
+        try {
+          const { idbSet } = await import('@/lib/storage/idbStorage');
+          await idbSet(`devtools-workspaces-${storageKey}`, workspaces);
+        } catch (err) {
+          if (process.env.NODE_ENV !== 'production') console.warn('IndexedDB fallback also failed', err);
+        }
+      }
+    }, 300);
+    return () => { if (persistTimer.current) clearTimeout(persistTimer.current); };
   }, [workspaces, mounted, storageKey]);
 
   // Persist active id
@@ -87,8 +123,8 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
     if (!mounted || !storageKey) return;
     try {
       localStorage.setItem(`devtools-active-workspace-${storageKey}`, activeWorkspaceId);
-    } catch (e) {
-      // ignore
+    } catch {
+      // ignore — active id is tiny, quota unlikely
     }
   }, [activeWorkspaceId, mounted, storageKey]);
 
@@ -153,7 +189,7 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
       
       navigator.clipboard.writeText(url.toString());
       toast({ type: 'success', message: 'Shareable link copied to clipboard!' });
-    } catch (e) {
+    } catch {
       toast({ type: 'error', message: 'Failed to generate share link.' });
     }
   }, [activeWorkspace.state]);

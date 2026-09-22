@@ -56,12 +56,19 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
   );
 }
 
+function genToastId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch {}
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function Toaster() {
   const [toasts, setToasts] = React.useState<Toast[]>([]);
 
   React.useEffect(() => {
     toastFn = (toast) => {
-      const id = Math.random().toString(36).slice(2);
+      const id = genToastId();
       
       setToasts((prev) => {
         // Deduplicate identical active toast messages to prevent spamming

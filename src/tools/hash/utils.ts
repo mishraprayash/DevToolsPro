@@ -27,7 +27,9 @@ function md5(str: string): string {
     6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
   ];
 
-  const utf8 = unescape(encodeURIComponent(str));
+  const utf8Bytes = new TextEncoder().encode(str);
+  let utf8 = '';
+  for (let i = 0; i < utf8Bytes.length; i++) utf8 += String.fromCharCode(utf8Bytes[i]);
   const n = utf8.length;
   const words: number[] = [];
   for (let i = 0; i < n; i++) {
