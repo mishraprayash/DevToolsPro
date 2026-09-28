@@ -1,9 +1,6 @@
-'use client';
-
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { ArrowRight, Grid3X3 } from 'lucide-react';
-import { tools, categories, type ToolCategory } from '@/tools/registry';
+import { ArrowRight } from 'lucide-react';
+import { tools, categories } from '@/tools/registry';
 
 export default function ToolsPage() {
   return (
@@ -33,14 +30,13 @@ export default function ToolsPage() {
                     const Icon = tool.icon;
                     return (
                       <Link key={tool.id} href={`/tools/${tool.id}`}>
-                        <motion.div whileHover={{ scale: 1.02, y: -3 }}
-                          className="p-4 rounded-xl border border-border bg-bg-secondary hover:border-accent/50 hover:bg-bg-elevated transition-all duration-200 cursor-pointer h-full group">
+                        <div className="p-4 rounded-xl border border-border bg-bg-secondary hover:border-accent/50 hover:bg-bg-elevated hover:-translate-y-0.5 hover:scale-[1.02] transition-all duration-200 cursor-pointer h-full group">
                           <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${tool.color} flex items-center justify-center mb-3 group-hover:scale-105 transition-transform`}>
                             <Icon className="h-5 w-5 text-white" />
                           </div>
                           <h3 className="text-sm font-semibold font-outfit text-text-primary group-hover:text-accent transition-colors">{tool.name}</h3>
                           <p className="mt-1 text-xs text-text-secondary leading-relaxed">{tool.description}</p>
-                        </motion.div>
+                        </div>
                       </Link>
                     );
                   })}

@@ -40,18 +40,19 @@ const cardVariant = {
 interface ToolItemProps {
   tool: ToolDef;
   viewMode: 'grid' | 'list';
+  isFavorite: boolean;
+  onToggleFavorite: (id: string) => void;
+  onAddRecent: (id: string) => void;
   onQuickPreview: (tool: ToolDef) => void;
 }
 
-const ToolItem = React.memo(function ToolItem({ tool, viewMode, onQuickPreview }: ToolItemProps) {
+const ToolItem = React.memo(function ToolItem({ tool, viewMode, isFavorite, onToggleFavorite, onAddRecent, onQuickPreview }: ToolItemProps) {
   const Icon = tool.icon;
-  const { favorites, toggleFavorite, addRecentTool } = useAppStore();
-  const isFavorite = React.useMemo(() => favorites.includes(tool.id), [favorites, tool.id]);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleFavorite(tool.id);
+    onToggleFavorite(tool.id);
     toast({
       type: 'success',
       message: isFavorite
@@ -66,11 +67,15 @@ const ToolItem = React.memo(function ToolItem({ tool, viewMode, onQuickPreview }
     onQuickPreview(tool);
   };
 
+  const handleCardClick = React.useCallback(() => {
+    onAddRecent(tool.id);
+  }, [onAddRecent, tool.id]);
+
   if (viewMode === 'list') {
     return (
       <motion.div variants={cardVariant}>
         <div className="group relative">
-          <Link href={`/tools/${tool.id}`} onClick={() => addRecentTool(tool.id)} className="block">
+          <Link href={`/tools/${tool.id}`} onClick={handleCardClick} className="block">
             <Card hover className="p-3.5 group cursor-pointer flex items-center gap-4 transition-all hover:bg-bg-hover/80 border-border/80">
               <div
                 className={cn(
@@ -136,7 +141,7 @@ const ToolItem = React.memo(function ToolItem({ tool, viewMode, onQuickPreview }
   return (
     <motion.div variants={cardVariant} className="h-full">
       <div className="h-full group relative">
-        <Link href={`/tools/${tool.id}`} onClick={() => addRecentTool(tool.id)} className="block h-full">
+        <Link href={`/tools/${tool.id}`} onClick={handleCardClick} className="block h-full">
           <Card
             hover
             className="h-full p-5 group cursor-pointer flex flex-col justify-between relative overflow-hidden card-highlight border-border/80 hover:border-accent/40 transition-all duration-300"
@@ -226,6 +231,10 @@ export function ToolGrid() {
   const [previewTool, setPreviewTool] = React.useState<ToolDef | null>(null);
 
   const { setCommandPaletteOpen, favorites, recentTools, addRecentTool } = useAppStore();
+  const toggleFavorite = useAppStore((s) => s.toggleFavorite);
+  const favoriteSet = React.useMemo(() => new Set(favorites), [favorites]);
+  const handleToggleFavorite = React.useCallback((id: string) => toggleFavorite(id), [toggleFavorite]);
+  const handleAddRecent = React.useCallback((id: string) => addRecentTool(id), [addRecentTool]);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -237,6 +246,21 @@ export function ToolGrid() {
     setViewMode(mode);
     localStorage.setItem('devtools-viewmode', mode);
   };
+
+  // URL ↔ state sync for shareable category filter
+  React.useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const cat = sp.get('category');
+    if (cat && (categoryPills as readonly string[]).includes(cat)) setActiveCategory(cat);
+    const q = sp.get('q'); if (q) setQuery(q);
+  }, []);
+  React.useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    if (activeCategory !== 'All') sp.set('category', activeCategory); else sp.delete('category');
+    if (query) sp.set('q', query); else sp.delete('q');
+    const s = sp.toString();
+    window.history.replaceState(null, '', s ? `?${s}` : window.location.pathname);
+  }, [activeCategory, query]);
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -327,6 +351,9 @@ export function ToolGrid() {
               key={`${title}-${tool.id}`}
               tool={tool}
               viewMode={viewMode}
+              isFavorite={favoriteSet.has(tool.id)}
+              onToggleFavorite={handleToggleFavorite}
+              onAddRecent={handleAddRecent}
               onQuickPreview={setPreviewTool}
             />
           ))}
@@ -350,7 +377,7 @@ export function ToolGrid() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search 59+ tools by name, category, or description…"
+                placeholder={`Search ${tools.length}+ tools by name, category, or description…`}
                 className="w-full h-10 pl-10 pr-10 rounded-xl bg-bg-tertiary/90 border border-border text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200 shadow-inner"
               />
               {!query && (
@@ -421,27 +448,39 @@ export function ToolGrid() {
             </div>
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 mt-3.5 overflow-x-auto scrollbar-hide">
-            {categoryPills.map((cat) => (
+          {/* Category Filter Pills — now with deep-link + a11y + keyboard nav */}
+          <div className="flex items-center gap-2 mt-3.5 overflow-x-auto scrollbar-hide" role="tablist" aria-label="Filter by category">
+            {categoryPills.map((cat) => {
+              const isActive = activeCategory === cat;
+              return (
               <button
                 key={cat}
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => setActiveCategory(cat)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+                  e.preventDefault();
+                  const idx = categoryPills.indexOf(cat as never);
+                  const next = e.key === 'ArrowRight' ? (idx + 1) % categoryPills.length : (idx - 1 + categoryPills.length) % categoryPills.length;
+                  setActiveCategory(categoryPills[next] as string);
+                  (e.currentTarget.parentElement?.children[next] as HTMLElement)?.focus();
+                }}
                 className={cn(
-                  'flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer',
-                  activeCategory === cat
+                  'flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-accent/50',
+                  isActive
                     ? 'bg-accent text-bg-primary shadow-md shadow-accent/20'
                     : 'bg-bg-tertiary text-text-secondary border border-border hover:border-border-hover hover:text-text-primary'
                 )}
               >
                 {cat === 'Favorites' && (
-                  <Star className={cn('h-3.5 w-3.5', activeCategory === cat && 'fill-current')} />
+                  <Star className={cn('h-3.5 w-3.5', isActive && 'fill-current')} />
                 )}
                 {cat}
                 <span
                   className={cn(
                     'text-[10px] px-1.5 py-0.2 rounded-full leading-5 font-mono',
-                    activeCategory === cat
+                    isActive
                       ? 'bg-white/30 text-bg-primary font-bold'
                       : 'bg-bg-hover text-text-muted'
                   )}
@@ -449,7 +488,12 @@ export function ToolGrid() {
                   {categoryCounts[cat] || 0}
                 </span>
               </button>
-            ))}
+              );})}
+            {activeCategory !== 'All' && (
+              <Link href={`/tools/categories/${activeCategory.toLowerCase().replace(/&/g, '').replace(/\s+/g, '-').replace(/--+/g, '-').trim()}`} className="ml-1 text-[11px] font-semibold text-accent hover:underline whitespace-nowrap">
+                Open {activeCategory} page →
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -522,25 +566,44 @@ export function ToolGrid() {
                   })}
                 </div>
               ) : (
-                <motion.div
-                  variants={container}
-                  initial="hidden"
-                  animate="show"
-                  className={
-                    viewMode === 'grid'
-                      ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
-                      : 'flex flex-col gap-2.5'
-                  }
-                >
-                  {filtered.map((tool) => (
-                    <ToolItem
-                      key={tool.id}
-                      tool={tool}
-                      viewMode={viewMode}
-                      onQuickPreview={setPreviewTool}
-                    />
-                  ))}
-                </motion.div>
+                <>
+                  {activeCategory === 'Formatting' && !query && (
+                    <div className="mb-4 p-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 flex flex-wrap items-center gap-2 text-xs">
+                      <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+                      <span className="font-semibold text-text-primary">Workflow hint:</span>
+                      <span className="text-text-secondary">Chain</span>
+                      <Link href="/tools/json" className="px-2 py-1 rounded-full bg-bg-tertiary border border-border hover:border-cyan-500/30">JSON</Link>
+                      <span>→</span>
+                      <Link href="/tools/yaml-json" className="px-2 py-1 rounded-full bg-bg-tertiary border border-border hover:border-cyan-500/30">YAML ↔ JSON</Link>
+                      <span>→</span>
+                      <Link href="/tools/json-to-ts" className="px-2 py-1 rounded-full bg-bg-tertiary border border-border hover:border-cyan-500/30">TS</Link>
+                      <span className="mx-1 text-text-muted">•</span>
+                      <Link href="/tools/categories/formatting" className="font-semibold text-cyan-400 hover:underline">Explore all workflows →</Link>
+                    </div>
+                  )}
+                  <motion.div
+                    variants={container}
+                    initial="hidden"
+                    animate="show"
+                    className={
+                      viewMode === 'grid'
+                        ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+                        : 'flex flex-col gap-2.5'
+                    }
+                  >
+                    {filtered.map((tool) => (
+                      <ToolItem
+                        key={tool.id}
+                        tool={tool}
+                        viewMode={viewMode}
+                        isFavorite={favoriteSet.has(tool.id)}
+                        onToggleFavorite={handleToggleFavorite}
+                        onAddRecent={handleAddRecent}
+                        onQuickPreview={setPreviewTool}
+                      />
+                    ))}
+                  </motion.div>
+                </>
               )}
             </motion.div>
           )}

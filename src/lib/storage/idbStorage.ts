@@ -29,73 +29,92 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-export async function idbSet<T = unknown>(key: string, value: T): Promise<void> {
+function closeDB(db: IDBDatabase) {
   try {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
+    db.close();
+  } catch {}
+}
+
+export async function idbSet<T = unknown>(key: string, value: T): Promise<void> {
+  let db: IDBDatabase | null = null;
+  try {
+    db = await openDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db!.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
       const req = store.put({ key, value, updatedAt: Date.now() });
-
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   } catch (err) {
-    console.warn('idbSet failed, falling back to memory/ignored:', err);
+    if (process.env.NODE_ENV !== 'production') console.warn('idbSet failed, falling back to memory/ignored:', err);
+  } finally {
+    if (db) closeDB(db);
   }
 }
 
 export async function idbGet<T = unknown>(key: string): Promise<T | null> {
+  let db: IDBDatabase | null = null;
   try {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readonly');
+    db = await openDB();
+    const result = await new Promise<T | null>((resolve, reject) => {
+      const tx = db!.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
       const req = store.get(key);
-
       req.onsuccess = () => {
-        if (req.result) {
-          resolve(req.result.value as T);
-        } else {
-          resolve(null);
-        }
+        if (req.result) resolve(req.result.value as T);
+        else resolve(null);
       };
       req.onerror = () => reject(req.error);
+      tx.onerror = () => reject(tx.error);
     });
+    return result;
   } catch (err) {
-    console.warn('idbGet failed:', err);
+    if (process.env.NODE_ENV !== 'production') console.warn('idbGet failed:', err);
     return null;
+  } finally {
+    if (db) closeDB(db);
   }
 }
 
 export async function idbDelete(key: string): Promise<void> {
+  let db: IDBDatabase | null = null;
   try {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
+    db = await openDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db!.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
       const req = store.delete(key);
-
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   } catch (err) {
-    console.warn('idbDelete failed:', err);
+    if (process.env.NODE_ENV !== 'production') console.warn('idbDelete failed:', err);
+  } finally {
+    if (db) closeDB(db);
   }
 }
 
 export async function idbClear(): Promise<void> {
+  let db: IDBDatabase | null = null;
   try {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
+    db = await openDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db!.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
       const req = store.clear();
-
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   } catch (err) {
-    console.warn('idbClear failed:', err);
+    if (process.env.NODE_ENV !== 'production') console.warn('idbClear failed:', err);
+  } finally {
+    if (db) closeDB(db);
   }
 }
