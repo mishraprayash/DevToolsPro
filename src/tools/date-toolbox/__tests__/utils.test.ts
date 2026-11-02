@@ -93,10 +93,10 @@ describe('Date Toolbox Utilities', () => {
   describe('getRelativeTime', () => {
     it('should format relative times for past and future', () => {
       const now = Date.now();
-      expect(getRelativeTime(now - 1000)).toBe('just now');
-      expect(getRelativeTime(now - 10000)).toBe('10 seconds ago');
-      expect(getRelativeTime(now - 120000)).toBe('2 minutes ago');
-      expect(getRelativeTime(now + 3600000)).toBe('in 1 hour');
+      expect(getRelativeTime(now - 1000, now)).toBe('just now');
+      expect(getRelativeTime(now - 10000, now)).toBe('10 seconds ago');
+      expect(getRelativeTime(now - 120000, now)).toBe('2 minutes ago');
+      expect(getRelativeTime(now + 3600000, now)).toBe('in 1 hour');
     });
   });
 
