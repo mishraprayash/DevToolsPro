@@ -24,6 +24,74 @@ describe('User-Agent Utilities', () => {
     expect(parsed.device.brand).toBe('Apple iPhone');
   });
 
+  it('should parse Firefox on Linux with Gecko engine', () => {
+    const ua = 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0';
+    const parsed = parseUserAgent(ua);
+    expect(parsed.browser.name).toBe('Mozilla Firefox');
+    expect(parsed.browser.version).toBe('115.0');
+    expect(parsed.os.name).toBe('Linux');
+    expect(parsed.os.version).toBe('Unknown');
+    expect(parsed.engine.name).toBe('Gecko');
+    expect(parsed.engine.version).toBe('109.0');
+  });
+
+  it('should parse Edge on Windows 8.1', () => {
+    const ua = 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.183';
+    const parsed = parseUserAgent(ua);
+    expect(parsed.browser.name).toBe('Microsoft Edge');
+    expect(parsed.browser.version).toBe('115.0.1901.183');
+    expect(parsed.os.name).toBe('Windows');
+    expect(parsed.os.version).toBe('8.1');
+  });
+
+  it('should parse Opera on macOS', () => {
+    const ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 OPR/100.0.0.0';
+    const parsed = parseUserAgent(ua);
+    expect(parsed.browser.name).toBe('Opera');
+    expect(parsed.browser.version).toBe('100.0.0.0');
+    expect(parsed.os.name).toBe('macOS');
+    expect(parsed.os.version).toBe('10.15.7');
+  });
+
+  it('should parse Vivaldi browser', () => {
+    const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Vivaldi/6.1.3035.111';
+    const parsed = parseUserAgent(ua);
+    expect(parsed.browser.name).toBe('Vivaldi');
+    expect(parsed.browser.version).toBe('6.1.3035.111');
+  });
+
+  it('should parse Internet Explorer on Windows 7 with Trident engine', () => {
+    const ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko';
+    const parsed = parseUserAgent(ua);
+    expect(parsed.browser.name).toBe('Internet Explorer');
+    expect(parsed.browser.version).toBe('11.0');
+    expect(parsed.os.name).toBe('Windows');
+    expect(parsed.os.version).toBe('7');
+    expect(parsed.engine.name).toBe('Trident');
+    expect(parsed.engine.version).toBe('7.0');
+  });
+
+  it('should parse Android Mobile and Android Tablet', () => {
+    const androidMobile = 'Mozilla/5.0 (Linux; Android 13; SM-S901B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36';
+    const mParsed = parseUserAgent(androidMobile);
+    expect(mParsed.os.name).toBe('Android');
+    expect(mParsed.os.version).toBe('13');
+    expect(mParsed.device.type).toBe('Mobile');
+    expect(mParsed.device.brand).toBe('SM-S901B');
+
+    const androidTablet = 'Mozilla/5.0 (Linux; Android 12; SM-X900) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36';
+    const tParsed = parseUserAgent(androidTablet);
+    expect(tParsed.device.type).toBe('Tablet');
+    expect(tParsed.device.brand).toBe('SM-X900');
+  });
+
+  it('should parse iPad', () => {
+    const ua = 'Mozilla/5.0 (iPad; CPU OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1';
+    const parsed = parseUserAgent(ua);
+    expect(parsed.device.type).toBe('Tablet');
+    expect(parsed.device.brand).toBe('Apple iPad');
+  });
+
   it('should handle unknown or empty User-Agent strings gracefully', () => {
     const parsed = parseUserAgent('');
     expect(parsed.browser.name).toBe('Unknown Browser');
