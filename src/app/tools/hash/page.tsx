@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { hashString, hashAlgorithms, HashAlgorithm } from '@/tools/hash/utils';
 interface Example { label: string; algo: HashAlgorithm; input: string; }
 
@@ -20,6 +21,8 @@ export default function Page() {
   const [hash, setHash] = React.useState('');
   const [algorithm, setAlgorithm] = React.useState<HashAlgorithm>(examples[0].algo);
   const [error, setError] = React.useState<string | null>(null);
+
+  useToolPrefill('hash', ({ input }) => setInput(input));
 
   React.useEffect(() => {
     if (!input.trim()) { setHash(''); setError(null); return; }

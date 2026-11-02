@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { convertCurl, inspectCurl, type TargetLanguage, type CurlDetails } from '@/tools/curl-converter/utils';
 import { HistoryDrawer } from '@/components/tool/HistoryDrawer';
 import { useAppStore, type HistoryItem } from '@/lib/store/useStore';
@@ -49,6 +50,8 @@ export default function Page() {
   const [output, setOutput] = React.useState('');
   const [targetLang, setTargetLang] = React.useState<TargetLanguage>('javascript-fetch');
   const [activeExample, setActiveExample] = React.useState(1);
+
+  useToolPrefill('curl-converter', ({ input }) => { setInput(input); setActiveExample(-1); });
   const [error, setError] = React.useState<string | null>(null);
   const [curlDetails, setCurlDetails] = React.useState<CurlDetails>({ url: '', method: 'GET', headers: {}, hasBody: false });
   const { addHistoryItem } = useAppStore();
