@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { toast } from '@/components/ui/Toast';
 import { readToolHandoff, clearToolHandoff } from '@/lib/utils/toolHandoff';
 import { normalizeTabName, nextTabName } from '@/lib/utils/workspaceNames';
+import { encodeShareState, decodeShareState } from '@/lib/utils/shareCodec';
 
 export interface Workspace<T> {
   id: string;
@@ -17,16 +18,43 @@ function deepClone<T>(v: T): T {
   return JSON.parse(JSON.stringify(v));
 }
 
-function readSharedHash<T>(): Partial<T> | null {
+const SHARE_HASH_PREFIX = '#share=';
+/** Longest share URL we'll hand out; modern browsers cope well beyond this. */
+const MAX_SHARE_URL_LENGTH = 16_000;
+/**
+ * Derived/generated fields every tool recomputes from its inputs on load. They are
+ * dropped from share links (hydration merges over defaultState, so they come back as defaults).
+ */
+const DEFAULT_SHARE_OMIT_KEYS: readonly string[] = [
+  'output', 'parsedData', 'error', 'validation',
+  'splitRows', 'unifiedLines', 'diffLineIndices', 'splitRowIndices',
+  'signatureStatus', 'signatureMessage',
+];
+
+/** Synchronously grab the raw `#share=` payload (decoding is async and happens later). */
+function readSharedHashRaw(): string | null {
   try {
     const hash = window.location.hash;
-    if (!hash.startsWith('#share=')) return null;
-    const decoded = JSON.parse(decodeURIComponent(atob(hash.slice('#share='.length))));
-    return decoded && typeof decoded === 'object' && !Array.isArray(decoded) ? decoded : null;
-  } catch (e) {
-    if (process.env.NODE_ENV !== 'production') console.warn('Failed to parse shared state from URL hash', e);
+    return hash.startsWith(SHARE_HASH_PREFIX) ? hash.slice(SHARE_HASH_PREFIX.length) : null;
+  } catch {
     return null;
   }
+}
+
+async function decodeSharedHash<T>(raw: string): Promise<Partial<T> | null> {
+  const res = await decodeShareState(raw);
+  if (!res.success) {
+    if (process.env.NODE_ENV !== 'production') console.warn('Failed to parse shared state from URL hash', res.error);
+    return null;
+  }
+  const decoded = res.data;
+  return decoded && typeof decoded === 'object' && !Array.isArray(decoded) ? (decoded as Partial<T>) : null;
+}
+
+function omitTopLevelKeys(state: unknown, keys: readonly string[]): unknown {
+  if (!state || typeof state !== 'object' || Array.isArray(state) || keys.length === 0) return state;
+  const omit = new Set(keys);
+  return Object.fromEntries(Object.entries(state).filter(([k]) => !omit.has(k)));
 }
 
 export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', storageKey?: string) {
@@ -51,9 +79,9 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
     // cleared on the next tick, so a StrictMode double-run of this effect sees it on both passes.
     const incoming: { name: string; state: Partial<T> }[] = [];
 
-    const shared = readSharedHash<T>();
-    if (shared) {
-      incoming.push({ name: 'Shared Tab', state: shared });
+    // #share= payloads may be compressed (async decode), so only the raw string is read here.
+    const sharedRaw = readSharedHashRaw();
+    if (sharedRaw !== null) {
       // Clear hash so it doesn't persist on reload
       setTimeout(() => window.history.replaceState(null, '', window.location.pathname + window.location.search), 0);
     }
@@ -96,6 +124,9 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
           if (process.env.NODE_ENV !== 'production') console.warn(`Failed to parse workspaces for ${storageKey}`, e);
         }
       }
+
+      const shared = sharedRaw !== null ? await decodeSharedHash<T>(sharedRaw) : null;
+      if (shared) incoming.unshift({ name: 'Shared Tab', state: shared });
 
       // Incoming state opens as new active tab(s), keeping the user's existing tabs
       for (const item of incoming) {
@@ -197,20 +228,25 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
     updateWorkspaceState(activeWorkspaceId, partialState);
   }, [activeWorkspaceId, updateWorkspaceState]);
 
-  const copyShareLink = useCallback(() => {
+  const copyShareLink = useCallback(async (omitKeys?: readonly string[]) => {
+    // Also used directly as an onClick handler, so ignore a non-array (event) argument.
+    const keys = Array.isArray(omitKeys) ? omitKeys : DEFAULT_SHARE_OMIT_KEYS;
     try {
-      // Strip potentially massive generated outputs to save URL length if needed,
-      // but for simplicity, we share the whole state.
-      const encoded = btoa(encodeURIComponent(JSON.stringify(activeWorkspace.state)));
-      const url = new URL(window.location.href);
-      url.hash = `share=${encoded}`;
-      
-      if (url.toString().length > 2000) {
-        toast({ type: 'error', message: 'State is too large to share via URL.' });
+      const encoded = await encodeShareState(omitTopLevelKeys(activeWorkspace.state, keys));
+      if (!encoded.success) {
+        toast({ type: 'error', message: 'Failed to generate share link.' });
         return;
       }
-      
-      navigator.clipboard.writeText(url.toString());
+      const url = new URL(window.location.href);
+      url.hash = `share=${encoded.data}`;
+      const link = url.toString();
+
+      if (link.length > MAX_SHARE_URL_LENGTH) {
+        toast({ type: 'error', message: 'Too large to share as a link — try Download instead.' });
+        return;
+      }
+
+      await navigator.clipboard.writeText(link);
       toast({ type: 'success', message: 'Shareable link copied to clipboard!' });
     } catch {
       toast({ type: 'error', message: 'Failed to generate share link.' });
