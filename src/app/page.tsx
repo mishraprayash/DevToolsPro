@@ -1,6 +1,3 @@
-'use client';
-
-import * as React from 'react';
 import { Hero } from '@/components/homepage/Hero';
 import { Features } from '@/components/homepage/Features';
 import { CategoryShowcase } from '@/components/homepage/CategoryShowcase';

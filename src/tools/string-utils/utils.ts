@@ -69,32 +69,54 @@ export function analyzeText(input: string): StatsResult {
   }
 }
 
+import type { Result } from '@/types';
+import { ok, err } from '@/types';
+
 export function slugify(input: string): string {
-  if (!input) return '';
-  return input
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+  const r = slugifyResult(input);
+  return r.success ? r.data : '';
+}
+
+export function slugifyResult(input: string): Result<string> {
+  try {
+    if (!input) return ok('');
+    const out = input
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+    return ok(out);
+  } catch (e) {
+    return err((e as Error).message || 'Failed to slugify');
+  }
 }
 
 export function transformText(input: string, transformType: 'slug' | 'upper' | 'lower' | 'title' | 'trim'): string {
-  if (!input) return '';
-  switch (transformType) {
-    case 'slug':
-      return slugify(input);
-    case 'upper':
-      return input.toUpperCase();
-    case 'lower':
-      return input.toLowerCase();
-    case 'title':
-      return input.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
-    case 'trim':
-      return input.trim();
-    default:
-      return input;
+  const r = transformTextResult(input, transformType);
+  return r.success ? r.data : '';
+}
+
+export function transformTextResult(input: string, transformType: 'slug' | 'upper' | 'lower' | 'title' | 'trim'): Result<string> {
+  try {
+    if (!input) return ok('');
+    switch (transformType) {
+      case 'slug':
+        return slugifyResult(input);
+      case 'upper':
+        return ok(input.toUpperCase());
+      case 'lower':
+        return ok(input.toLowerCase());
+      case 'title':
+        return ok(input.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()));
+      case 'trim':
+        return ok(input.trim());
+      default:
+        return ok(input);
+    }
+  } catch (e) {
+    return err((e as Error).message || 'Failed to transform text');
   }
 }

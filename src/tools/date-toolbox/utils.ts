@@ -73,8 +73,8 @@ export function listTimeZones(): string[] {
   return ['UTC','America/Los_Angeles','America/New_York','Europe/London','Europe/Paris','Asia/Tokyo','Asia/Kolkata','Australia/Sydney'];
 }
 
-export function getRelativeTime(timestampMs: number): string {
-  const now = Date.now();
+export function getRelativeTime(timestampMs: number, referenceTimeMs?: number): string {
+  const now = referenceTimeMs ?? Date.now();
   const diff = now - timestampMs;
   const absDiff = Math.abs(diff);
   const seconds = Math.floor(absDiff / 1000);

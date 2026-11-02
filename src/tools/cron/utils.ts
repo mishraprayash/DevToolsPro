@@ -83,11 +83,11 @@ export function getNextRuns(
     const dates: Date[] = [];
     const current = new Date();
     current.setMilliseconds(0);
-    current.setSeconds(current.getSeconds() + 1);
-
+    
     let iterations = 0;
-    while (dates.length < count && iterations < 50000) {
+    while (dates.length < count && iterations < 60000) {
       iterations++;
+      current.setSeconds(current.getSeconds() + 1);
 
       const m = current.getMonth() + 1;
       if (!months.has(m)) {
@@ -124,7 +124,6 @@ export function getNextRuns(
       if (!seconds.has(sec)) continue;
 
       dates.push(new Date(current.getTime()));
-      current.setSeconds(current.getSeconds() + 1);
     }
 
     if (dates.length === 0) {
@@ -135,6 +134,15 @@ export function getNextRuns(
   } catch (e) {
     return { success: false, error: `Parsing error: ${(e as Error).message}` };
   }
+}
+
+import type { Result } from '@/types';
+import { ok, err } from '@/types';
+
+export function translateCronToEnglishResult(expr: string): Result<string> {
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length !== 5 && parts.length !== 6) return err('Invalid cron expression: must have exactly 5 or 6 fields');
+  return ok(translateCronToEnglish(expr));
 }
 
 export function translateCronToEnglish(expr: string): string {
