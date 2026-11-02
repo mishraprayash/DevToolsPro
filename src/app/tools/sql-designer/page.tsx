@@ -15,7 +15,8 @@ import {
   NodeChange,
   EdgeChange,
   ConnectionMode,
-  MarkerType
+  MarkerType,
+  useReactFlow
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import dynamic from 'next/dynamic';
@@ -31,6 +32,7 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
+import { useFullscreenOverlay } from '@/lib/hooks/useFullscreenOverlay';
 import { TableNode } from './TableNode';
 import { 
   initialNodes, 
@@ -64,6 +66,20 @@ function FlowDesigner() {
   const [exportFormat, setExportFormat] = React.useState<ExportFormat>('sql');
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [isLoaded, setIsLoaded] = React.useState(false);
+  const { fitView } = useReactFlow();
+
+  const exitFullscreen = React.useCallback(() => setIsFullscreen(false), []);
+  useFullscreenOverlay(isFullscreen, exitFullscreen);
+
+  // Re-fit the diagram once the canvas has resized after entering/exiting fullscreen
+  // (compares against the previous value so the initial mount, incl. Strict Mode re-runs, is skipped)
+  const prevFullscreenRef = React.useRef(isFullscreen);
+  React.useEffect(() => {
+    if (prevFullscreenRef.current === isFullscreen) return;
+    prevFullscreenRef.current = isFullscreen;
+    const frame = requestAnimationFrame(() => fitView({ padding: 0.2 }));
+    return () => cancelAnimationFrame(frame);
+  }, [isFullscreen, fitView]);
 
   const visualChangePending = React.useRef(true);
   const isTypingRef = React.useRef(false);
@@ -364,7 +380,8 @@ function FlowDesigner() {
     <div
       className={
         isFullscreen
-          ? 'fixed inset-0 z-50 bg-bg-primary p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 h-screen overflow-hidden'
+          ? // z-45: above the header (z-40), below modals and toasts (z-50). Below lg the overlay scrolls with fixed row heights.
+            'fixed inset-0 z-[45] bg-bg-primary p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 grid-rows-[70dvh_80dvh] lg:grid-rows-none gap-6 overflow-y-auto lg:overflow-hidden'
           : 'grid grid-cols-1 lg:grid-cols-12 gap-6 h-[720px]'
       }
     >
@@ -383,7 +400,7 @@ function FlowDesigner() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setIsFullscreen(!isFullscreen)}
+            onClick={() => setIsFullscreen((prev) => !prev)}
             className="shadow-lg bg-bg-elevated border border-border"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4 mr-1" /> : <Maximize2 className="w-4 h-4 mr-1" />}
