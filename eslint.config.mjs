@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Playwright output
+    "playwright-report/**",
+    "test-results/**",
+    "blob-report/**",
   ]),
   // The codebase intentionally uses synchronous setState inside effects for
   // debounced input sync, selection reset, and secondary-output propagation
