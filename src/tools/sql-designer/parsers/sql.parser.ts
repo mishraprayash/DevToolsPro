@@ -102,7 +102,10 @@ export function parseSqlToNodes(
           }
 
           while (usedIds.has(colId)) {
-            colId = `col-${tableName}-${name}-${Math.random().toString(36).substring(2, 7)}`;
+            const suffix = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+              ? crypto.randomUUID().slice(0, 6)
+              : Math.random().toString(36).substring(2, 7);
+            colId = `col-${tableName}-${name}-${suffix}`;
           }
           usedIds.add(colId);
 

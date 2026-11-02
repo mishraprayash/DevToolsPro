@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   getNextRuns,
   translateCronToEnglish,
@@ -7,6 +7,16 @@ import {
 
 describe('Cron Utilities', () => {
   describe('getNextRuns', () => {
+    beforeEach(() => {
+      // Freeze time to a Monday at 08:00 AM UTC
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2025-01-06T08:00:00Z'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('should calculate upcoming execution dates for 5-field cron "* * * * *"', () => {
       const res = getNextRuns('* * * * *', 3);
       expect(res.success).toBe(true);
@@ -27,6 +37,9 @@ describe('Cron Utilities', () => {
     it('should handle ranges and step values', () => {
       const res = getNextRuns('0 9-17/2 * * 1-5', 2);
       expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.dates).toHaveLength(2);
+      }
     });
 
     it('should return error for invalid field count', () => {

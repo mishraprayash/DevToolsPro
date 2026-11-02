@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { RotateCcw, ArrowRight, Settings, Download, AlertTriangle, CheckCircle, ArrowLeftRight } from 'lucide-react';
+import { RotateCcw, ArrowRight, Settings, Download, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
@@ -10,8 +10,8 @@ import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import {
-  jsonToYaml,
-  yamlToJson,
+  jsonToYamlResult,
+  yamlToJsonResult,
   validateYaml,
   type ValidationResult
 } from '@/tools/yaml-json/utils';
@@ -28,9 +28,10 @@ const indentOptions = [
   { value: '4', label: '4 Spaces' },
 ];
 
-const examples = [
+const examples: { label: string; hint: string; input: string; mode: 'json' | 'yaml' }[] = [
   {
     label: 'JSON → YAML (User Config)',
+    hint: 'JSON • nested',
     input: `{
   "name": "Alice Smith",
   "age": 30,
@@ -46,6 +47,7 @@ const examples = [
   },
   {
     label: 'YAML → JSON (K8s Service)',
+    hint: 'K8s • multi-doc',
     input: `apiVersion: v1
 kind: Service
 metadata:
@@ -117,21 +119,15 @@ export default function Page() {
       return;
     }
 
-    try {
-      const result = state.mode === 'json' 
-        ? await jsonToYaml(state.input, { indent: parseInt(state.indent, 10) }) 
-        : await yamlToJson(state.input);
-      
-      updateActiveWorkspace({
-        output: result,
-        error: result.startsWith('Invalid') ? result : null
-      });
+    const r = state.mode === 'json'
+      ? await jsonToYamlResult(state.input, { indent: parseInt(state.indent, 10) })
+      : await yamlToJsonResult(state.input);
 
-      if (!result.startsWith('Invalid')) {
-        addHistoryItem('yaml-json', state.input.slice(0, 1000), result.slice(0, 1000), { mode: state.mode });
-      }
-    } catch (e) {
-      updateActiveWorkspace({ error: (e as Error).message, output: '' });
+    if (r.success) {
+      updateActiveWorkspace({ output: r.data, error: null });
+      addHistoryItem('yaml-json', state.input.slice(0, 1000), r.data.slice(0, 1000), { mode: state.mode });
+    } else {
+      updateActiveWorkspace({ output: '', error: r.error });
     }
   }, [state.input, state.mode, state.indent, addHistoryItem, updateActiveWorkspace]);
 
@@ -159,7 +155,7 @@ export default function Page() {
   };
 
   const handleSwap = () => {
-    if (!state.output || state.output.startsWith('Invalid')) return;
+    if (!state.output || state.error) return;
     updateActiveWorkspace({
       mode: state.mode === 'json' ? 'yaml' : 'json',
       input: state.output,
@@ -171,7 +167,7 @@ export default function Page() {
   };
 
   const handleDownload = () => {
-    if (!state.output || state.output.startsWith('Invalid')) return;
+    if (!state.output || state.error) return;
     const isTargetYaml = state.mode === 'json';
     const blob = new Blob([state.output], { type: isTargetYaml ? 'text/yaml' : 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -315,18 +311,18 @@ export default function Page() {
             variant="ghost" 
             size="sm" 
             onClick={handleSwap} 
-            disabled={!state.output || state.output.startsWith('Invalid') || state.output.startsWith('Error')}
+            disabled={!state.output || !!state.error}
             icon={<ArrowRight className="h-4 w-4" />}
             title="Swap Inputs"
           >
             Swap
           </Button>
-          <CopyButton value={state.output} disabled={!state.output || state.output.startsWith('Invalid')} />
+          <CopyButton value={state.output} disabled={!state.output || !!state.error} />
           <Button
             variant="ghost"
             size="sm"
             onClick={handleDownload}
-            disabled={!state.output || state.output.startsWith('Invalid')}
+            disabled={!state.output || !!state.error}
             icon={<Download className="h-4 w-4" />}
           >
             Download
@@ -338,7 +334,7 @@ export default function Page() {
         <GradientBox value={state.output} placeholder="Output code will appear here..." className="h-full w-full overflow-y-auto" />
       </div>
       
-      {state.output && !state.output.startsWith('Invalid') && (
+      {state.output && !state.error && (
         <span className="text-xs text-text-muted font-medium block shrink-0">
           {state.output.length.toLocaleString()} characters · {state.output.split('\n').length.toLocaleString()} lines
         </span>

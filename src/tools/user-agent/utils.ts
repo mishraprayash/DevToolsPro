@@ -101,17 +101,17 @@ export function parseUserAgent(uaStr: string): ParsedUserAgent {
   let engineName = 'Unknown Engine';
   let engineVer = 'Unknown';
 
-  if (/webkit/i.test(ua)) {
+  if (/trident/i.test(ua)) {
+    engineName = 'Trident';
+    const match = ua.match(/trident\/([\d.]+)/i);
+    if (match) engineVer = match[1];
+  } else if (/webkit/i.test(ua)) {
     engineName = 'WebKit';
     const match = ua.match(/applewebkit\/([\d.]+)/i);
     if (match) engineVer = match[1];
   } else if (/gecko/i.test(ua) && !/webkit/i.test(ua)) {
     engineName = 'Gecko';
     const match = ua.match(/rv:([\d.]+)/i);
-    if (match) engineVer = match[1];
-  } else if (/trident/i.test(ua)) {
-    engineName = 'Trident';
-    const match = ua.match(/trident\/([\d.]+)/i);
     if (match) engineVer = match[1];
   }
 

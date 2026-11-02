@@ -143,6 +143,9 @@ export function computeDiff(original: string, modified: string, options: Partial
     return res;
   };
 
+  const cleanedOld = oldLines.map(clean);
+  const cleanedNew = newLines.map(clean);
+
   const m = oldLines.length;
   const n = newLines.length;
 
@@ -150,8 +153,9 @@ export function computeDiff(original: string, modified: string, options: Partial
   const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
 
   for (let i = 1; i <= m; i++) {
+    const oldVal = cleanedOld[i - 1];
     for (let j = 1; j <= n; j++) {
-      if (clean(oldLines[i - 1]) === clean(newLines[j - 1])) {
+      if (oldVal === cleanedNew[j - 1]) {
         dp[i][j] = dp[i - 1][j - 1] + 1;
       } else {
         dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
@@ -164,7 +168,7 @@ export function computeDiff(original: string, modified: string, options: Partial
   const path: { type: 'added' | 'removed' | 'unchanged'; oldIdx: number; newIdx: number }[] = [];
 
   while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && clean(oldLines[i - 1]) === clean(newLines[j - 1])) {
+    if (i > 0 && j > 0 && cleanedOld[i - 1] === cleanedNew[j - 1]) {
       path.push({ type: 'unchanged', oldIdx: i - 1, newIdx: j - 1 });
       i--;
       j--;
