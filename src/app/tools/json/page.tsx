@@ -38,6 +38,8 @@ import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
 import { SplitPanesView } from '@/components/ui/SplitPanesView';
 import { useToolWorker } from '@/lib/workers/useToolWorker';
 import { sendToTool } from '@/lib/utils/toolHandoff';
+import { OpenInMenu } from '@/components/tool/OpenInMenu';
+import { jsonConsumerTargets } from '@/lib/utils/openInTargets';
 
 const actions: { value: JsonAction; label: string }[] = [
   { value: 'beautify', label: 'Beautify' },
@@ -460,6 +462,10 @@ export default function Page() {
           >
             To Base64
           </Button>
+          <OpenInMenu
+            targets={jsonConsumerTargets(state.output, 'From JSON', { csv: Array.isArray(state.parsedData) && state.parsedData.length > 0 })}
+            disabled={!state.output || !!state.error}
+          />
           <Button
             variant="ghost"
             size="sm"
