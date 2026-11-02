@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { testRegex, RegexMatch } from '@/tools/regex/utils';
+import { type RegexMatch } from '@/tools/regex/utils';
+import { useHeavyTask } from '@/lib/workers/useHeavyTask';
+import { REGEX_TIMEOUT_MS, REGEX_TIMEOUT_MESSAGE } from '@/lib/workers/thresholds';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 
@@ -73,32 +75,34 @@ export default function Page() {
   const [replacedOutput, setReplacedOutput] = React.useState('');
   const [activeTab, setActiveTab] = React.useState<'matches' | 'replace'>('matches');
 
-  const [result, setResult] = React.useState<{ matches: RegexMatch[]; isValid: boolean; error?: string }>({ 
+  const [result, setResult] = React.useState<{ matches: RegexMatch[]; isValid: boolean; error?: string; timedOut?: boolean }>({ 
     matches: [], 
     isValid: true 
   });
   const [activeExample] = React.useState(0);
 
-  // Run Regex Matching
-  React.useEffect(() => {
-    const res = testRegex(pattern, flags, testString);
-    setResult(res);
-  }, [pattern, flags, testString]);
+  // Run matching + replacement in a background worker with a hard timeout so a
+  // catastrophically backtracking pattern can be killed instead of freezing the tab.
+  const { run: runRegexTask, pending: isMatching } = useHeavyTask('regex', {
+    timeoutMs: REGEX_TIMEOUT_MS,
+    timeoutMessage: REGEX_TIMEOUT_MESSAGE,
+  });
 
-  // Run Regex Replacement Simulation
   React.useEffect(() => {
-    if (!pattern.trim() || !result.isValid) {
-      setReplacedOutput('');
-      return;
-    }
-    try {
-      const regex = new RegExp(pattern, flags);
-      const output = testString.replace(regex, replacement);
-      setReplacedOutput(output);
-    } catch {
-      setReplacedOutput('');
-    }
-  }, [pattern, flags, testString, replacement, result.isValid]);
+    let active = true;
+    runRegexTask({ pattern, flags, input: testString, replacement }).then((outcome) => {
+      if (!active || outcome.status === 'cancelled') return;
+      if (outcome.status === 'ok') {
+        const { matches, isValid, error, replaced } = outcome.data;
+        setResult({ matches, isValid, error });
+        setReplacedOutput(replaced);
+      } else {
+        setResult({ matches: [], isValid: false, error: outcome.error, timedOut: outcome.status === 'timeout' });
+        setReplacedOutput('');
+      }
+    });
+    return () => { active = false; };
+  }, [pattern, flags, testString, replacement, runRegexTask]);
 
   const handleClear = () => {
     setPattern('');
@@ -187,7 +191,7 @@ export default function Page() {
             <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-error/10 text-error border border-error/30 text-xs shadow-sm">
               <AlertCircle className="h-5 w-5 shrink-0 text-error mt-0.5" />
               <div className="space-y-0.5">
-                <span className="font-bold">Regex Syntax Error</span>
+                <span className="font-bold">{result.timedOut ? 'Regex Timed Out' : 'Regex Syntax Error'}</span>
                 <p className="leading-relaxed">{result.error}</p>
               </div>
             </div>
@@ -255,7 +259,7 @@ export default function Page() {
                 activeTab === 'matches' ? 'border-accent text-accent' : 'border-transparent text-text-muted hover:text-text-primary'
               )}
             >
-              Interactive Matches ({result.matches.length})
+              Interactive Matches ({result.matches.length}){isMatching ? ' · running…' : ''}
             </button>
             <button
               onClick={() => setActiveTab('replace')}
