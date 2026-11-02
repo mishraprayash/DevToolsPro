@@ -1,8 +1,4 @@
 import type { Metadata, Viewport } from "next";
-
-export const viewport: Viewport = {
-  themeColor: "#09090b",
-};
 import { Outfit, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from '@/components/layout/Header';
@@ -14,6 +10,10 @@ import { ServiceWorkerRegister } from '@/components/layout/ServiceWorkerRegister
 import { Toaster } from '@/components/ui/Toast';
 import { ThemeSync } from "@/components/layout/ThemeSync";
 import { tools } from '@/tools/registry';
+
+export const viewport: Viewport = {
+  themeColor: "#07070a",
+};
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -37,7 +37,9 @@ export const metadata: Metadata = {
   keywords: ["developer tools", "json beautifier", "base64 encoder", "jwt decoder", "hash generator", "regex tester", "devtools"],
   authors: [{ name: "DevTools Pro" }],
   manifest: "/manifest.json",
+  applicationName: "DevTools Pro",
   appleWebApp: {
+    capable: true,
     title: "DevTools Pro",
     statusBarStyle: "black-translucent",
   },

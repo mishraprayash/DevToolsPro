@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store/useStore';
 import { GithubIcon } from '@/components/ui/GithubIcon';
+import { InstallAppButton } from '@/components/layout/InstallAppButton';
 import { tools, toolsMap, type ToolCategory } from '@/tools/registry';
 
 const categoryLinks: { cat: ToolCategory; ids: string[] }[] = [
@@ -59,6 +60,7 @@ export function Footer() {
             © {new Date().getFullYear()} DevTools Pro. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
+            <InstallAppButton />
             <button
               onClick={() => setFeedbackOpen(true)}
               className="text-[11px] text-text-muted hover:text-text-primary transition-colors cursor-pointer"
