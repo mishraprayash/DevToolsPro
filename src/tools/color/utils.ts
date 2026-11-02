@@ -85,6 +85,7 @@ const namedColors: Record<string, string> = {
 
 export function parseHex(input: string): RgbColor | null {
   const cleaned = input.trim().replace(/^#/, '');
+
   if (cleaned.length === 3) {
     const [r, g, b] = cleaned;
     return { r: parseInt(r + r, 16), g: parseInt(g + g, 16), b: parseInt(b + b, 16), a: 1 };
@@ -97,16 +98,21 @@ export function parseHex(input: string): RgbColor | null {
     };
   }
   if (cleaned.length === 6) {
-    const m = /^([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(cleaned);
-    if (!m) return null;
-    return { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16), a: 1 };
+    if (!/^[0-9a-fA-F]{6}$/.test(cleaned)) return null;
+    return {
+      r: parseInt(cleaned.slice(0, 2), 16),
+      g: parseInt(cleaned.slice(2, 4), 16),
+      b: parseInt(cleaned.slice(4, 6), 16),
+      a: 1,
+    };
   }
   if (cleaned.length === 8) {
-    const m = /^([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(cleaned);
-    if (!m) return null;
+    if (!/^[0-9a-fA-F]{8}$/.test(cleaned)) return null;
     return {
-      r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16),
-      a: Math.round((parseInt(m[4], 16) / 255) * 100) / 100,
+      r: parseInt(cleaned.slice(0, 2), 16),
+      g: parseInt(cleaned.slice(2, 4), 16),
+      b: parseInt(cleaned.slice(4, 6), 16),
+      a: Math.round((parseInt(cleaned.slice(6, 8), 16) / 255) * 100) / 100,
     };
   }
   return null;
