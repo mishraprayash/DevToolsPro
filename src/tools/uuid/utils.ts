@@ -89,20 +89,25 @@ export function formatUuid(uuid: string, options: UuidOptions): string {
 }
 
 export function generateBulkUuids(count: number, options: UuidOptions): string[] {
-  const list: string[] = [];
-  const limit = Math.min(Math.max(count, 1), 500);
+  const r = generateBulkUuidsResult(count, options);
+  return r.success ? r.data : [];
+}
 
-  for (let i = 0; i < limit; i++) {
-    let raw = '';
-    if (options.version === 1) {
-      raw = generateV1();
-    } else if (options.version === 7) {
-      raw = generateV7();
-    } else {
-      raw = generateV4();
+export function generateBulkUuidsResult(count: number, options: UuidOptions): import('@/types').Result<string[]> {
+  try {
+    if (!Number.isFinite(count)) return { success: false, error: 'Count must be a finite number' };
+    const list: string[] = [];
+    const limit = Math.min(Math.max(Math.floor(count), 1), 500);
+
+    for (let i = 0; i < limit; i++) {
+      let raw = '';
+      if (options.version === 1) raw = generateV1();
+      else if (options.version === 7) raw = generateV7();
+      else raw = generateV4();
+      list.push(formatUuid(raw, options));
     }
-    list.push(formatUuid(raw, options));
+    return { success: true, data: list };
+  } catch (e) {
+    return { success: false, error: (e as Error).message || 'Failed to generate UUIDs' };
   }
-
-  return list;
 }

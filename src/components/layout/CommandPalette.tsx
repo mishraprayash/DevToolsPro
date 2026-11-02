@@ -36,11 +36,19 @@ export function CommandPalette() {
     setQuery('');
   };
 
+  const listRef = React.useRef<HTMLDivElement>(null);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setSelectedIndex((i) => (i + 1) % filteredTools.length); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setSelectedIndex((i) => (i - 1 + filteredTools.length) % filteredTools.length); }
     else if (e.key === 'Enter' && filteredTools[selectedIndex]) { handleSelect(filteredTools[selectedIndex].id); }
   };
+
+  React.useEffect(() => {
+    if (!listRef.current) return;
+    const el = listRef.current.querySelector<HTMLElement>(`[data-index="${selectedIndex}"]`);
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [selectedIndex]);
 
   return (
     <Modal open={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)}>
@@ -48,6 +56,10 @@ export function CommandPalette() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted pointer-events-none" />
         <input
           type="text"
+          role="combobox"
+          aria-expanded={filteredTools.length > 0}
+          aria-controls="command-palette-listbox"
+          aria-activedescendant={filteredTools[selectedIndex] ? `cmd-opt-${filteredTools[selectedIndex].id}` : undefined}
           placeholder={`Search ${tools.length} tools...`}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -55,6 +67,7 @@ export function CommandPalette() {
           autoFocus
         />
         <button
+          type="button"
           onClick={() => setCommandPaletteOpen(false)}
           className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors cursor-pointer"
           aria-label="Close command palette"
@@ -63,7 +76,7 @@ export function CommandPalette() {
         </button>
       </div>
 
-      <div className="mt-4 max-h-80 overflow-y-auto scrollbar-thin">
+      <div ref={listRef} id="command-palette-listbox" role="listbox" aria-label="Tool results" className="mt-4 max-h-80 overflow-y-auto scrollbar-thin">
         <AnimatePresence mode="wait">
           {filteredTools.length === 0 ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-8 text-center text-text-muted">No tools found</motion.div>
@@ -75,7 +88,7 @@ export function CommandPalette() {
                 const isRecent = !query && !isFav && recentTools.includes(tool.id);
 
                 return (
-                  <button key={tool.id} onClick={() => handleSelect(tool.id)}
+                  <button key={tool.id} id={`cmd-opt-${tool.id}`} data-index={index} role="option" aria-selected={index === selectedIndex} onClick={() => handleSelect(tool.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
                       index === selectedIndex ? 'bg-bg-hover text-text-primary' : 'text-text-secondary hover:bg-bg-tertiary'
                     }`}>

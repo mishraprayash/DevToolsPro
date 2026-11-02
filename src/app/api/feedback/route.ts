@@ -100,9 +100,9 @@ export async function POST(request: Request) {
 
       if (!emailResponse.ok) {
         const errText = await emailResponse.text();
-        console.error('Failed to send email via Resend:', errText);
-        // Fallback: log to console but still succeed locally
-        console.log('Logged feedback (Resend API failed):', feedbackData);
+        if (process.env.NODE_ENV !== 'production') console.error('Failed to send email via Resend:', errText);
+        // Fallback: do not log PII in production; just acknowledge receipt
+        if (process.env.NODE_ENV !== 'production') console.log('Logged feedback (Resend API failed):', { type: feedbackData.type, rating: feedbackData.rating, timestamp: feedbackData.timestamp });
         return NextResponse.json({
           success: true,
           message: 'Feedback received, but email delivery failed. Saved in server logs.',
@@ -116,13 +116,14 @@ export async function POST(request: Request) {
     }
 
     // Default mock behavior if no Resend API key is configured
-    console.log('\n--- NEW FEEDBACK RECEIVED ---');
-    console.log(`Sender:    ${feedbackData.name} (${feedbackData.email})`);
-    console.log(`Type:      ${feedbackData.type.toUpperCase()}`);
-    console.log(`Rating:    ${feedbackData.rating}/5 Stars`);
-    console.log(`Message:   ${feedbackData.message}`);
-    console.log(`Timestamp: ${feedbackData.timestamp}`);
-    console.log('------------------------------\n');
+    // Never log raw PII (name/email/message) — only non-sensitive metadata
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('\n--- NEW FEEDBACK RECEIVED (dev only, PII scrubbed) ---');
+      console.log(`Type:      ${feedbackData.type.toUpperCase()}`);
+      console.log(`Rating:    ${feedbackData.rating}/5 Stars`);
+      console.log(`Timestamp: ${feedbackData.timestamp}`);
+      console.log('------------------------------\n');
+    }
 
     return NextResponse.json({
       success: true,
@@ -130,7 +131,7 @@ export async function POST(request: Request) {
       warning: 'Configure RESEND_API_KEY in your env file to receive actual email alerts.',
     });
   } catch (error) {
-    console.error('Error in feedback route handler:', error);
+    if (process.env.NODE_ENV !== 'production') console.error('Error in feedback route handler:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error while processing feedback' },
       { status: 500 }
