@@ -97,6 +97,22 @@ export function decodeBase64(input: string, mode: Base64Mode = 'utf8', urlSafe: 
   return r.success ? r.data : '';
 }
 
+// True when decoded text is a JSON object or array worth opening in the JSON tool.
+// Bare primitives ("abc", 42, true) are valid JSON but not useful to load, so they're excluded.
+export function isJsonCompatible(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  const first = trimmed[0];
+  const last = trimmed[trimmed.length - 1];
+  if (!((first === '{' && last === '}') || (first === '[' && last === ']'))) return false;
+  try {
+    JSON.parse(trimmed);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export type UrlMode = 'component' | 'uri' | 'strict';
 
 export function encodeUrlStrResult(input: string, mode: UrlMode = 'component'): Result<string> {

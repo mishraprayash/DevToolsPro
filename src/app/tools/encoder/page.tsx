@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Lock, Link2, FileCode, Copy } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Lock, Link2, FileCode, Copy, Braces, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
@@ -9,7 +10,8 @@ import { GradientBox } from '@/components/ui/GradientBox';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
-import { encodeBase64, decodeBase64, encodeUrlStr, decodeUrlStr, encodeEntities, decodeEntities } from '@/tools/encoder/utils';
+import { encodeBase64, decodeBase64, encodeUrlStr, decodeUrlStr, encodeEntities, decodeEntities, isJsonCompatible } from '@/tools/encoder/utils';
+import { sendToTool } from '@/lib/utils/toolHandoff';
 import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
 import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
 import { SplitPanesView } from '@/components/ui/SplitPanesView';
@@ -51,6 +53,20 @@ export default function Page() {
   } = useWorkspaces<EncoderState>(defaultState, 'Encoder', 'encoder');
 
   const { state } = activeWorkspace;
+  const router = useRouter();
+
+  const decodedIsJson = React.useMemo(
+    () => state.encodingMode === 'base64' && state.direction === 'decode' && isJsonCompatible(state.output),
+    [state.encodingMode, state.direction, state.output]
+  );
+
+  const handleOpenInJson = () => {
+    if (!sendToTool('json', { input: state.output, action: 'beautify', activeExample: -1 }, 'From Base64')) {
+      toast({ type: 'error', message: 'Could not hand off to the JSON tool.' });
+      return;
+    }
+    router.push('/tools/json');
+  };
 
   const handleProcess = React.useCallback(() => {
     if (!state.input) {
@@ -250,6 +266,19 @@ export default function Page() {
       <div className="flex-1 min-h-[200px] h-full">
         <GradientBox value={state.output} placeholder="Conversion output will appear here..." className="h-full w-full font-mono leading-relaxed overflow-y-auto" />
       </div>
+
+      {/* Decoded payload is JSON: offer to continue in the JSON tool */}
+      {decodedIsJson && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-xl border border-success/20 bg-success/10 shrink-0">
+          <div className="flex items-center gap-2 text-sm text-success">
+            <Braces className="h-4 w-4 shrink-0" />
+            <span>Decoded value is valid JSON</span>
+          </div>
+          <Button size="sm" onClick={handleOpenInJson} icon={<ArrowRight className="h-3.5 w-3.5" />}>
+            Open in JSON Tool
+          </Button>
+        </div>
+      )}
     </div>
   );
 

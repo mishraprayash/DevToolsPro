@@ -6,6 +6,7 @@ import {
   decodeUrlStr,
   encodeEntities,
   decodeEntities,
+  isJsonCompatible,
 } from '../utils';
 
 describe('Encoder Utilities', () => {
@@ -107,6 +108,29 @@ describe('Encoder Utilities', () => {
       const input = '&lt;hello&gt; &#8364; &#x20AC; &copy; &unknown;';
       const decoded = decodeEntities(input);
       expect(decoded).toBe('<hello> € € © &unknown;');
+    });
+  });
+
+  describe('isJsonCompatible', () => {
+    it('should accept JSON objects and arrays, including decoded base64 payloads', () => {
+      expect(isJsonCompatible('{"a":1}')).toBe(true);
+      expect(isJsonCompatible('  [1, 2, {"b": null}]\n')).toBe(true);
+      expect(isJsonCompatible('{}')).toBe(true);
+      const decoded = decodeBase64(encodeBase64('{"user":"alice","roles":["admin"]}'));
+      expect(isJsonCompatible(decoded)).toBe(true);
+    });
+
+    it('should reject primitives, empty input, and malformed JSON', () => {
+      expect(isJsonCompatible('')).toBe(false);
+      expect(isJsonCompatible('   ')).toBe(false);
+      expect(isJsonCompatible('"just a string"')).toBe(false);
+      expect(isJsonCompatible('42')).toBe(false);
+      expect(isJsonCompatible('true')).toBe(false);
+      expect(isJsonCompatible('null')).toBe(false);
+      expect(isJsonCompatible('{"a":1')).toBe(false);
+      expect(isJsonCompatible("{'a': 1}")).toBe(false);
+      expect(isJsonCompatible('[1, 2,]')).toBe(false);
+      expect(isJsonCompatible('Hello, World!')).toBe(false);
     });
   });
 });

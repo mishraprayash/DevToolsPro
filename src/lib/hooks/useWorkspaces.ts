@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from '@/components/ui/Toast';
+import { readToolHandoff, clearToolHandoff } from '@/lib/utils/toolHandoff';
 
 export interface Workspace<T> {
   id: string;
@@ -33,6 +34,10 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
   // Hydrate from localStorage and URL Hash once on client (with IndexedDB fallback)
   useEffect(() => {
     let cancelled = false;
+    // Read any cross-tool handoff synchronously and clear it on the next tick, so a
+    // StrictMode double-run of this effect sees the same payload on both passes.
+    const handoff = storageKey ? readToolHandoff<T>(storageKey) : null;
+    if (handoff && storageKey) setTimeout(() => clearToolHandoff(storageKey), 0);
     (async () => {
       let hydratedWorkspaces = [createNewWorkspace(crypto.randomUUID(), `${defaultNamePrefix} 1`)];
       let hydratedActiveId = hydratedWorkspaces[0].id;
@@ -85,6 +90,13 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
         } catch (e) {
           if (process.env.NODE_ENV !== 'production') console.warn(`Failed to parse workspaces for ${storageKey}`, e);
         }
+      }
+
+      // Incoming cross-tool handoff opens as a new active tab, keeping existing tabs
+      if (handoff) {
+        const newId = crypto.randomUUID();
+        hydratedWorkspaces = [...hydratedWorkspaces, { id: newId, name: handoff.name, state: { ...deepClone(defaultState), ...handoff.state } }];
+        hydratedActiveId = newId;
       }
 
       if (!cancelled) {

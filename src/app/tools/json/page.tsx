@@ -1,8 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Download,
+  Lock,
   RotateCcw,
   CheckCircle,
   AlertCircle,
@@ -35,6 +37,7 @@ import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
 import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
 import { SplitPanesView } from '@/components/ui/SplitPanesView';
 import { useToolWorker } from '@/lib/workers/useToolWorker';
+import { sendToTool } from '@/lib/utils/toolHandoff';
 
 const actions: { value: JsonAction; label: string }[] = [
   { value: 'beautify', label: 'Beautify' },
@@ -115,6 +118,7 @@ export default function Page() {
   const { state } = activeWorkspace;
   const { addHistoryItem } = useAppStore();
   const { execute: runWorker } = useToolWorker();
+  const router = useRouter();
 
   const handleProcess = React.useCallback(async () => {
     if (!state.input.trim()) {
@@ -220,6 +224,14 @@ export default function Page() {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleEncodeBase64 = () => {
+    if (!sendToTool('encoder', { encodingMode: 'base64', direction: 'encode', b64Mode: 'utf8', b64UrlSafe: false, input: state.output }, 'From JSON')) {
+      toast({ type: 'error', message: 'Could not hand off to the Base64 encoder.' });
+      return;
+    }
+    router.push('/tools/encoder');
   };
 
   const validation = state.input.trim() ? validateJson(state.input) : null;
@@ -437,6 +449,16 @@ export default function Page() {
         </h2>
         <div className="flex items-center gap-2">
           <CopyButton value={state.output} label="Copy Output" disabled={!state.output} />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleEncodeBase64}
+            disabled={!state.output || !!state.error}
+            icon={<Lock className="h-4 w-4" />}
+            title="Open the output in the Base64 encoder"
+          >
+            To Base64
+          </Button>
           <Button
             variant="ghost"
             size="sm"
