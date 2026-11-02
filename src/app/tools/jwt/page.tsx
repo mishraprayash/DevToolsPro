@@ -8,7 +8,11 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { decodeJWT, decodeJwtParts, getJWTStatus, signJWT, verifyJwtSignature, type JWTPayload, type JWTAlgorithm } from '@/tools/jwt/utils';
+import { decodeJWT, decodeJwtParts, getJWTStatus, signJWT, verifyJwtSignature, extractTimestampClaims, type JWTPayload, type JWTAlgorithm, type TimestampClaim } from '@/tools/jwt/utils';
+import { OpenInMenu } from '@/components/tool/OpenInMenu';
+import { inputTarget, jsonToolTarget, type OpenInTarget } from '@/lib/utils/openInTargets';
+
+const CLAIM_LABELS: Record<TimestampClaim['claim'], string> = { exp: 'Expires', iat: 'Issued at', nbf: 'Not before' };
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
 import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
@@ -182,7 +186,7 @@ function highlightJson(json: string, showRaw: boolean, searchQuery: string, acti
   };
 }
 
-function JsonBlock({ data, label, color, className }: { data: Record<string, unknown>; label: string; color: string; className?: string }) {
+function JsonBlock({ data, label, color, className, actions }: { data: Record<string, unknown>; label: string; color: string; className?: string; actions?: React.ReactNode }) {
   const [showRaw, setShowRaw] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [activeIndex, setActiveIndex] = React.useState(0);
@@ -218,11 +222,12 @@ function JsonBlock({ data, label, color, className }: { data: Record<string, unk
 
   return (
     <div className={cn("border border-border rounded-xl overflow-hidden flex flex-col", className)}>
-      <div className={cn('flex items-center justify-between px-4 py-2.5 shrink-0', color)}>
+      <div className={cn('flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 shrink-0', color)}>
         <h3 className="text-sm font-medium text-white">{label}</h3>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           <Button variant="ghost" size="sm" onClick={() => setShowRaw(!showRaw)} icon={showRaw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
             className="text-white/70 hover:text-white" />
+          {actions}
           <CopyButton value={jsonStr} className="text-white/70 hover:text-white [&>svg]:text-white/70 [&>svg]:hover:text-white" />
         </div>
       </div>
@@ -406,6 +411,19 @@ export default function Page() {
 
   const expValue = decoded?.payload?.exp && typeof decoded.payload.exp === 'number' ? decoded.payload.exp : null;
   const iatValue = decoded?.payload?.iat && typeof decoded.payload.iat === 'number' ? decoded.payload.iat : null;
+
+  // "Open in…" targets for the decoded payload: the JSON tool, plus the Date Toolbox per timestamp claim.
+  const payloadTargets: OpenInTarget[] = decoded
+    ? [
+        jsonToolTarget(JSON.stringify(decoded.payload, null, 2), 'JWT Payload'),
+        ...extractTimestampClaims(decoded.payload).map(({ claim, seconds }) =>
+          inputTarget('date-toolbox', String(seconds), `JWT ${claim}`, {
+            label: `Date Toolbox (${claim})`,
+            hint: `${CLAIM_LABELS[claim]} · ${seconds}`,
+          })
+        ),
+      ]
+    : [];
 
   const toolbarContent = (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
@@ -598,8 +616,20 @@ export default function Page() {
             </div>
 
             <div className="flex flex-col flex-1 gap-4 overflow-y-auto">
-              <JsonBlock data={decoded.header} label="Header" color="bg-gradient-to-r from-rose-600 to-pink-600" className="shrink-0" />
-              <JsonBlock data={decoded.payload} label="Payload" color="bg-gradient-to-r from-blue-600 to-cyan-600" className="flex-1" />
+              <JsonBlock
+                data={decoded.header}
+                label="Header"
+                color="bg-gradient-to-r from-rose-600 to-pink-600"
+                className="shrink-0"
+                actions={<OpenInMenu variant="secondary" targets={[jsonToolTarget(JSON.stringify(decoded.header, null, 2), 'JWT Header')]} />}
+              />
+              <JsonBlock
+                data={decoded.payload}
+                label="Payload"
+                color="bg-gradient-to-r from-blue-600 to-cyan-600"
+                className="flex-1"
+                actions={<OpenInMenu variant="secondary" targets={payloadTargets} />}
+              />
               <div className="border border-border rounded-xl overflow-hidden shadow-sm shrink-0">
                 <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-gray-600 to-slate-600">
                   <h3 className="text-sm font-medium text-white">Signature</h3>

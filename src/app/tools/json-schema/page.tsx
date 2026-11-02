@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/Input';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { OpenInMenu } from '@/components/tool/OpenInMenu';
+import { jsonToolTarget } from '@/lib/utils/openInTargets';
 import { generateJsonSchema } from '@/tools/json-schema/utils';
 
 const draftOptions = [
@@ -119,11 +121,14 @@ export default function Page() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
         {/* Left Inputs */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-base font-medium text-text-secondary">Input JSON Payloads</h2>
-            <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
-              Clear
-            </Button>
+            <div className="flex items-center gap-2">
+              <OpenInMenu targets={[jsonToolTarget(input, 'From JSON Schema', 'Beautify / validate')]} />
+              <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+                Clear
+              </Button>
+            </div>
           </div>
 
           <Input

@@ -11,9 +11,11 @@ import { Database, Code } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { parseSqlCreate, generateOrmEntities } from '@/tools/sql-to-orm/utils';
+import { parseSqlCreate, generateOrmEntities, hasCreateTable } from '@/tools/sql-to-orm/utils';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
+import { OpenInMenu } from '@/components/tool/OpenInMenu';
+import { inputTarget } from '@/lib/utils/openInTargets';
 
 const DEFAULT_SQL = `CREATE TABLE users (
   id SERIAL PRIMARY KEY,
@@ -54,11 +56,19 @@ export default function Page() {
         
         {/* Left Input */}
         <div className="flex flex-col space-y-3 h-full">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
               <Database className="h-4 w-4 text-blue-500" /> SQL DDL
             </h2>
-            <Button variant="ghost" size="sm" onClick={() => setInput('')} className="h-8">Clear</Button>
+            <div className="flex items-center gap-2">
+              <OpenInMenu
+                targets={[
+                  inputTarget('sql-designer', hasCreateTable(input) ? input : null, 'From SQL to ORM', { label: 'SQL Schema Designer', hint: 'Visualise the tables' }),
+                  inputTarget('sql-prettify', input, 'From SQL to ORM', { label: 'SQL Formatter', hint: 'Format this SQL' }),
+                ]}
+              />
+              <Button variant="ghost" size="sm" onClick={() => setInput('')} className="h-8">Clear</Button>
+            </div>
           </div>
           <div className={`flex-1 rounded-xl border border-border ${editorBg} overflow-hidden`}>
             <Editor

@@ -15,6 +15,9 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { formatSql, minifySql, analyzeSql, type SqlFormatterOptions, type SqlKeywordCase, type SqlDialect } from '@/tools/sql-prettify/utils';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
+import { OpenInMenu } from '@/components/tool/OpenInMenu';
+import { inputTarget } from '@/lib/utils/openInTargets';
+import { hasCreateTable } from '@/tools/sql-to-orm/utils';
 
 const dialectOptions = [
   { value: 'sql', label: 'Standard SQL' },
@@ -167,11 +170,21 @@ export default function Page() {
 
           {/* Output */}
           <div className="lg:col-span-6 flex flex-col space-y-2 h-full">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
                 <RefreshCcw className="h-4 w-4 text-emerald-500" /> Formatted / Minified Output
               </h2>
-              <CopyButton value={output} />
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {hasCreateTable(input) && (
+                  <OpenInMenu
+                    targets={[
+                      inputTarget('sql-designer', output || input, 'From SQL Formatter', { label: 'SQL Schema Designer', hint: 'Visualise the tables' }),
+                      inputTarget('sql-to-orm', output || input, 'From SQL Formatter', { label: 'SQL to ORM', hint: 'Generate Prisma / TypeORM / Mongoose' }),
+                    ]}
+                  />
+                )}
+                <CopyButton value={output} />
+              </div>
             </div>
             <div className={`flex-1 relative rounded-xl border border-border ${editorBg} overflow-hidden`}>
               {error ? (
