@@ -14,7 +14,10 @@ export function Modal({ open, onClose, children, title }: ModalProps) {
 
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Escape') return;
+      // Mark as handled so window-level Esc listeners (e.g. fullscreen overlays) don't also fire
+      e.preventDefault();
+      onClose();
     };
     if (open) {
       document.addEventListener('keydown', handleEscape);
