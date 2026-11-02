@@ -41,6 +41,26 @@ function toBinaryString(long: number): string {
   ].join('.');
 }
 
+export interface CidrInput {
+  ipAddress: string;
+  /** Prefix length, or null when the input was a plain IP without `/nn`. */
+  cidr: number | null;
+}
+
+/** Parses `a.b.c.d/nn` (or a plain `a.b.c.d`) into its IP and prefix length. */
+export function parseCidrInput(input: string): Result<CidrInput> {
+  const match = /^(\d{1,3}(?:\.\d{1,3}){3})(?:\s*\/\s*(\d{1,2}))?$/.exec(input.trim());
+  if (!match) return { success: false, error: 'Expected an IPv4 address or CIDR block (e.g. 10.0.0.0/8)' };
+  const [, ipAddress, prefix] = match;
+  if (ipAddress.split('.').some((octet) => parseInt(octet, 10) > 255)) {
+    return { success: false, error: 'Each IPv4 octet must be between 0 and 255' };
+  }
+  if (prefix === undefined) return { success: true, data: { ipAddress, cidr: null } };
+  const cidr = parseInt(prefix, 10);
+  if (cidr > 32) return { success: false, error: 'CIDR prefix must be between 0 and 32' };
+  return { success: true, data: { ipAddress, cidr } };
+}
+
 export function calculateSubnet(ipStr: string, cidrInput: number): Result<SubnetInfo> {
   try {
     const cleanIp = ipStr.trim();

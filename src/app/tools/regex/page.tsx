@@ -5,6 +5,7 @@ import { RotateCcw, AlertCircle, Sparkles, Info } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { type RegexMatch } from '@/tools/regex/utils';
 import { useHeavyTask } from '@/lib/workers/useHeavyTask';
@@ -86,6 +87,11 @@ export default function Page() {
   const { run: runRegexTask, pending: isMatching } = useHeavyTask('regex', {
     timeoutMs: REGEX_TIMEOUT_MS,
     timeoutMessage: REGEX_TIMEOUT_MESSAGE,
+  });
+
+  useToolPrefill('regex', (data) => {
+    setTestString(data.input);
+    if (typeof data.pattern === 'string') setPattern(data.pattern);
   });
 
   React.useEffect(() => {
