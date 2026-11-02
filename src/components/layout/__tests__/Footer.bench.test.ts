@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tools, type ToolDef } from '@/tools/registry';
+import { tools, toolsMap, type ToolDef } from '@/tools/registry';
 
 const categoryLinks = [
   { cat: 'Formatting', ids: ['json', 'yaml-json', 'html-preview', 'css-sandbox'] },
@@ -7,15 +7,14 @@ const categoryLinks = [
   { cat: 'Security', ids: ['jwt', 'hash', 'password', 'aes'] },
 ];
 
-// Current implementation
+// Legacy linear search implementation
 function getToolsLinear(ids: string[]): ToolDef[] {
   return ids.map(id => tools.find(t => t.id === id)).filter(Boolean) as ToolDef[];
 }
 
-// Optimized implementation using Map
-const toolMap = new Map(tools.map(t => [t.id, t]));
+// Exported toolsMap lookup implementation
 function getToolsMap(ids: string[]): ToolDef[] {
-  return ids.map(id => toolMap.get(id)).filter(Boolean) as ToolDef[];
+  return ids.map(id => toolsMap.get(id)).filter(Boolean) as ToolDef[];
 }
 
 describe('Footer tool lookup performance', () => {

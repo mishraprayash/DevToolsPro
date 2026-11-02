@@ -67,6 +67,10 @@ const CATEGORY_SHOWCASE = [
   },
 ];
 
+function slugifyCategory(cat: string) {
+  return cat.toLowerCase().replace(/&/g, '').replace(/\s+/g, '-').replace(/--+/g, '-').trim();
+}
+
 export function CategoryShowcase() {
   return (
     <section className="py-16 relative">
@@ -94,6 +98,7 @@ export function CategoryShowcase() {
           {CATEGORY_SHOWCASE.map((cat, idx) => {
             const Icon = cat.icon;
             const toolCount = tools.filter((t) => t.category === cat.name).length;
+            const slug = slugifyCategory(cat.name);
 
             return (
               <motion.div
@@ -102,9 +107,9 @@ export function CategoryShowcase() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: idx * 0.05 }}
-                className="group relative p-6 rounded-2xl border border-border/80 bg-bg-secondary/70 backdrop-blur-xl hover:border-accent/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between card-highlight"
+                className="group relative rounded-2xl border border-border/80 bg-bg-secondary/70 backdrop-blur-xl hover:border-accent/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between card-highlight overflow-hidden"
               >
-                <div>
+                <Link href={`/tools/categories/${slug}`} aria-label={`Explore ${cat.name} category — ${toolCount} tools`} className="p-6 block flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-t-2xl">
                   <div className="flex items-center justify-between mb-4">
                     <div className={cn('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-md', cat.color)}>
                       <Icon className="w-5 h-5 text-white" />
@@ -113,21 +118,20 @@ export function CategoryShowcase() {
                       {toolCount} Tools
                     </span>
                   </div>
-
                   <h3 className="text-lg font-bold font-outfit text-text-primary group-hover:text-accent transition-colors duration-200">
                     {cat.name}
                   </h3>
                   <p className="mt-1.5 text-xs text-text-secondary leading-relaxed">
                     {cat.description}
                   </p>
-                </div>
+                </Link>
 
-                <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between">
-                  <Link
-                    href={`/tools/${cat.topTool}`}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline"
-                  >
-                    Featured: {cat.topToolName} <ArrowRight className="w-3.5 h-3.5" />
+                <div className="px-6 pb-4 pt-4 border-t border-border/50 flex items-center justify-between">
+                  <Link href={`/tools/categories/${slug}`} className="inline-flex items-center gap-1 text-xs font-bold text-accent hover:underline">
+                    Explore {toolCount} tools <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                  <Link href={`/tools/${cat.topTool}`} className="text-[11px] text-text-muted hover:text-text-primary border border-border px-2 py-1 rounded-full">
+                    Featured: {cat.topToolName.split(' ')[0]}
                   </Link>
                 </div>
               </motion.div>
