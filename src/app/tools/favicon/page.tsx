@@ -256,9 +256,12 @@ export default function Page() {
             <div className="flex items-center justify-center gap-6 min-h-[120px] w-full">
               {output ? (
                 <>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- generated data: URI, next/image cannot optimize it */}
                   <img src={output.dataUri} alt="Favicon preview" className="w-16 h-16 shadow-lg rounded" />
+                  {/* eslint-disable-next-line @next/next/no-img-element -- generated data: URI, next/image cannot optimize it */}
                   <img src={output.dataUri} alt="Favicon preview large" className="w-24 h-24 shadow-lg rounded" />
                   <div className="hidden sm:flex flex-col items-center gap-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- generated data: URI, next/image cannot optimize it */}
                     <img src={output.dataUri} alt="Favicon preview tab" className="w-12 h-12 shadow-lg rounded" />
                     <span className="text-[9px] text-text-muted">Browser tab</span>
                   </div>

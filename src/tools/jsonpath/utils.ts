@@ -7,7 +7,7 @@ export async function evaluateJsonPath(jsonString: string, path: string): Promis
     let parsedJson: unknown;
     try {
       parsedJson = JSON.parse(jsonString);
-    } catch (e) {
+    } catch {
       return { success: false, error: 'Invalid JSON input' };
     }
 

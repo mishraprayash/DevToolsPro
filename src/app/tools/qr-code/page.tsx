@@ -114,6 +114,7 @@ export default function Page() {
             ) : result?.success ? (
               <>
                 <div className="bg-white p-4 rounded-xl border border-border/40 shadow-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- generated data: URL, next/image cannot optimize it */}
                   <img src={result.dataUrl} alt="QR Code" width={size} height={size}
                     className="max-w-full h-auto rounded-lg" style={{ imageRendering: 'pixelated' }} />
                 </div>

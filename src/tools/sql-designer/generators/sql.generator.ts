@@ -1,5 +1,5 @@
 import type { Edge } from '@xyflow/react';
-import type { TableNode, ColumnDef, SqlDialect, Result, FkRelationship } from '../types/schema.types';
+import type { TableNode, SqlDialect, Result, FkRelationship } from '../types/schema.types';
 
 export function resolveFkRelationship(
   nodes: TableNode[],

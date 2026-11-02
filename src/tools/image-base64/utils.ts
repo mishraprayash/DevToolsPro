@@ -67,7 +67,7 @@ export function fileToBase64(file: File, options?: CompressionOptions): Promise<
       if (options && (options.maxWidth || options.quality || options.outputType)) {
         try {
           result = await compressImage(result, file.type, options);
-        } catch (e) {
+        } catch {
           // Fallback to original on error
         }
       }

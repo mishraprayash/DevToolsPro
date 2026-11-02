@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Sliders, RefreshCw, Layers, Grid, Code, Sparkles, RotateCcw, Plus, Minus } from 'lucide-react';
+import { Layers, Grid, Code, Sparkles, RotateCcw, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';

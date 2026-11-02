@@ -16,6 +16,18 @@ function deepClone<T>(v: T): T {
   return JSON.parse(JSON.stringify(v));
 }
 
+function readSharedHash<T>(): Partial<T> | null {
+  try {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#share=')) return null;
+    const decoded = JSON.parse(decodeURIComponent(atob(hash.slice('#share='.length))));
+    return decoded && typeof decoded === 'object' && !Array.isArray(decoded) ? decoded : null;
+  } catch (e) {
+    if (process.env.NODE_ENV !== 'production') console.warn('Failed to parse shared state from URL hash', e);
+    return null;
+  }
+}
+
 export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', storageKey?: string) {
   const [mounted, setMounted] = useState(false);
 
@@ -34,36 +46,28 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
   // Hydrate from localStorage and URL Hash once on client (with IndexedDB fallback)
   useEffect(() => {
     let cancelled = false;
-    // Read any cross-tool handoff synchronously and clear it on the next tick, so a
-    // StrictMode double-run of this effect sees the same payload on both passes.
+    // Incoming state (a #share= link or a cross-tool handoff) is read synchronously and
+    // cleared on the next tick, so a StrictMode double-run of this effect sees it on both passes.
+    const incoming: { name: string; state: Partial<T> }[] = [];
+
+    const shared = readSharedHash<T>();
+    if (shared) {
+      incoming.push({ name: 'Shared Tab', state: shared });
+      // Clear hash so it doesn't persist on reload
+      setTimeout(() => window.history.replaceState(null, '', window.location.pathname + window.location.search), 0);
+    }
+
     const handoff = storageKey ? readToolHandoff<T>(storageKey) : null;
-    if (handoff && storageKey) setTimeout(() => clearToolHandoff(storageKey), 0);
+    if (handoff && storageKey) {
+      incoming.push(handoff);
+      setTimeout(() => clearToolHandoff(storageKey), 0);
+    }
+
     (async () => {
       let hydratedWorkspaces = [createNewWorkspace(crypto.randomUUID(), `${defaultNamePrefix} 1`)];
       let hydratedActiveId = hydratedWorkspaces[0].id;
 
-      let hasSharedState = false;
-
-      // Check for shared URL hash
-      try {
-        const hash = window.location.hash;
-        if (hash.startsWith('#share=')) {
-          const encoded = hash.replace('#share=', '');
-          const decoded = JSON.parse(decodeURIComponent(atob(encoded)));
-          if (decoded) {
-            const newId = crypto.randomUUID();
-            hydratedWorkspaces = [{ id: newId, name: 'Shared Tab', state: { ...deepClone(defaultState), ...decoded } }];
-            hydratedActiveId = newId;
-            hasSharedState = true;
-            // Clear hash so it doesn't persist on reload
-            window.history.replaceState(null, '', window.location.pathname + window.location.search);
-          }
-        }
-      } catch (e) {
-        if (process.env.NODE_ENV !== 'production') console.warn('Failed to parse shared state from URL hash', e);
-      }
-
-      if (storageKey && !hasSharedState) {
+      if (storageKey) {
         try {
           const stored = localStorage.getItem(`devtools-workspaces-${storageKey}`);
           if (stored) {
@@ -92,10 +96,10 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
         }
       }
 
-      // Incoming cross-tool handoff opens as a new active tab, keeping existing tabs
-      if (handoff) {
+      // Incoming state opens as new active tab(s), keeping the user's existing tabs
+      for (const item of incoming) {
         const newId = crypto.randomUUID();
-        hydratedWorkspaces = [...hydratedWorkspaces, { id: newId, name: handoff.name, state: { ...deepClone(defaultState), ...handoff.state } }];
+        hydratedWorkspaces = [...hydratedWorkspaces, { id: newId, name: item.name, state: { ...deepClone(defaultState), ...item.state } }];
         hydratedActiveId = newId;
       }
 

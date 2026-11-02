@@ -1,16 +1,23 @@
 'use client';
 
 import * as React from 'react';
-import { AlignLeft, Search, Link2, Copy, Download, RefreshCw } from 'lucide-react';
+import { AlignLeft, Search, Link2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { generateParagraphs, generateSentences, generateWords, analyzeText, transformText, type TextStats } from '@/tools/string-utils/utils';
+
+type LoremType = 'paragraphs' | 'sentences' | 'words';
+
+function generateLorem(type: LoremType, count: number): string {
+  if (type === 'paragraphs') return generateParagraphs(count);
+  if (type === 'sentences') return generateSentences(count);
+  return generateWords(count);
+}
 
 export default function Page() {
   const [activeTab, setActiveTab] = React.useState<'analyzer' | 'generator' | 'transformer'>('analyzer');
@@ -27,26 +34,19 @@ export default function Page() {
   }, [analyzeInput]);
 
   // --- Generator States ---
-  const [genType, setGenType] = React.useState<'paragraphs' | 'sentences' | 'words'>('paragraphs');
+  const [genType, setGenType] = React.useState<LoremType>('paragraphs');
   const [genCount, setGenCount] = React.useState(3);
   const [genOutput, setGenOutput] = React.useState('');
 
+  // Auto-regenerate silently whenever the type or count changes.
+  React.useEffect(() => {
+    setGenOutput(generateLorem(genType, genCount));
+  }, [genType, genCount]);
+
   const handleGenerate = () => {
-    let out = '';
-    if (genType === 'paragraphs') {
-      out = generateParagraphs(genCount);
-    } else if (genType === 'sentences') {
-      out = generateSentences(genCount);
-    } else {
-      out = generateWords(genCount);
-    }
-    setGenOutput(out);
+    setGenOutput(generateLorem(genType, genCount));
     toast({ type: 'success', message: `Generated ${genCount} ${genType}!` });
   };
-
-  React.useEffect(() => {
-    handleGenerate();
-  }, [genType, genCount]);
 
   // --- Transformer States ---
   const [transformInput, setTransformInput] = React.useState('Transform this text into URL-friendly Slugs, UPPERCASE, lowercase, or Title Case.');
@@ -172,7 +172,7 @@ export default function Page() {
                     { value: 'words', label: 'Individual Words' }
                   ]}
                   value={genType}
-                  onChange={(e) => setGenType(e.target.value as 'paragraphs' | 'sentences' | 'words')}
+                  onChange={(e) => setGenType(e.target.value as LoremType)}
                 />
                 
                 <div>

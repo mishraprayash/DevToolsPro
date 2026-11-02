@@ -104,7 +104,14 @@ export default function Page() {
               { value: '4', label: '4 Spaces' },
             ]}
           />
-
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={handleFormat} icon={<RefreshCcw className="h-4 w-4" />} className="flex-1">
+              Format
+            </Button>
+            <Button variant="secondary" onClick={handleMinify} icon={<Minimize2 className="h-4 w-4" />} className="flex-1">
+              Minify
+            </Button>
+          </div>
         </div>
 
         {/* Stats banner */}

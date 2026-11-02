@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { processAES } from '@/tools/aes/utils';
-import { Shield, ArrowRightLeft, Settings, Copy } from 'lucide-react';
+import { Settings, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
@@ -85,7 +85,7 @@ export default function AESCryptoPage() {
     <ToolLayout
       name="AES Encryption & Decryption"
       description="Encrypt and decrypt text using Advanced Encryption Standard (AES) with CBC, CTR, or GCM modes."
-      category="Cryptography"
+      category="Security"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Direction Selector */}

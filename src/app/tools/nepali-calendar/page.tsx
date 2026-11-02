@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Calendar, RefreshCw, ArrowLeftRight, Sparkles, BookOpen } from 'lucide-react';
+import { RefreshCw, Sparkles, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { ToolLayout } from '@/components/tool/ToolLayout';
@@ -12,7 +12,6 @@ import {
   nepaliMonths, 
   type NepaliDateObj 
 } from '@/tools/nepali-calendar/utils';
-import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 
 const devnagariDigits = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];

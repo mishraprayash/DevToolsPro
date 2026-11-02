@@ -351,7 +351,7 @@ function FlowDesigner() {
           setNodes(newNodes);
           setEdges(newEdges);
         }
-      } catch (e) {
+      } catch {
         // Ignore syntax parsing errors while typing
       }
     },

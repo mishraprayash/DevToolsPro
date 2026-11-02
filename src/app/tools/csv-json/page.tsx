@@ -17,7 +17,6 @@ import {
   detectDelimiter,
   formatJson,
   DELIMITERS,
-  type Delimiter,
 } from '@/tools/csv-json/utils';
 
 type Mode = 'csv-to-json' | 'json-to-csv';

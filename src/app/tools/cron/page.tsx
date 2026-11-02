@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { RotateCcw, Calendar, AlignLeft, Info, HelpCircle, Briefcase, RefreshCw } from 'lucide-react';
+import { RotateCcw, Calendar, AlignLeft, Info, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ExamplePills } from '@/components/ui/ExamplePills';

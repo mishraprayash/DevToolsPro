@@ -9,7 +9,6 @@ import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { convertColor, type HarmonyColor } from '@/tools/color/utils';
 import { toast } from '@/components/ui/Toast';
-import { cn } from '@/lib/utils';
 
 const examples = [
   { label: 'Tomato Red', value: 'tomato' },

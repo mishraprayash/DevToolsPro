@@ -1,9 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { ArrowRight, Code } from 'lucide-react';
+import { Code } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { gqlToTs } from '@/tools/graphql-to-ts/utils';

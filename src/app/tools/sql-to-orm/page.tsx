@@ -7,12 +7,11 @@ const Editor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
   loading: () => <div className="h-full w-full flex items-center justify-center text-text-muted text-xs font-mono">Loading editor...</div>,
 });
-import { Database, Code, Braces } from 'lucide-react';
+import { Database, Code } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';
-import { Select } from '@/components/ui/Select';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { parseSqlCreate, generateOrmEntities, type GeneratedEntity } from '@/tools/sql-to-orm/utils';
+import { parseSqlCreate, generateOrmEntities } from '@/tools/sql-to-orm/utils';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
 

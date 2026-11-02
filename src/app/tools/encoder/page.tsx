@@ -258,7 +258,7 @@ export default function Page() {
     <div className="flex flex-col h-full space-y-4 min-h-0">
       <div className="flex items-center justify-between shrink-0">
         <h2 className="text-base font-semibold text-text-primary">Converted Output</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={handleSwap} disabled={!state.output} icon={<Copy className="h-3.5 w-3.5" />}>Swap</Button>
           {state.output && <CopyButton value={state.output} label="Copy Output" />}
         </div>

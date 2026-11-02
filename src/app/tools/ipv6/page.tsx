@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { processIpv6, type Ipv6Details } from '@/tools/ipv6/utils';
-import { Shield, Eye, Copy, Check, FileCode, CheckCircle } from 'lucide-react';
+import { processIpv6 } from '@/tools/ipv6/utils';
+import { Shield, Eye, Copy, Check, CheckCircle } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 
 export default function Ipv6HelperPage() {

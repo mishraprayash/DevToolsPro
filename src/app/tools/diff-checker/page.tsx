@@ -288,57 +288,6 @@ export default function Page() {
     </div>
   );
 
-  const leftPane = (
-    <div className="flex flex-col h-full space-y-4 min-h-0">
-      <div className="flex flex-col lg:flex-row gap-6 h-[45%] lg:h-auto min-h-0 shrink-0">
-        <div className="space-y-2 flex-1 flex flex-col min-h-0">
-          <div className="flex items-center justify-between shrink-0">
-            <h2 className="text-base font-medium text-text-secondary">Original Text</h2>
-            <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
-              Clear
-            </Button>
-          </div>
-          <Input
-            value={state.originalText}
-            onChange={(e) => updateActiveWorkspace({ originalText: e.target.value, activeExample: -1 })}
-            onDropText={(text) => updateActiveWorkspace({ originalText: text, activeExample: -1 })}
-            placeholder="Paste original text here or drop file..."
-            className="w-full h-full"
-            wrapperClassName="flex-1 min-h-[150px]"
-            monospace
-          />
-        </div>
-
-        <div className="space-y-2 flex-1 flex flex-col min-h-0">
-          <div className="flex items-center justify-between shrink-0">
-            <h2 className="text-base font-medium text-text-secondary">Modified Text</h2>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleSwap} icon={<ArrowLeftRight className="h-4 w-4" />}>
-                Swap
-              </Button>
-            </div>
-          </div>
-          <Input
-            value={state.modifiedText}
-            onChange={(e) => updateActiveWorkspace({ modifiedText: e.target.value, activeExample: -1 })}
-            onDropText={(text) => updateActiveWorkspace({ modifiedText: text, activeExample: -1 })}
-            placeholder="Paste modified text here or drop file..."
-            className="w-full h-full"
-            wrapperClassName="flex-1 min-h-[150px]"
-            monospace
-          />
-        </div>
-      </div>
-      
-      {/* We will leave right pane for the result, but since diff checker has a unique top-bottom layout originally, we will adapt SplitPanesView differently. Actually, SplitPanesView assumes left = side 1, right = side 2. But we want inputs on top, and diff on bottom when not full screen. 
-      Wait, in SplitPanesView, `lg:grid-cols-2` puts them side-by-side. 
-      For Diff Checker, Inputs are usually left/right, and Diff is below them spanning full width. Or, Inputs on left, Diff on right?
-      If Inputs are left pane (stacked vertically) and Diff is right pane, it's nice.
-      Let's do that: Left Pane = Input 1 & Input 2 (stacked). Right Pane = Diff Viewer.
-      */}
-    </div>
-  );
-
   const leftPaneStacked = (
     <div className="flex flex-col h-full space-y-6 min-h-0">
       <div className="space-y-2 flex-1 flex flex-col min-h-0">

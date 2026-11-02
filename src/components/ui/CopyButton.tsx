@@ -55,7 +55,7 @@ export function CopyButton({
         message: `${label} successfully copied!`,
       });
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
+    } catch {
       toast({
         type: 'error',
         message: 'Failed to copy to clipboard',

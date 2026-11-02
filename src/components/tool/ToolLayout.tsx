@@ -8,6 +8,7 @@ import { useAppStore } from '@/lib/store/useStore';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
+import { toolsMap, getToolsByCategory, categorySlug as toSlug, type ToolCategory } from '@/tools/registry';
 
 // React 19 Error Boundary class component
 interface ErrorBoundaryProps {
@@ -69,8 +70,6 @@ class ToolErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundar
   }
 }
 
-function slugifyCategory(cat: string) { return cat.toLowerCase().replace(/&/g, '').replace(/\s+/g, '-').replace(/--+/g, '-').trim(); }
-
 const formattingNext = [
   { id: 'json', label: 'JSON', icon: FileJson },
   { id: 'yaml-json', label: 'YAML ↔ JSON', icon: FileCode },
@@ -88,15 +87,28 @@ interface ToolLayoutProps {
   historyComponent?: React.ReactNode;
 }
 
-export function ToolLayout({ name, description, category, children, historyComponent }: ToolLayoutProps) {
+export function ToolLayout({ name, description, category: categoryProp, children, historyComponent }: ToolLayoutProps) {
   const pathname = usePathname();
-  const { favorites, toggleFavorite } = useAppStore();
+  const { favorites, toggleFavorite, addRecentTool } = useAppStore();
   const [helpOpen, setHelpOpen] = React.useState(false);
   
   const toolId = React.useMemo(() => {
     if (!pathname) return '';
     return pathname.split('/').pop() || '';
   }, [pathname]);
+
+  // The registry is the source of truth for a tool's category (keeps breadcrumbs and related links valid)
+  const category: string = toolsMap.get(toolId)?.category ?? categoryProp;
+
+  // Record every visit (URL, header, footer, related links) in recent tools, not just grid/palette clicks
+  React.useEffect(() => {
+    if (toolId && toolsMap.has(toolId)) addRecentTool(toolId);
+  }, [toolId, addRecentTool]);
+
+  const relatedTools = React.useMemo(
+    () => getToolsByCategory(category as ToolCategory).filter((t) => t.id !== toolId).slice(0, 6),
+    [category, toolId]
+  );
 
   const isFavorite = React.useMemo(() => {
     return favorites.includes(toolId);
@@ -113,23 +125,27 @@ export function ToolLayout({ name, description, category, children, historyCompo
     });
   };
 
-  const categorySlug = React.useMemo(() => slugifyCategory(category), [category]);
+  const categorySlug = React.useMemo(() => toSlug(category), [category]);
   const isFormatting = category === 'Formatting';
 
   return (
     <div className="flex-1 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Breadcrumb — category now deep-links */}
-        <nav className="flex items-center gap-2 text-sm text-text-muted mb-6" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-sm text-text-muted mb-6 min-w-0" aria-label="Breadcrumb">
           <Link href="/" className="hover:text-text-primary transition-colors" aria-label="Home">
             <Home className="h-4 w-4" />
           </Link>
           <ChevronRight className="h-4 w-4" />
+          <Link href="/tools" className="hidden sm:inline text-text-secondary hover:text-accent hover:underline underline-offset-4">
+            Tools
+          </Link>
+          <ChevronRight className="hidden sm:inline h-4 w-4" />
           <Link href={`/tools/categories/${categorySlug}`} className="text-text-secondary hover:text-accent hover:underline underline-offset-4">
             {category}
           </Link>
           <ChevronRight className="h-4 w-4" />
-          <span className="text-text-primary font-medium">{name}</span>
+          <span className="text-text-primary font-medium truncate" aria-current="page">{name}</span>
         </nav>
 
         {/* Tool header */}
@@ -219,21 +235,38 @@ export function ToolLayout({ name, description, category, children, historyCompo
           </ToolErrorBoundary>
         </div>
 
-        {/* Formatting cross-tool footer — only for Formatting */}
-        {isFormatting && toolId && (
-          <div className="mt-8 p-4 rounded-xl border border-border bg-bg-secondary/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="text-xs">
-              <span className="font-semibold">Continue your flow:</span>
-              <span className="text-text-secondary"> Convert → Generate → Validate.</span>
+        {/* Related tools — keeps users moving between tools in the same category */}
+        {relatedTools.length > 0 && (
+          <section className="mt-12 pt-8 border-t border-border" aria-labelledby="related-tools-heading">
+            <div className="flex items-end justify-between gap-3 mb-4">
+              <div>
+                <h2 id="related-tools-heading" className="text-base font-semibold font-outfit text-text-primary">More {category} tools</h2>
+                {isFormatting && (
+                  <p className="mt-0.5 text-xs text-text-secondary">Continue your flow: Convert → Generate → Validate.</p>
+                )}
+              </div>
+              <Link href={`/tools/categories/${categorySlug}`} className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline underline-offset-4">
+                View all <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {formattingNext.filter(f => f.id !== toolId).slice(0,4).map(f => (
-                <Link key={f.id} href={`/tools/${f.id}`} className="px-3 py-1.5 rounded-full bg-bg-tertiary border border-border text-xs font-medium hover:border-accent/30">
-                  {f.label} →
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {relatedTools.map((tool) => (
+                <Link
+                  key={tool.id}
+                  href={`/tools/${tool.id}`}
+                  className="group flex items-center gap-3 p-3 rounded-xl border border-border bg-bg-secondary hover:border-accent/40 hover:bg-bg-elevated transition-all"
+                >
+                  <div className={cn('w-9 h-9 shrink-0 rounded-lg bg-gradient-to-br flex items-center justify-center', tool.color)}>
+                    <tool.icon className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors truncate">{tool.name}</p>
+                    <p className="text-xs text-text-muted truncate">{tool.description}</p>
+                  </div>
                 </Link>
               ))}
             </div>
-          </div>
+          </section>
         )}
       </div>
     </div>
