@@ -64,7 +64,7 @@ export function Hero() {
   };
 
   return (
-    <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden pt-12 pb-16">
+    <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden pt-24 pb-16">
       {/* Dynamic Background Effects */}
       <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
       <div className="absolute top-1/4 left-1/3 w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-accent/10 blur-[140px] pointer-events-none animate-pulse-glow" />

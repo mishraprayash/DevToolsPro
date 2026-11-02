@@ -85,7 +85,7 @@ export default function AESCryptoPage() {
     <ToolLayout
       name="AES Encryption & Decryption"
       description="Encrypt and decrypt text using Advanced Encryption Standard (AES) with CBC, CTR, or GCM modes."
-      category="Cryptography"
+      category="Security"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Direction Selector */}

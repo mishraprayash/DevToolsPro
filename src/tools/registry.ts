@@ -94,6 +94,11 @@ export const categoryLabels: Record<ToolCategory, string> = {
   'Date & Time': 'Date & Time',
 };
 
+// URL slug for /tools/categories/[category] (e.g. 'Date & Time' -> 'date-time')
+export function categorySlug(category: string): string {
+  return category.toLowerCase().replace(/&/g, '').replace(/\s+/g, '-').replace(/--+/g, '-').trim();
+}
+
 export const toolsMap = new Map<string, ToolDef>(tools.map((t) => [t.id, t]));
 
 const categoryToolsMap = new Map<ToolCategory, ToolDef[]>();

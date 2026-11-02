@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Lock, Keyboard, Sparkles, Cpu, Layers, Code, ShieldCheck } from 'lucide-react';
-import { tools, categories } from '@/tools/registry';
+import { Zap, Lock, Keyboard, Sparkles, Cpu } from 'lucide-react';
+import { tools } from '@/tools/registry';
 
 const features = [
   {
