@@ -94,6 +94,7 @@ export default function Page() {
     setActiveWorkspaceId,
     addWorkspace,
     removeWorkspace,
+    renameWorkspace,
     updateActiveWorkspace,
     copyShareLink
   } = useWorkspaces<YamlJsonState>(defaultState, 'Converter', 'yaml-json');
@@ -355,6 +356,7 @@ export default function Page() {
         onChange={setActiveWorkspaceId}
         onAdd={addWorkspace}
         onClose={removeWorkspace}
+        onRename={renameWorkspace}
         onShare={copyShareLink}
       />
       
