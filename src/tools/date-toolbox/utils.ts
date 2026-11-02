@@ -57,7 +57,7 @@ export function formatInTimezone(dateMs: number, timeZone?: string, opts?: Intl.
     const options: Intl.DateTimeFormatOptions = Object.assign({ year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' }, opts ?? {});
     const tz = timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
     return new Intl.DateTimeFormat(undefined, Object.assign({}, options, { timeZone: tz })).format(new Date(dateMs));
-  } catch (e) {
+  } catch {
     return new Date(dateMs).toString();
   }
 }

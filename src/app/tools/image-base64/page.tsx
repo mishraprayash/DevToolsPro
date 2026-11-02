@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
 import { fileToBase64, stripDataUrlPrefix, formatFileSize, type FileReadResult } from '@/tools/image-base64/utils';
-import { ImageUp, Trash2, FileText, Settings2, Download } from 'lucide-react';
+import { ImageUp, Trash2, Settings2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
 
@@ -213,6 +213,7 @@ export default function Page() {
                 <>
                   <div className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl bg-bg-tertiary border border-border">
                     <div className="w-full sm:w-32 h-32 rounded-lg overflow-hidden bg-[url('https://cdn.pixabay.com/photo/2016/09/24/09/52/checkered-1691335_1280.png')] border border-border shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- user-supplied data: URL, next/image cannot optimize it */}
                       <img src={result.dataUrl} alt="Preview" className="w-full h-full object-contain backdrop-blur-sm" />
                     </div>
                     <div className="flex-1 flex flex-col justify-center">

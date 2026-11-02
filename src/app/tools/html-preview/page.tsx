@@ -3,11 +3,10 @@
 import * as React from 'react';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { Button } from '@/components/ui/Button';
-import { sanitizeHtml, wrapHtmlDocument, formatHtml } from '@/tools/html-preview/utils';
+import { wrapHtmlDocument, formatHtml } from '@/tools/html-preview/utils';
 import { cn } from '@/lib/utils';
-import { RotateCcw, Monitor, Smartphone, Tablet, Terminal, Check, Info, Settings } from 'lucide-react';
+import { RotateCcw, Monitor, Smartphone, Tablet, Terminal, Settings } from 'lucide-react';
 import { toast } from '@/components/ui/Toast';
 
 interface Example { 
@@ -102,19 +101,8 @@ interface LogItem {
   time: string;
 }
 
-export default function Page() {
-  const [input, setInput] = React.useState(examples[0].value);
-  const [activeExample, setActiveExample] = React.useState(0);
-  const [injectTailwind, setInjectTailwind] = React.useState(examples[0].tailwind);
-  const [injectBootstrap, setInjectBootstrap] = React.useState(examples[0].bootstrap);
-  const [injectFontAwesome, setInjectFontAwesome] = React.useState(examples[0].fontawesome);
-  const [viewportWidth, setViewportWidth] = React.useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  
-  // Console simulator logs state
-  const [logs, setLogs] = React.useState<LogItem[]>([]);
-
-  // Override standard console in Iframe and postMessage up
-  const consoleScript = `
+// Override standard console in Iframe and postMessage up
+const CONSOLE_SCRIPT = `
     <script>
       (function() {
         const _log = console.log;
@@ -148,7 +136,18 @@ export default function Page() {
         };
       })();
     </script>
-  `;
+`;
+
+export default function Page() {
+  const [input, setInput] = React.useState(examples[0].value);
+  const [activeExample, setActiveExample] = React.useState(0);
+  const [injectTailwind, setInjectTailwind] = React.useState(examples[0].tailwind);
+  const [injectBootstrap, setInjectBootstrap] = React.useState(examples[0].bootstrap);
+  const [injectFontAwesome, setInjectFontAwesome] = React.useState(examples[0].fontawesome);
+  const [viewportWidth, setViewportWidth] = React.useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  
+  // Console simulator logs state
+  const [logs, setLogs] = React.useState<LogItem[]>([]);
 
   // Build document with console injection + CDN injections
   const srcdoc = React.useMemo(() => {
@@ -160,9 +159,9 @@ export default function Page() {
     const baseDoc = wrapHtmlDocument(input, options);
     // Inject our custom console catcher script right after <head>
     if (/<head>/i.test(baseDoc)) {
-      return baseDoc.replace(/<head>/i, `<head>\n  ${consoleScript}`);
+      return baseDoc.replace(/<head>/i, `<head>\n  ${CONSOLE_SCRIPT}`);
     }
-    return consoleScript + baseDoc;
+    return CONSOLE_SCRIPT + baseDoc;
   }, [input, injectTailwind, injectBootstrap, injectFontAwesome]);
 
   // Listen to console log postMessage events from iframe

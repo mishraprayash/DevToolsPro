@@ -23,15 +23,12 @@ export function JsonTreeViewer({
   const [copiedPath, setCopiedPath] = React.useState<string | null>(null);
   const [hoveredPath, setHoveredPath] = React.useState<string | null>(null);
 
-  // Parse paths and search matches
-  const { allPaths, matchedPaths, ancestorPaths } = React.useMemo(() => {
-    const all: string[] = [];
+  // Find search matches and collect their ancestor paths so they auto-expand
+  const ancestorPaths = React.useMemo(() => {
     const matched: string[] = [];
     const ancestors = new Set<string>();
 
     const traverse = (val: unknown, path: string) => {
-      all.push(path);
-
       if (val === null || val === undefined) {
         if (searchQuery && String(val).toLowerCase().includes(searchQuery.toLowerCase())) {
           matched.push(path);
@@ -87,7 +84,7 @@ export function JsonTreeViewer({
       });
     }
 
-    return { allPaths: all, matchedPaths: matched, ancestorPaths: ancestors };
+    return ancestors;
   }, [data, searchQuery]);
 
   // Handle local collapse toggles

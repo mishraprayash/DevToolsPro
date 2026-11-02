@@ -8,7 +8,7 @@ import {
   type ChmodState, 
   type ChmodPermissions 
 } from '@/tools/chmod/utils';
-import { Copy, Terminal, Shield, Check, RefreshCw } from 'lucide-react';
+import { Copy, Terminal, Check, RefreshCw } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 
 const INITIAL_STATE: ChmodState = {

@@ -1,14 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { Compass, Laptop, Smartphone, Tablet, Terminal, Globe, RefreshCw, Cpu, Monitor, Eye, RotateCcw } from 'lucide-react';
+import { Compass, Laptop, Smartphone, Tablet, Cpu, Monitor, Eye, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { parseUserAgent, type ParsedUserAgent } from '@/tools/user-agent/utils';
+import { parseUserAgent } from '@/tools/user-agent/utils';
 import { toast } from '@/components/ui/Toast';
-import { cn } from '@/lib/utils';
 
 const examples = [
   { label: 'Chrome (macOS)', value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },

@@ -11,13 +11,6 @@ export type ConvertResult =
   | { success: true; decimal: string; hex: string; binary: string; octal: string; custom?: string }
   | { success: false; error: string };
 
-const BASE_RADIX: Record<NumberBase, number> = {
-  decimal: 10,
-  hex: 16,
-  binary: 2,
-  octal: 8,
-};
-
 export function convertNumber(
   input: string, 
   from: NumberBase | number, 

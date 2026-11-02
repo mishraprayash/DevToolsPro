@@ -276,7 +276,7 @@ export function decodeJwtParts(token: string): {
       signature: signatureB64,
       raw: { header: headerB64, payload: payloadB64, signature: signatureB64 }
     };
-  } catch (e) {
+  } catch {
     return { success: false, error: 'Unable to parse JSON in header/payload' };
   }
 }

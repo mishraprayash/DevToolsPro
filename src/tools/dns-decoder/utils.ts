@@ -54,7 +54,6 @@ function parseHexToBytes(hex: string): Uint8Array {
 function readDomainName(bytes: Uint8Array, offset: { val: number }): string {
   const parts: string[] = [];
   let jumped = false;
-  const jumpOffset = 0;
   let currentOffset = offset.val;
   let loops = 0;
 

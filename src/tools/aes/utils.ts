@@ -89,7 +89,7 @@ export async function processAES(
         false,
         [action]
       );
-    } catch (e) {
+    } catch {
       return { success: false, error: "Failed to import key. Ensure algorithm is supported." };
     }
 

@@ -1,9 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { FileMinus, Download, Search, CheckCircle } from 'lucide-react';
+import { Download, Search, CheckCircle } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { generateGitignore, gitignoreTemplates, type GitignoreTemplate } from '@/tools/gitignore/utils';

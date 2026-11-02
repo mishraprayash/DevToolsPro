@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Clock, Calendar, Earth, RefreshCw } from 'lucide-react';
+import { Clock, Calendar, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
@@ -13,8 +13,6 @@ import {
   parseInput,
   toEpochSeconds,
   toEpochMilliseconds,
-  toEpochMicroseconds,
-  toEpochNanoseconds,
   formatInTimezone,
   listTimeZones,
   getRelativeTime,

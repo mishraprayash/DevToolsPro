@@ -6,7 +6,6 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Button } from '@/components/ui/Button';
 import { convertToNepali } from '@/tools/nepali-romanized/utils';
-import { useAppStore } from '@/lib/store/useStore';
 
 export default function Page() {
   const [input, setInput] = React.useState('namaste');

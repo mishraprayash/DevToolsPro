@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { RotateCcw, AlertTriangle, Binary, Sliders } from 'lucide-react';
+import { RotateCcw, AlertTriangle, Sliders } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { ToolLayout } from '@/components/tool/ToolLayout';
@@ -31,7 +31,6 @@ export default function Page() {
   const [input, setInput] = React.useState(examples[0].value);
   const [from, setFrom] = React.useState<NumberBase>('decimal');
   const [customBase, setCustomBase] = React.useState<number>(12); // Base 12 Duodecimal by default
-  const [activeExample, setActiveExample] = React.useState(0);
 
   const result = React.useMemo(() => {
     return convertNumber(input, from, customBase);
@@ -41,7 +40,6 @@ export default function Page() {
 
   const handleClear = () => {
     setInput('');
-    setActiveExample(-1);
   };
 
   return (
@@ -76,7 +74,7 @@ export default function Page() {
               label="Source Base"
               options={basesOptions}
               value={from}
-              onChange={(e) => { setFrom(e.target.value as NumberBase); setActiveExample(-1); }}
+              onChange={(e) => setFrom(e.target.value as NumberBase)}
             />
           </div>
 
