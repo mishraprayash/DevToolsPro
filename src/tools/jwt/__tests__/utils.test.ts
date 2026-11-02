@@ -168,7 +168,7 @@ describe('JWT Utilities', () => {
   describe('signJWT & verifyJwtSignature (RS256)', () => {
     it('should fail when given invalid RSA PEM key', async () => {
       const invalidPem = '-----BEGIN PRIVATE KEY-----\nNOT_A_KEY\n-----END PRIVATE KEY-----';
-      await expect(signJWT({ alg: 'RS256' }, { sub: '123' }, invalidPem, 'RS256')).rejects.toThrow('Failed to sign JWT');
+      await expect(signJWT({ alg: 'RS256' }, { sub: '123' }, invalidPem, 'RS256')).rejects.toThrow('Invalid RSA private key');
 
       const verifyResult = await verifyJwtSignature('header.payload.sig', invalidPem, 'RS256');
       expect(verifyResult.valid).toBe(false);

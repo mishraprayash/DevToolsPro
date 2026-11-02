@@ -17,22 +17,27 @@ describe('JSON Utilities', () => {
 
   it('should beautify JSON', () => {
     const minified = '{"a":1,"b":2}';
-    const beautified = beautifyJson(minified, 2);
-    expect(beautified).toBe('{\n  "a": 1,\n  "b": 2\n}');
+    const r = beautifyJson(minified, 2);
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data).toBe('{\n  "a": 1,\n  "b": 2\n}');
   });
 
   it('should minify JSON', () => {
     const beautified = '{\n  "a": 1,\n  "b": 2\n}';
-    const minified = minifyJson(beautified);
-    expect(minified).toBe('{"a":1,"b":2}');
+    const r = minifyJson(beautified);
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data).toBe('{"a":1,"b":2}');
   });
 
   it('should sort JSON keys', () => {
     const unsorted = '{"z": 1, "a": 2, "c": 3}';
-    const sorted = sortJsonKeys(unsorted);
-    expect(sorted).toContain('"a"');
-    expect(sorted.indexOf('"a"')).toBeLessThan(sorted.indexOf('"c"'));
-    expect(sorted.indexOf('"c"')).toBeLessThan(sorted.indexOf('"z"'));
+    const r = sortJsonKeys(unsorted);
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data).toContain('"a"');
+      expect(r.data.indexOf('"a"')).toBeLessThan(r.data.indexOf('"c"'));
+      expect(r.data.indexOf('"c"')).toBeLessThan(r.data.indexOf('"z"'));
+    }
   });
 
   it('should validate JSON', () => {

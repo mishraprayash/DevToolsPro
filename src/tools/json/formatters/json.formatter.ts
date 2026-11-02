@@ -9,21 +9,29 @@ export function parseJson(input: string): JsonResult<unknown> {
   }
 }
 
-export function beautifyJson(input: string, indent: number = 2): string {
+export function beautifyJson(input: string, indent: number = 2): import('../types').JsonResult<string> {
   const parsed = parseJson(input);
-  if (!parsed.success) return input;
-  return JSON.stringify(parsed.data, null, indent);
+  if (!parsed.success) return { success: false, error: parsed.error };
+  try {
+    return { success: true, data: JSON.stringify(parsed.data, null, indent) };
+  } catch (e) {
+    return { success: false, error: (e as Error).message };
+  }
 }
 
-export function minifyJson(input: string): string {
+export function minifyJson(input: string): import('../types').JsonResult<string> {
   const parsed = parseJson(input);
-  if (!parsed.success) return input;
-  return JSON.stringify(parsed.data);
+  if (!parsed.success) return { success: false, error: parsed.error };
+  try {
+    return { success: true, data: JSON.stringify(parsed.data) };
+  } catch (e) {
+    return { success: false, error: (e as Error).message };
+  }
 }
 
-export function sortJsonKeys(input: string): string {
+export function sortJsonKeys(input: string, indent: number = 2): import('../types').JsonResult<string> {
   const parsed = parseJson(input);
-  if (!parsed.success) return input;
+  if (!parsed.success) return { success: false, error: parsed.error };
 
   const sortObject = (obj: unknown): unknown => {
     if (Array.isArray(obj)) {
@@ -40,7 +48,11 @@ export function sortJsonKeys(input: string): string {
     return obj;
   };
 
-  return JSON.stringify(sortObject(parsed.data), null, 2);
+  try {
+    return { success: true, data: JSON.stringify(sortObject(parsed.data), null, indent) };
+  } catch (e) {
+    return { success: false, error: (e as Error).message };
+  }
 }
 
 export function validateJson(input: string): JsonValidationResult {
@@ -56,22 +68,37 @@ export function validateJson(input: string): JsonValidationResult {
   }
 }
 
-export function processJson(input: string, action: JsonAction, indent: number = 2): string {
+export function processJson(input: string, action: JsonAction, indent: number = 2): import('../types').JsonResult<string> {
   switch (action) {
     case 'beautify':
       return beautifyJson(input, indent);
     case 'minify':
       return minifyJson(input);
     case 'sort':
-      return sortJsonKeys(input);
+      return sortJsonKeys(input, indent);
     case 'validate': {
       const result = validateJson(input);
-      if (!result.valid) {
-        throw new Error(result.error);
-      }
-      return input;
+      if (!result.valid) return { success: false, error: result.error ?? 'Invalid JSON' };
+      return { success: true, data: input };
     }
     default:
-      return input;
+      return { success: false, error: `Unknown action: ${String(action)}` };
   }
+}
+
+/**
+ * Back-compat wrappers that return raw strings for legacy UI code.
+ * Prefer the Result-returning variants above in new code.
+ */
+export function beautifyJsonString(input: string, indent: number = 2): string {
+  const r = beautifyJson(input, indent);
+  return r.success ? r.data : input;
+}
+export function minifyJsonString(input: string): string {
+  const r = minifyJson(input);
+  return r.success ? r.data : input;
+}
+export function sortJsonKeysString(input: string): string {
+  const r = sortJsonKeys(input);
+  return r.success ? r.data : input;
 }

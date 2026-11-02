@@ -68,25 +68,25 @@ describe('AES Utilities', () => {
     it('should return error when required fields are empty', async () => {
       const noInput = await processAES('encrypt', 'CBC', '', secretKey, 'utf8', iv16, 'utf8', 'base64');
       expect(noInput.success).toBe(false);
-      expect(noInput.error).toBe('Input is required.');
+      expect(!noInput.success && noInput.error).toBe('Input is required.');
 
       const noKey = await processAES('encrypt', 'CBC', plaintext, '', 'utf8', iv16, 'utf8', 'base64');
       expect(noKey.success).toBe(false);
-      expect(noKey.error).toBe('Key is required.');
+      expect(!noKey.success && noKey.error).toBe('Key is required.');
 
       const noIv = await processAES('encrypt', 'CBC', plaintext, secretKey, 'utf8', '', 'utf8', 'base64');
       expect(noIv.success).toBe(false);
-      expect(noIv.error).toBe('IV is required.');
+      expect(!noIv.success && noIv.error).toBe('IV is required.');
     });
 
     it('should handle invalid hex key or IV', async () => {
       const badHexKey = await processAES('encrypt', 'CBC', plaintext, 'XYZ123', 'hex', iv16, 'utf8', 'base64');
       expect(badHexKey.success).toBe(false);
-      expect(badHexKey.error).toContain('Invalid key');
+      expect(!badHexKey.success && badHexKey.error).toContain('Invalid key');
 
       const badHexIv = await processAES('encrypt', 'CBC', plaintext, secretKey, 'utf8', 'INVALID_HEX', 'hex', 'base64');
       expect(badHexIv.success).toBe(false);
-      expect(badHexIv.error).toContain('Invalid IV');
+      expect(!badHexIv.success && badHexIv.error).toContain('Invalid IV');
     });
 
     it('should return error on invalid ciphertext or wrong decryption key', async () => {
@@ -98,7 +98,7 @@ describe('AES Utilities', () => {
 
       const decBadCipherHex = await processAES('decrypt', 'CBC', 'XYZ123', secretKey, 'utf8', iv16, 'utf8', 'hex');
       expect(decBadCipherHex.success).toBe(false);
-      expect(decBadCipherHex.error).toContain('Invalid ciphertext format');
+      expect(!decBadCipherHex.success && decBadCipherHex.error).toContain('Invalid ciphertext format');
     });
   });
 });

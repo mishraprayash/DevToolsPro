@@ -133,8 +133,7 @@ describe('Image Base64 Utilities', () => {
 
       // @ts-expect-error mock Image
       globalThis.Image = MockImage;
-      // @ts-expect-error mock document
-      globalThis.document = {
+      (globalThis as { document: unknown }).document = {
         createElement: (tag: string) => {
           if (tag === 'canvas') return mockCanvas;
           return {};

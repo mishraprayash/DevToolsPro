@@ -1,34 +1,63 @@
 import { describe, it, expect } from 'vitest';
 import { validateYaml, jsonToYaml, yamlToJson } from '../utils';
 
-describe('YAML-JSON Utilities', () => {
-  const sampleYaml = 'name: DevTools\nversion: 1.0\nfeatures:\n  - fast\n  - reliable';
+describe('YAML / JSON Utilities', () => {
+  describe('validateYaml', () => {
+    it('should return valid true for valid YAML', async () => {
+      const yaml = 'name: John\nage: 30\ntags:\n  - dev\n  - qa';
+      const res = await validateYaml(yaml);
+      expect(res.valid).toBe(true);
+    });
 
-  it('should validate YAML correctly', async () => {
-    const valid = await validateYaml(sampleYaml);
-    expect(valid.valid).toBe(true);
+    it('should return valid false for malformed YAML', async () => {
+      const yaml = 'name: John\n  age: : : invalid';
+      const res = await validateYaml(yaml);
+      expect(res.valid).toBe(false);
+      expect(res.error).toBeDefined();
+    });
   });
 
-  it('should convert YAML to JSON', async () => {
-    const jsonStr = await yamlToJson(sampleYaml);
-    expect(jsonStr).not.toContain('Invalid YAML');
-    const parsed = JSON.parse(jsonStr);
-    expect(parsed.name).toBe('DevTools');
-    expect(parsed.features).toHaveLength(2);
+  describe('jsonToYaml', () => {
+    it('should convert valid JSON string to YAML', async () => {
+      const jsonStr = JSON.stringify({ name: 'Alice', role: 'Engineer' });
+      const yamlStr = await jsonToYaml(jsonStr);
+      expect(yamlStr).toContain('name: Alice');
+      expect(yamlStr).toContain('role: Engineer');
+    });
+
+    it('should return error message for invalid JSON string', async () => {
+      const res = await jsonToYaml('{ invalid json }');
+      expect(res).toContain('Invalid JSON:');
+    });
   });
 
-  it('should convert JSON to YAML', async () => {
-    const jsonStr = JSON.stringify({ title: 'Test', count: 42 });
-    const yamlStr = await jsonToYaml(jsonStr);
-    expect(yamlStr).toContain('title: Test');
-    expect(yamlStr).toContain('count: 42');
-  });
+  describe('yamlToJson', () => {
+    it('should convert valid single-document YAML to JSON', async () => {
+      const yaml = 'title: DevTools\nactive: true';
+      const jsonStr = await yamlToJson(yaml);
+      const parsed = JSON.parse(jsonStr);
+      expect(parsed.title).toBe('DevTools');
+      expect(parsed.active).toBe(true);
+    });
 
-  it('should return error message for invalid inputs', async () => {
-    const yamlRes = await yamlToJson(':\n  invalid: [');
-    expect(yamlRes).toContain('Invalid YAML:');
+    it('should convert multi-document YAML to JSON array', async () => {
+      const multiYaml = '---\nitem: 1\n---\nitem: 2';
+      const jsonStr = await yamlToJson(multiYaml);
+      const parsed = JSON.parse(jsonStr);
+      expect(Array.isArray(parsed)).toBe(true);
+      expect(parsed).toHaveLength(2);
+      expect(parsed[0].item).toBe(1);
+      expect(parsed[1].item).toBe(2);
+    });
 
-    const jsonRes = await jsonToYaml('{ bad json }');
-    expect(jsonRes).toContain('Invalid JSON:');
+    it('should return empty string for empty YAML input', async () => {
+      const res = await yamlToJson('');
+      expect(res).toBe('');
+    });
+
+    it('should return error message for invalid YAML syntax', async () => {
+      const res = await yamlToJson('foo: bar\n  baz: [invalid:');
+      expect(res).toContain('Invalid YAML:');
+    });
   });
 });

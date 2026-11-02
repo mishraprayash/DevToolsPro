@@ -45,7 +45,7 @@ describe('mock-data generateUUID & generateMockData', () => {
       const result = generateMockData([{ name: 'id', type: 'uuid' }], 1);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toContain('Cryptographically secure random number generator unavailable');
+        expect(!result.success && result.error).toContain('Cryptographically secure random number generator unavailable');
       }
     } finally {
       globalThis.crypto = originalCrypto;
@@ -117,15 +117,15 @@ describe('mock-data generateUUID & generateMockData', () => {
 
       const zeroCount = generateMockData(schema, 0);
       expect(zeroCount.success).toBe(false);
-      expect(zeroCount.error).toBe('Count must be between 1 and 1000');
+      expect(!zeroCount.success && zeroCount.error).toBe('Count must be between 1 and 1000');
 
       const excessCount = generateMockData(schema, 1001);
       expect(excessCount.success).toBe(false);
-      expect(excessCount.error).toBe('Count must be between 1 and 1000');
+      expect(!excessCount.success && excessCount.error).toBe('Count must be between 1 and 1000');
 
       const emptySchema = generateMockData([], 5);
       expect(emptySchema.success).toBe(false);
-      expect(emptySchema.error).toBe('Schema must contain at least one field');
+      expect(!emptySchema.success && emptySchema.error).toBe('Schema must contain at least one field');
     });
   });
 });

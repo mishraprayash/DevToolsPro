@@ -135,7 +135,7 @@ describe('Git Generator Utilities', () => {
       const result = generateGitCommand({ type: 'unknown' as GitCommandType });
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe('Unknown command type');
+        expect(result.error).toContain('Unknown command type');
       }
     });
   });
