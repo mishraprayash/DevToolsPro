@@ -2,6 +2,75 @@ export type FileReadResult =
   | { success: true; dataUrl: string; fileName: string; fileSize: number; mimeType: string }
   | { success: false; error: string };
 
+export type Result<T> = { success: true; data: T } | { success: false; error: string };
+
+export interface ParsedImageBase64 {
+  mimeType: string;
+  base64: string;
+}
+
+// Leading base64 characters of common image formats' magic bytes
+const IMAGE_SIGNATURES: [prefix: string, mimeType: string][] = [
+  ['iVBORw0KGgo', 'image/png'],
+  ['/9j/', 'image/jpeg'],
+  ['R0lGOD', 'image/gif'],
+  ['UklGR', 'image/webp'],
+  ['PHN2Zy', 'image/svg+xml'], // "<svg"
+  ['PD94bWw', 'image/svg+xml'], // "<?xml"
+  ['AAABAA', 'image/x-icon'],
+];
+
+const MIME_EXTENSIONS: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/svg+xml': 'svg',
+  'image/x-icon': 'ico',
+};
+
+/**
+ * Parses an image given as a base64 data URL (`data:image/png;base64,...`) or a raw
+ * base64 string (type sniffed from its leading magic bytes).
+ */
+export function parseImageBase64(input: string): Result<ParsedImageBase64> {
+  const trimmed = input.trim();
+  let mimeType: string | undefined;
+  let base64 = trimmed;
+
+  if (/^data:/i.test(trimmed)) {
+    const match = /^data:(image\/[a-z0-9.+-]+)((?:;[^,;]*)*?);base64,([\s\S]*)$/i.exec(trimmed);
+    if (!match) return { success: false, error: 'Expected a base64-encoded image data URL (data:image/...;base64,...)' };
+    mimeType = match[1].toLowerCase();
+    base64 = match[3];
+  }
+
+  base64 = base64.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+  if (!base64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) {
+    return { success: false, error: 'Input is not valid base64' };
+  }
+
+  mimeType ??= IMAGE_SIGNATURES.find(([prefix]) => base64.startsWith(prefix))?.[1];
+  if (!mimeType) return { success: false, error: 'Could not detect an image type from the base64 data' };
+
+  return { success: true, data: { mimeType, base64 } };
+}
+
+/** Decodes a base64 image (data URL or raw base64) into a File, for the upload pipeline. */
+export function base64ToImageFile(input: string, baseName = 'pasted-image'): Result<File> {
+  const parsed = parseImageBase64(input);
+  if (!parsed.success) return parsed;
+  try {
+    const binary = atob(parsed.data.base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const ext = MIME_EXTENSIONS[parsed.data.mimeType] ?? parsed.data.mimeType.split('/')[1]?.split('+')[0] ?? 'img';
+    return { success: true, data: new File([bytes], `${baseName}.${ext}`, { type: parsed.data.mimeType }) };
+  } catch {
+    return { success: false, error: 'Failed to decode base64 image data' };
+  }
+}
+
 export interface CompressionOptions {
   maxWidth?: number;
   quality?: number; // 0 to 1 for jpeg/webp

@@ -9,6 +9,7 @@ const Editor = dynamic(() => import('@monaco-editor/react'), {
 });
 import { Database, RefreshCcw, Minimize2, BarChart2, Table } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { CopyButton } from '@/components/ui/CopyButton';
@@ -36,6 +37,8 @@ export default function Page() {
   const [input, setInput] = React.useState('select id, name, created_at from users left join orders on users.id = orders.user_id where active=1 order by created_at desc;');
   const [output, setOutput] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
+
+  useToolPrefill('sql-prettify', ({ input }) => setInput(input));
 
   const [options, setOptions] = React.useState<SqlFormatterOptions>({
     language: 'sql',

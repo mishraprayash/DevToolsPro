@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { generateJsonSchema } from '@/tools/json-schema/utils';
 
 const draftOptions = [
@@ -66,6 +67,8 @@ export default function Page() {
   const [draftVersion, setDraftVersion] = React.useState<'draft-07' | 'draft-2020-12'>('draft-07');
   const [requireAll, setRequireAll] = React.useState(true);
   const [activeExample, setActiveExample] = React.useState(0);
+
+  useToolPrefill('json-schema', ({ input }) => { setInput(input); setActiveExample(-1); });
 
   const [output, setOutput] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);

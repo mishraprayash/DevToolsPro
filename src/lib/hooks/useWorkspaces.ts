@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from '@/components/ui/Toast';
-import { readToolHandoff, clearToolHandoff } from '@/lib/utils/toolHandoff';
+import { readToolHandoff, clearToolHandoff, prefillFromSearch, scheduleStripPrefillParam } from '@/lib/utils/toolHandoff';
 import { normalizeTabName, nextTabName } from '@/lib/utils/workspaceNames';
 import { encodeShareState, decodeShareState } from '@/lib/utils/shareCodec';
 
@@ -90,6 +90,15 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
     if (handoff && storageKey) {
       incoming.push(handoff);
       setTimeout(() => clearToolHandoff(storageKey), 0);
+    }
+
+    // `?input=` deep link — only for tools whose state has an `input` string field
+    const linked = !handoff && typeof (defaultState as Record<string, unknown> | null)?.input === 'string'
+      ? prefillFromSearch(window.location.search)
+      : null;
+    if (linked) {
+      incoming.push({ name: 'From link', state: { input: linked.input } as unknown as Partial<T> });
+      scheduleStripPrefillParam();
     }
 
     (async () => {
