@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { convertColor, type HarmonyColor } from '@/tools/color/utils';
 import { toast } from '@/components/ui/Toast';
 
@@ -42,6 +43,8 @@ function HarmonySwatch({ color, onSelect }: { color: HarmonyColor; onSelect: (va
 export default function Page() {
   const [input, setInput] = React.useState(examples[0].value);
   const [activeExample, setActiveExample] = React.useState(0);
+
+  useToolPrefill('color', ({ input }) => { setInput(input); setActiveExample(-1); });
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {

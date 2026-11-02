@@ -7,6 +7,7 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import {
@@ -28,6 +29,8 @@ export default function Page() {
   const [liveEpoch, setLiveEpoch] = React.useState(0);
   const [targetTz, setTargetTz] = React.useState('UTC');
   const [convResult, setConvResult] = React.useState<{ date: Date; sec: number; ms: number; relative: string; tzFormat: string } | null>(null);
+
+  useToolPrefill('date-toolbox', ({ input }) => { setActiveTab('converter'); setEpochInput(input); });
 
   React.useEffect(() => {
     setLiveEpoch(Math.floor(Date.now() / 1000));

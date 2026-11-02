@@ -11,6 +11,7 @@ import { Select } from '@/components/ui/Select';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { OpenInMenu } from '@/components/tool/OpenInMenu';
 import { jsonToolTarget } from '@/lib/utils/openInTargets';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { jsonToTs, type JsonToTsOptions } from '@/tools/json-to-ts/utils';
 
 const outputOptions = [
@@ -104,6 +105,8 @@ export default function Page() {
   const [addExport, setAddExport] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [activeExample, setActiveExample] = React.useState(0);
+
+  useToolPrefill('json-to-ts', ({ input }) => { setInput(input); setActiveExample(-1); });
 
   const handleProcess = React.useCallback(() => {
     if (!input.trim()) {

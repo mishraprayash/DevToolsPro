@@ -9,6 +9,7 @@ const Editor = dynamic(() => import('@monaco-editor/react'), {
 });
 import { Database, Code } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { parseSqlCreate, generateOrmEntities, hasCreateTable } from '@/tools/sql-to-orm/utils';
@@ -34,6 +35,8 @@ export default function Page() {
   const [orm, setOrm] = React.useState<'prisma' | 'typeorm' | 'mongoose'>('prisma');
   const [output, setOutput] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
+
+  useToolPrefill('sql-to-orm', ({ input }) => setInput(input));
 
   React.useEffect(() => {
     const parseRes = parseSqlCreate(input);
