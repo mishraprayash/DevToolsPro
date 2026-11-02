@@ -111,6 +111,7 @@ export default function Page() {
     setActiveWorkspaceId,
     addWorkspace,
     removeWorkspace,
+    renameWorkspace,
     updateActiveWorkspace,
     copyShareLink
   } = useWorkspaces<JsonState>(defaultState, 'JSON', 'json');
@@ -550,6 +551,7 @@ export default function Page() {
         onChange={setActiveWorkspaceId}
         onAdd={addWorkspace}
         onClose={removeWorkspace}
+        onRename={renameWorkspace}
         onShare={copyShareLink}
       />
       

@@ -116,6 +116,7 @@ export default function Page() {
     setActiveWorkspaceId,
     addWorkspace,
     removeWorkspace,
+    renameWorkspace,
     updateActiveWorkspace,
     copyShareLink
   } = useWorkspaces<DiffState>(defaultState, 'Comparison', 'diff-checker');
@@ -529,6 +530,7 @@ export default function Page() {
         onChange={setActiveWorkspaceId}
         onAdd={addWorkspace}
         onClose={removeWorkspace}
+        onRename={renameWorkspace}
         onShare={copyShareLink}
       />
       <ExamplePills examples={examples} activeIndex={state.activeExample} onSelect={applyExample} />

@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from '@/components/ui/Toast';
 import { readToolHandoff, clearToolHandoff } from '@/lib/utils/toolHandoff';
+import { normalizeTabName, nextTabName } from '@/lib/utils/workspaceNames';
 
 export interface Workspace<T> {
   id: string;
@@ -149,7 +150,7 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
   const addWorkspace = useCallback(() => {
     setWorkspaces((prev) => {
       const newId = crypto.randomUUID();
-      const newName = `${defaultNamePrefix} ${prev.length + 1}`;
+      const newName = nextTabName(defaultNamePrefix, prev.map((w) => w.name));
       const newW = createNewWorkspace(newId, newName);
       setActiveWorkspaceId(newId);
       return [...prev, newW];
@@ -177,6 +178,12 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
       return filtered;
     });
   }, [activeWorkspaceId, createNewWorkspace, defaultNamePrefix]);
+
+  const renameWorkspace = useCallback((id: string, name: string) => {
+    setWorkspaces((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, name: normalizeTabName(name, w.name) } : w))
+    );
+  }, []);
 
   const updateWorkspaceState = useCallback((id: string, partialState: Partial<T>) => {
     setWorkspaces((prev) => 
@@ -217,6 +224,7 @@ export function useWorkspaces<T>(defaultState: T, defaultNamePrefix = 'Tab', sto
     setActiveWorkspaceId,
     addWorkspace,
     removeWorkspace,
+    renameWorkspace,
     updateWorkspaceState,
     updateActiveWorkspace,
     copyShareLink
