@@ -94,7 +94,7 @@ export const categoryLabels: Record<ToolCategory, string> = {
   'Date & Time': 'Date & Time',
 };
 
-const toolsMap = new Map<string, ToolDef>(tools.map((t) => [t.id, t]));
+export const toolsMap = new Map<string, ToolDef>(tools.map((t) => [t.id, t]));
 
 const categoryToolsMap = new Map<ToolCategory, ToolDef[]>();
 for (const cat of categories) {
@@ -108,8 +108,8 @@ const newToolsList = tools.filter((t) => t.isNew);
 
 const searchIndexMap = new Map<string, string>();
 for (const tool of tools) {
-  const keywords = (tool.keywords ?? []).join(' ');
-  const fullText = `${tool.name} ${tool.description} ${tool.category} ${keywords}`.toLowerCase();
+  const keywords = (tool.keywords ?? []).join('\n');
+  const fullText = [tool.name, tool.description, tool.category, keywords].join('\n').toLowerCase();
   searchIndexMap.set(tool.id, fullText);
 }
 

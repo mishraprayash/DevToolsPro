@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Star, History } from 'lucide-react';
 import { useAppStore } from '@/lib/store/useStore';
 import { Modal } from '@/components/ui/Modal';
-import { tools, searchTools } from '@/tools/registry';
+import { tools, toolsMap, searchTools } from '@/tools/registry';
 import { cn } from '@/lib/utils';
 
 export function CommandPalette() {
@@ -17,8 +17,8 @@ export function CommandPalette() {
 
   const filteredTools = React.useMemo(() => {
     if (!query) {
-      const favTools = favorites.map(id => tools.find(t => t.id === id)).filter(Boolean) as typeof tools;
-      const recTools = recentTools.filter(id => !favorites.includes(id)).map(id => tools.find(t => t.id === id)).filter(Boolean) as typeof tools;
+      const favTools = favorites.map(id => toolsMap.get(id)).filter(Boolean) as typeof tools;
+      const recTools = recentTools.filter(id => !favorites.includes(id)).map(id => toolsMap.get(id)).filter(Boolean) as typeof tools;
       const rest = tools.filter(t => !favorites.includes(t.id) && !recentTools.includes(t.id));
       return [...favTools, ...recTools, ...rest];
     }
