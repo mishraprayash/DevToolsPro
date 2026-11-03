@@ -1,15 +1,31 @@
 'use client';
 
 import * as React from 'react';
-import { calculateSubnet, calculateSubnetSplits } from '@/tools/subnet/utils';
+import { calculateSubnet, calculateSubnetSplits, parseCidrInput } from '@/tools/subnet/utils';
 import { Network, Copy, Check, Info, Layers } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { cn } from '@/lib/utils';
 
 export default function SubnetCalculatorPage() {
   const [ipAddress, setIpAddress] = React.useState('192.168.1.1');
   const [cidr, setCidr] = React.useState(24);
   const [targetSplitCidr, setTargetSplitCidr] = React.useState(26);
+
+  useToolPrefill('subnet', ({ input }) => {
+    const parsed = parseCidrInput(input);
+    if (!parsed.success) {
+      // Show the raw value so the page's own validation explains what's wrong
+      setIpAddress(input.trim());
+      return;
+    }
+    setIpAddress(parsed.data.ipAddress);
+    const nextCidr = parsed.data.cidr;
+    if (nextCidr !== null) {
+      setCidr(nextCidr);
+      setTargetSplitCidr((t) => (t <= nextCidr ? Math.min(32, nextCidr + 1) : t));
+    }
+  });
   const [activeTab, setActiveTab] = React.useState<'calc' | 'split'>('calc');
   const [copiedType, setCopiedType] = React.useState<string | null>(null);
 

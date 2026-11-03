@@ -5,6 +5,7 @@ import { RotateCcw, AlertTriangle, Sliders } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import {
@@ -31,6 +32,8 @@ export default function Page() {
   const [input, setInput] = React.useState(examples[0].value);
   const [from, setFrom] = React.useState<NumberBase>('decimal');
   const [customBase, setCustomBase] = React.useState<number>(12); // Base 12 Duodecimal by default
+
+  useToolPrefill('number-base', ({ input }) => setInput(input.trim()));
 
   const result = React.useMemo(() => {
     return convertNumber(input, from, customBase);

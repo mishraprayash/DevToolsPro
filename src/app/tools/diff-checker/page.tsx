@@ -7,7 +7,9 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { computeDiff, type SplitDiffRow, type UnifiedDiffLine } from '@/tools/diff-checker/utils';
+import { computeDiff, type DiffResult, type SplitDiffRow, type UnifiedDiffLine } from '@/tools/diff-checker/utils';
+import { useHeavyTask } from '@/lib/workers/useHeavyTask';
+import { shouldOffloadDiff } from '@/lib/workers/thresholds';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
@@ -125,28 +127,51 @@ export default function Page() {
   const [activeDiffIndex, setActiveDiffIndex] = React.useState(0);
   const diffContainerRef = React.useRef<HTMLDivElement>(null);
 
-  const handleProcess = React.useCallback(() => {
-    const result = computeDiff(state.originalText, state.modifiedText, {
-      ignoreWhitespace: state.ignoreWhitespace,
-      ignoreCase: state.ignoreCase
-    });
-    
-    updateActiveWorkspace({
-      splitRows: result.splitRows,
-      unifiedLines: result.unifiedLines,
-      hasChanges: result.hasChanges,
-      addedCount: result.addedCount,
-      removedCount: result.removedCount,
-      diffLineIndices: result.diffLineIndices,
-      splitRowIndices: result.splitRowIndices
-    });
-    setActiveDiffIndex(0);
-  }, [state.originalText, state.modifiedText, state.ignoreWhitespace, state.ignoreCase, updateActiveWorkspace]);
+  const { run: runDiffTask, cancel: cancelDiffTask, pending: isComputingDiff } = useHeavyTask('diff', {
+    timeoutMs: 30_000,
+    timeoutMessage: 'Diff took too long to compute — try smaller inputs',
+  });
+  const [diffError, setDiffError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const t = setTimeout(handleProcess, 150);
-    return () => clearTimeout(t);
-  }, [handleProcess]);
+    let active = true;
+    const original = state.originalText;
+    const modified = state.modifiedText;
+    const options = { ignoreWhitespace: state.ignoreWhitespace, ignoreCase: state.ignoreCase };
+
+    const apply = (result: DiffResult) => {
+      updateActiveWorkspace({
+        splitRows: result.splitRows,
+        unifiedLines: result.unifiedLines,
+        hasChanges: result.hasChanges,
+        addedCount: result.addedCount,
+        removedCount: result.removedCount,
+        diffLineIndices: result.diffLineIndices,
+        splitRowIndices: result.splitRowIndices
+      });
+      setDiffError(null);
+      setActiveDiffIndex(0);
+    };
+
+    const t = setTimeout(() => {
+      // Small inputs: stay synchronous for snappiness.
+      if (!shouldOffloadDiff(original, modified)) {
+        cancelDiffTask();
+        apply(computeDiff(original, modified, options));
+        return;
+      }
+      // Large inputs: O(m·n) LCS runs in a worker; stale results are dropped (latest-wins).
+      runDiffTask({ original, modified, options }).then((outcome) => {
+        if (!active || outcome.status === 'cancelled') return;
+        if (outcome.status === 'ok') apply(outcome.data);
+        else setDiffError(outcome.error);
+      });
+    }, 150);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [state.originalText, state.modifiedText, state.ignoreWhitespace, state.ignoreCase, updateActiveWorkspace, runDiffTask, cancelDiffTask]);
 
   const applyExample = (i: number) => {
     updateActiveWorkspace({
@@ -335,7 +360,15 @@ export default function Page() {
     <div className="flex flex-col h-full space-y-4 min-h-0">
       <div className="flex items-center justify-between shrink-0">
         <h2 className="text-base font-medium text-text-secondary">Comparison Result</h2>
-        {state.hasChanges ? (
+        {isComputingDiff ? (
+          <span className="text-text-muted text-xs font-semibold flex items-center gap-1.5 bg-bg-tertiary border border-border px-2.5 py-1 rounded-full" role="status">
+            <span className="h-2 w-2 rounded-full bg-accent animate-pulse" /> Computing diff…
+          </span>
+        ) : diffError ? (
+          <span className="text-error text-xs font-semibold bg-error/10 border border-error/20 px-2.5 py-1 rounded-full" role="alert">
+            {diffError}
+          </span>
+        ) : state.hasChanges ? (
           <div className="flex items-center gap-3 text-xs font-semibold">
             <span className="text-error bg-error/10 border border-error/20 px-2.5 py-1 rounded-full">
               -{state.removedCount} lines deleted

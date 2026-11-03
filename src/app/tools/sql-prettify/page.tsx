@@ -9,12 +9,16 @@ const Editor = dynamic(() => import('@monaco-editor/react'), {
 });
 import { Database, RefreshCcw, Minimize2, BarChart2, Table } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { formatSql, minifySql, analyzeSql, type SqlFormatterOptions, type SqlKeywordCase, type SqlDialect } from '@/tools/sql-prettify/utils';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
+import { OpenInMenu } from '@/components/tool/OpenInMenu';
+import { inputTarget } from '@/lib/utils/openInTargets';
+import { hasCreateTable } from '@/tools/sql-to-orm/utils';
 
 const dialectOptions = [
   { value: 'sql', label: 'Standard SQL' },
@@ -36,6 +40,8 @@ export default function Page() {
   const [input, setInput] = React.useState('select id, name, created_at from users left join orders on users.id = orders.user_id where active=1 order by created_at desc;');
   const [output, setOutput] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
+
+  useToolPrefill('sql-prettify', ({ input }) => setInput(input));
 
   const [options, setOptions] = React.useState<SqlFormatterOptions>({
     language: 'sql',
@@ -167,11 +173,21 @@ export default function Page() {
 
           {/* Output */}
           <div className="lg:col-span-6 flex flex-col space-y-2 h-full">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
                 <RefreshCcw className="h-4 w-4 text-emerald-500" /> Formatted / Minified Output
               </h2>
-              <CopyButton value={output} />
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {hasCreateTable(input) && (
+                  <OpenInMenu
+                    targets={[
+                      inputTarget('sql-designer', output || input, 'From SQL Formatter', { label: 'SQL Schema Designer', hint: 'Visualise the tables' }),
+                      inputTarget('sql-to-orm', output || input, 'From SQL Formatter', { label: 'SQL to ORM', hint: 'Generate Prisma / TypeORM / Mongoose' }),
+                    ]}
+                  />
+                )}
+                <CopyButton value={output} />
+              </div>
             </div>
             <div className={`flex-1 relative rounded-xl border border-border ${editorBg} overflow-hidden`}>
               {error ? (

@@ -9,6 +9,9 @@ import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { Select } from '@/components/ui/Select';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { OpenInMenu } from '@/components/tool/OpenInMenu';
+import { jsonToolTarget } from '@/lib/utils/openInTargets';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { jsonToTs, type JsonToTsOptions } from '@/tools/json-to-ts/utils';
 
 const outputOptions = [
@@ -103,6 +106,8 @@ export default function Page() {
   const [error, setError] = React.useState<string | null>(null);
   const [activeExample, setActiveExample] = React.useState(0);
 
+  useToolPrefill('json-to-ts', ({ input }) => { setInput(input); setActiveExample(-1); });
+
   const handleProcess = React.useCallback(() => {
     if (!input.trim()) {
       setOutput('');
@@ -157,11 +162,14 @@ export default function Page() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-base font-medium text-text-secondary">Input JSON</h2>
-            <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
-              Clear
-            </Button>
+            <div className="flex items-center gap-2">
+              <OpenInMenu targets={[jsonToolTarget(input, 'From JSON to TS', 'Beautify / validate')]} />
+              <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+                Clear
+              </Button>
+            </div>
           </div>
 
           <Input
