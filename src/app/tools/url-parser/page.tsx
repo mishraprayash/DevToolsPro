@@ -10,6 +10,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { parseUrlString, constructUrl, encodeUrlComponentSafe, decodeUrlComponentSafe, type QueryParam, type ParsedUrlData } from '@/tools/url-parser/utils';
 import { toast } from '@/components/ui/Toast';
@@ -29,6 +30,8 @@ export default function UrlParserPage() {
   const [inputUrl, setInputUrl] = React.useState<string>(DEFAULT_URL);
   const [parsed, setParsed] = React.useState<ParsedUrlData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+
+  useToolPrefill('url-parser', ({ input }) => setInputUrl(input.trim()));
 
   // Sync parsing when input changes
   React.useEffect(() => {

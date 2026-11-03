@@ -37,3 +37,64 @@ export function clearToolHandoff(storageKey: string): void {
     // ignore
   }
 }
+
+// --- Prefill helpers -------------------------------------------------------
+// Any tool can be opened pre-filled, either via a handoff payload (sendToTool)
+// or a deep link (`/tools/<id>?input=...`). Payload state always carries `input`.
+
+export const PREFILL_QUERY_PARAM = 'input';
+
+export type ToolPrefill = { input: string } & Record<string, unknown>;
+
+/** Link to a tool, optionally pre-filled via the `?input=` deep-link param. */
+export function toolHref(toolId: string, input?: string): string {
+  const base = `/tools/${toolId}`;
+  return input ? `${base}?${PREFILL_QUERY_PARAM}=${encodeURIComponent(input)}` : base;
+}
+
+/** Validates handoff state as a prefill payload: requires a non-empty string `input`. */
+export function prefillFromState(state: unknown): ToolPrefill | null {
+  if (!state || typeof state !== 'object' || Array.isArray(state)) return null;
+  const input = (state as Record<string, unknown>).input;
+  if (typeof input !== 'string' || input === '') return null;
+  return state as ToolPrefill;
+}
+
+/** Reads a non-empty `?input=` value from a URL search string (e.g. `location.search`). */
+export function prefillFromSearch(search: string): ToolPrefill | null {
+  try {
+    const input = new URLSearchParams(search).get(PREFILL_QUERY_PARAM);
+    return input ? { input } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns `pathname + search + hash` with the `input` param removed (other params and
+ * the hash preserved), or null when there is no `input` param to strip.
+ */
+export function stripPrefillParam(pathname: string, search: string, hash: string): string | null {
+  try {
+    const params = new URLSearchParams(search);
+    if (!params.has(PREFILL_QUERY_PARAM)) return null;
+    params.delete(PREFILL_QUERY_PARAM);
+    const rest = params.toString();
+    return `${pathname}${rest ? `?${rest}` : ''}${hash}`;
+  } catch {
+    return null;
+  }
+}
+
+/** Schedules removal of the `?input=` param from the address bar on the next tick. */
+export function scheduleStripPrefillParam(): void {
+  setTimeout(() => {
+    try {
+      const { pathname, search, hash } = window.location;
+      const next = stripPrefillParam(pathname, search, hash);
+      if (next !== null) window.history.replaceState(null, '', next);
+    } catch {
+      // ignore
+    }
+  }, 0);
+}
