@@ -5,7 +5,7 @@ import {
   ImageUp, Earth, QrCode, Braces, Code, GitCompare, SunMoon,
   Laptop, Grid, Database, GitBranch, FileMinus,
   Paintbrush, ListTree, Languages,
-  FileSpreadsheet, Link2
+  FileSpreadsheet, Link2, Workflow
 } from 'lucide-react';
 
 export type ToolCategory = 'Formatting' | 'Encoding' | 'Security' | 'Network' | 'Text' | 'Date & Time';
@@ -47,6 +47,7 @@ export const tools: ToolDef[] = [
   { id: 'qr-code', name: 'QR Code Generator', description: 'Generate QR codes from text, URLs & more', keywords: ['qrcode', 'scan', 'barcode', 'generate', 'qr'], category: 'Encoding', icon: QrCode, color: 'from-fuchsia-500 to-pink-500' },
   { id: 'curl-converter', name: 'cURL Converter', description: 'Convert cURL commands to Fetch, Axios, Python & Go', keywords: ['http', 'request', 'fetch', 'axios', 'rest', 'api', 'python', 'go'], category: 'Encoding', icon: TerminalSquare, color: 'from-fuchsia-500 to-pink-500' },
   { id: 'favicon', name: 'Favicon Generator', description: 'Design SVG favicons from text or emoji with live preview', keywords: ['icon', 'emoji', 'svg', 'browser tab', 'website', 'ico'], category: 'Encoding', icon: Paintbrush, color: 'from-pink-500 to-rose-500', isNew: true },
+  { id: 'recipes', name: 'Recipes (Transform Pipeline)', description: 'Chain encode, decode, hash, JSON & text steps into a reusable pipeline', keywords: ['pipeline', 'chain', 'cyberchef', 'recipe', 'transform', 'workflow', 'multi-step', 'base64', 'jwt', 'hash', 'convert'], category: 'Encoding', icon: Workflow, color: 'from-cyan-500 to-violet-500', isNew: true },
 
   // ── Security ───────────────────────────────────────────────────
   { id: 'jwt', name: 'JWT Decoder & Generator', description: 'Decode, inspect, and sign JWT tokens', keywords: ['token', 'jose', 'sign', 'verify', 'auth', 'bearer', 'decode'], category: 'Security', icon: Lock, color: 'from-purple-500 to-pink-500' },

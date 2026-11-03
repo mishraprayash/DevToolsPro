@@ -16,6 +16,8 @@ import {
 } from '@/tools/xml-json/utils';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
+import { OpenInMenu } from '@/components/tool/OpenInMenu';
+import { jsonToolTarget } from '@/lib/utils/openInTargets';
 
 import { HistoryDrawer } from '@/components/tool/HistoryDrawer';
 import { useAppStore, type HistoryItem } from '@/lib/store/useStore';
@@ -370,7 +372,7 @@ export default function Page() {
 
   const rightPane = (
     <div className="flex flex-col h-full space-y-4 min-h-0">
-      <div className="flex items-center justify-between shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-medium text-text-secondary">
             <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent font-bold">
@@ -387,7 +389,7 @@ export default function Page() {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -408,6 +410,12 @@ export default function Page() {
           >
             Download
           </Button>
+          {state.mode === 'xml' && (
+            <OpenInMenu
+              targets={[jsonToolTarget(state.output, 'From XML')]}
+              disabled={!state.output || state.output.startsWith('Invalid') || state.output.startsWith('Error')}
+            />
+          )}
         </div>
       </div>
 

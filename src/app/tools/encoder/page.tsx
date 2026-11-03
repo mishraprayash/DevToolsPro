@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, Link2, FileCode, Copy, Braces, ArrowRight } from 'lucide-react';
+import { Lock, Link2, FileCode, Copy, Braces, ArrowRight, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
@@ -10,7 +10,9 @@ import { GradientBox } from '@/components/ui/GradientBox';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
-import { encodeBase64, decodeBase64, encodeUrlStr, decodeUrlStr, encodeEntities, decodeEntities, isJsonCompatible } from '@/tools/encoder/utils';
+import { encodeBase64, decodeBase64, encodeUrlStr, decodeUrlStr, encodeEntities, decodeEntities, isJsonCompatible, base64ToImageDataUrl } from '@/tools/encoder/utils';
+import { OpenInMenu } from '@/components/tool/OpenInMenu';
+import { inputTarget } from '@/lib/utils/openInTargets';
 import { sendToTool } from '@/lib/utils/toolHandoff';
 import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
 import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
@@ -59,6 +61,12 @@ export default function Page() {
   const decodedIsJson = React.useMemo(
     () => state.encodingMode === 'base64' && state.direction === 'decode' && isJsonCompatible(state.output),
     [state.encodingMode, state.direction, state.output]
+  );
+
+  // Base64 input that decodes to PNG/JPEG/GIF/WebP bytes: offer the Image to Base64 tool.
+  const decodedImageDataUrl = React.useMemo(
+    () => (state.encodingMode === 'base64' && state.direction === 'decode' ? base64ToImageDataUrl(state.input) : null),
+    [state.encodingMode, state.direction, state.input]
   );
 
   const handleOpenInJson = () => {
@@ -278,6 +286,20 @@ export default function Page() {
           <Button size="sm" onClick={handleOpenInJson} icon={<ArrowRight className="h-3.5 w-3.5" />}>
             Open in JSON Tool
           </Button>
+        </div>
+      )}
+
+      {/* Decoded bytes are an image: offer to preview it in the Image to Base64 tool */}
+      {decodedImageDataUrl && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-xl border border-accent/20 bg-accent/10 shrink-0">
+          <div className="flex items-center gap-2 text-sm text-accent">
+            <ImageIcon className="h-4 w-4 shrink-0" />
+            <span>Decoded bytes are a {decodedImageDataUrl.slice(11, decodedImageDataUrl.indexOf(';')).toUpperCase()} image</span>
+          </div>
+          <OpenInMenu
+            variant="primary"
+            targets={[inputTarget('image-base64', decodedImageDataUrl, 'From Base64', { label: 'Image to Base64' })]}
+          />
         </div>
       )}
     </div>

@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { generateMockData, type MockSchema, type MockFieldType } from '@/tools/mock-data/utils';
+import { useHeavyTask } from '@/lib/workers/useHeavyTask';
+import { shouldOffloadMockData } from '@/lib/workers/thresholds';
 
 const fieldTypes: { label: string; value: MockFieldType }[] = [
   { label: 'Auto-increment ID', value: 'id' },
@@ -44,13 +46,23 @@ export default function Page() {
     setSchema(newSchema);
   };
 
+  const { run: runMockTask, cancel: cancelMockTask, pending: isGenerating } = useHeavyTask('mock', { timeoutMs: 15_000 });
+
   const handleGenerate = () => {
-    const res = generateMockData(schema, count, format);
-    if (res.success) {
-      setOutput(res.data);
-    } else {
-      setOutput(`Error: ${res.error}`);
+    const applyResult = (res: ReturnType<typeof generateMockData>) => {
+      setOutput(res.success ? res.data : `Error: ${res.error}`);
+    };
+    // Small batches stay synchronous; large batches are generated in a worker (latest click wins).
+    if (!shouldOffloadMockData(count)) {
+      cancelMockTask();
+      applyResult(generateMockData(schema, count, format));
+      return;
     }
+    runMockTask({ schema, count, format }).then((outcome) => {
+      if (outcome.status === 'cancelled') return;
+      if (outcome.status === 'ok') applyResult(outcome.data);
+      else setOutput(`Error: ${outcome.error}`);
+    });
   };
 
   const handleDownload = () => {
@@ -137,8 +149,8 @@ export default function Page() {
             </div>
           </div>
 
-          <Button onClick={handleGenerate} className="w-full h-12 text-sm font-bold">
-            Generate Data
+          <Button onClick={handleGenerate} className="w-full h-12 text-sm font-bold" aria-busy={isGenerating}>
+            {isGenerating ? 'Generating…' : 'Generate Data'}
           </Button>
         </div>
 

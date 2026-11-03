@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill, readToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { parseUserAgent } from '@/tools/user-agent/utils';
 import { toast } from '@/components/ui/Toast';
 
@@ -39,7 +40,8 @@ export default function Page() {
 
   React.useEffect(() => {
     setMounted(true);
-    detectMyBrowser();
+    // A prefilled User-Agent (handoff or ?input= link) takes priority over auto-detection
+    if (!readToolPrefill('user-agent')) detectMyBrowser();
 
     // Capture screen and client specs
     if (typeof window !== 'undefined') {
@@ -51,6 +53,8 @@ export default function Page() {
       });
     }
   }, [detectMyBrowser]);
+
+  useToolPrefill('user-agent', ({ input }) => { setInput(input.trim()); setActiveExample(-1); });
 
   const parsed = React.useMemo(() => {
     return parseUserAgent(input);
