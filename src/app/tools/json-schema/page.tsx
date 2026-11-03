@@ -9,7 +9,12 @@ import { Input } from '@/components/ui/Input';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { generateJsonSchema } from '@/tools/json-schema/utils';
+import { OpenInMenu } from '@/components/tool/OpenInMenu';
+import { jsonToolTarget } from '@/lib/utils/openInTargets';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
+import { generateJsonSchema, type SchemaResult } from '@/tools/json-schema/utils';
+import { useHeavyTask } from '@/lib/workers/useHeavyTask';
+import { shouldOffloadSchema } from '@/lib/workers/thresholds';
 
 const draftOptions = [
   { value: 'draft-07', label: 'JSON Schema Draft-07 (Widely Compatible)' },
@@ -67,32 +72,49 @@ export default function Page() {
   const [requireAll, setRequireAll] = React.useState(true);
   const [activeExample, setActiveExample] = React.useState(0);
 
+  useToolPrefill('json-schema', ({ input }) => { setInput(input); setActiveExample(-1); });
+
   const [output, setOutput] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
 
-  const handleGenerate = React.useCallback(() => {
-    if (!input.trim()) {
-      setOutput('');
-      setError(null);
-      return;
-    }
-    const result = generateJsonSchema(input, {
-      draftVersion,
-      requireAllFields: requireAll,
-    });
-    if (result.success) {
-      setOutput(result.code);
-      setError(null);
-    } else {
-      setError(result.error || 'Failed to generate schema');
-      setOutput('');
-    }
-  }, [input, draftVersion, requireAll]);
+  const { run: runSchemaTask, cancel: cancelSchemaTask, pending: isInferring } = useHeavyTask('schema', { timeoutMs: 20_000 });
 
   React.useEffect(() => {
-    const t = setTimeout(handleGenerate, 120);
-    return () => clearTimeout(t);
-  }, [handleGenerate]);
+    let active = true;
+    const applyResult = (result: SchemaResult) => {
+      if (result.success) {
+        setOutput(result.code);
+        setError(null);
+      } else {
+        setError(result.error || 'Failed to generate schema');
+        setOutput('');
+      }
+    };
+    const t = setTimeout(() => {
+      if (!input.trim()) {
+        cancelSchemaTask();
+        setOutput('');
+        setError(null);
+        return;
+      }
+      const options = { draftVersion, requireAllFields: requireAll };
+      // Small payloads stay synchronous; large ones are inferred in a worker (latest-wins).
+      if (!shouldOffloadSchema(input)) {
+        cancelSchemaTask();
+        applyResult(generateJsonSchema(input, options));
+        return;
+      }
+      runSchemaTask({ json: input, options }).then((outcome) => {
+        if (!active || outcome.status === 'cancelled') return;
+        if (outcome.status === 'ok') applyResult(outcome.data);
+        else applyResult({ success: false, error: outcome.error });
+      });
+    }, 120);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [input, draftVersion, requireAll, runSchemaTask, cancelSchemaTask]);
 
   const applyExample = (i: number) => {
     setActiveExample(i);
@@ -119,11 +141,14 @@ export default function Page() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
         {/* Left Inputs */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-base font-medium text-text-secondary">Input JSON Payloads</h2>
-            <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
-              Clear
-            </Button>
+            <div className="flex items-center gap-2">
+              <OpenInMenu targets={[jsonToolTarget(input, 'From JSON Schema', 'Beautify / validate')]} />
+              <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+                Clear
+              </Button>
+            </div>
           </div>
 
           <Input
@@ -181,11 +206,12 @@ export default function Page() {
             </h2>
             
             <div className="flex items-center gap-2">
+              {isInferring && <span className="text-xs text-text-muted" role="status">Inferring schema…</span>}
               <CopyButton value={output} disabled={!output} />
             </div>
           </div>
 
-          <GradientBox value={output} placeholder="JSON validation schema will appear here..." className="min-h-[360px]" />
+          <GradientBox value={output} placeholder={isInferring ? 'Inferring schema…' : 'JSON validation schema will appear here...'} className="min-h-[360px]" />
 
           <div className="p-4 rounded-xl border border-border bg-bg-secondary flex gap-3 text-xs text-text-muted select-none">
             <Sparkles className="h-5 w-5 text-accent shrink-0 animate-pulse-glow" />

@@ -9,9 +9,13 @@ import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { convertCurl, inspectCurl, type TargetLanguage, type CurlDetails } from '@/tools/curl-converter/utils';
 import { HistoryDrawer } from '@/components/tool/HistoryDrawer';
 import { useAppStore, type HistoryItem } from '@/lib/store/useStore';
+import { OpenInMenu } from '@/components/tool/OpenInMenu';
+import { inputTarget, jsonToolTarget } from '@/lib/utils/openInTargets';
+import { extractCurlUrl, extractCurlJsonBody } from '@/tools/curl-converter/request';
 
 const languageOptions = [
   { value: 'javascript-fetch', label: 'JavaScript (Fetch)' },
@@ -49,6 +53,8 @@ export default function Page() {
   const [output, setOutput] = React.useState('');
   const [targetLang, setTargetLang] = React.useState<TargetLanguage>('javascript-fetch');
   const [activeExample, setActiveExample] = React.useState(1);
+
+  useToolPrefill('curl-converter', ({ input }) => { setInput(input); setActiveExample(-1); });
   const [error, setError] = React.useState<string | null>(null);
   const [curlDetails, setCurlDetails] = React.useState<CurlDetails>({ url: '', method: 'GET', headers: {}, hasBody: false });
   const { addHistoryItem } = useAppStore();
@@ -183,14 +189,20 @@ export default function Page() {
 
         {/* Right Side Outputs */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-base font-medium text-text-secondary">
               <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent font-bold">
                 Generated Code
               </span>
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <CopyButton value={output} disabled={!output} />
+              <OpenInMenu
+                targets={[
+                  inputTarget('url-parser', extractCurlUrl(input), 'From cURL', { label: 'URL Parser', hint: 'Inspect the request URL' }),
+                  jsonToolTarget(extractCurlJsonBody(input), 'cURL Body', 'Request JSON body'),
+                ]}
+              />
             </div>
           </div>
 

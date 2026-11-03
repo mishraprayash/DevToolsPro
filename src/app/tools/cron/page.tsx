@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { translateCronToEnglish, getNextRuns } from '@/tools/cron/utils';
 import { getRelativeTime } from '@/tools/date-toolbox/utils';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,8 @@ const examples = [
 export default function Page() {
   const [input, setInput] = React.useState(examples[1].value);
   const [activeExample, setActiveExample] = React.useState(1);
+
+  useToolPrefill('cron', ({ input }) => { setInput(input); setActiveExample(-1); });
 
   // Quick Builder States
   const [builderPeriod, setBuilderPeriod] = React.useState<'minute' | 'hour' | 'day' | 'week'>('minute');

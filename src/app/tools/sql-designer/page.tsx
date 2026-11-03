@@ -33,6 +33,7 @@ import { Select } from '@/components/ui/Select';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
 import { useFullscreenOverlay } from '@/lib/hooks/useFullscreenOverlay';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { TableNode } from './TableNode';
 import { 
   initialNodes, 
@@ -324,6 +325,22 @@ function FlowDesigner() {
       }
     }
   }, [nodes, edges, dialect, exportFormat, outputCode]);
+
+  // Prefill: import SQL DDL into a fresh diagram, the same parser as typing into the SQL editor.
+  // Declared after the localStorage load + code-regeneration effects so it wins over the
+  // saved diagram and re-flags regeneration after the initial pass consumed the flag.
+  useToolPrefill('sql-designer', ({ input }) => {
+    try {
+      const { nodes: newNodes, edges: newEdges } = parseSqlToNodes(input, []);
+      if (newNodes.length === 0) return;
+      visualChangePending.current = true;
+      setExportFormat('sql');
+      setNodes(newNodes);
+      setEdges(newEdges);
+    } catch {
+      // Unparseable DDL: keep the current diagram
+    }
+  });
 
   // Handle typing in editor
   const handleEditorChange = React.useCallback(

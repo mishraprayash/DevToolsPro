@@ -5,7 +5,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
-import { fileToBase64, stripDataUrlPrefix, formatFileSize, type FileReadResult } from '@/tools/image-base64/utils';
+import { fileToBase64, stripDataUrlPrefix, formatFileSize, base64ToImageFile, type FileReadResult } from '@/tools/image-base64/utils';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { ImageUp, Trash2, Settings2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
@@ -50,6 +51,13 @@ export default function Page() {
     setOriginalFile(file);
     processFile(file);
   }, [processFile]);
+
+  // Prefill: a base64 image (data URL or raw) is decoded and loaded like an uploaded file
+  useToolPrefill('image-base64', ({ input }) => {
+    const decoded = base64ToImageFile(input);
+    if (decoded.success) handleFile(decoded.data);
+    else setResult({ success: false, error: decoded.error });
+  });
 
   // Re-process when settings change
   React.useEffect(() => {
