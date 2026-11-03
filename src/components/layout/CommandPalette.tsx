@@ -3,12 +3,14 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Star, History, Wand2 } from 'lucide-react';
+import { Search, X, Star, History, Wand2, Zap } from 'lucide-react';
 import { useAppStore } from '@/lib/store/useStore';
 import { Modal } from '@/components/ui/Modal';
 import { tools, toolsMap, searchTools, type ToolDef } from '@/tools/registry';
 import { detectInput, type Detection } from '@/lib/utils/detectInput';
 import { openDetection, ToolIcon } from '@/components/homepage/SmartPaste';
+import { matchActions } from '@/lib/utils/paletteActions';
+import { paletteActions, type PaletteAction, type PaletteActionContext } from '@/components/layout/paletteActionRunners';
 import { cn } from '@/lib/utils';
 
 /** Minimum top-detection confidence before a short query is treated as data. */
@@ -18,6 +20,7 @@ const LONG_QUERY = 60;
 
 type PaletteEntry =
   | { kind: 'detect'; id: string; detection: Detection }
+  | { kind: 'action'; id: string; action: PaletteAction }
   | { kind: 'tool'; id: string; tool: ToolDef };
 
 function getDetections(text: string): Detection[] {
@@ -32,7 +35,7 @@ function getDetections(text: string): Detection[] {
 
 export function CommandPalette() {
   const router = useRouter();
-  const { commandPaletteOpen, setCommandPaletteOpen, favorites, recentTools, addRecentTool } = useAppStore();
+  const { commandPaletteOpen, setCommandPaletteOpen, favorites, recentTools, addRecentTool, toggleTheme, setShortcutsOpen } = useAppStore();
   const [query, setQuery] = React.useState('');
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   // <input> flattens newlines on paste; keep the original text so YAML/CSV/etc. survive.
@@ -51,10 +54,26 @@ export function CommandPalette() {
 
   const detections = React.useMemo(() => getDetections(dataText), [dataText]);
 
-  const entries = React.useMemo<PaletteEntry[]>(() => [
-    ...detections.map((d) => ({ kind: 'detect' as const, id: `cmd-opt-detect-${d.toolId}`, detection: d })),
-    ...filteredTools.map((t) => ({ kind: 'tool' as const, id: `cmd-opt-${t.id}`, tool: t })),
-  ], [detections, filteredTools]);
+  const matchedActions = React.useMemo(
+    () => (detections.length > 0 ? [] : matchActions(paletteActions, query, query.trim() ? 5 : 4)),
+    [detections.length, query],
+  );
+
+  // Section order: detected data first; quick actions lead on an empty query,
+  // otherwise tool-name matches keep priority and actions follow them.
+  const sections = React.useMemo(() => {
+    const detect: PaletteEntry[] = detections.map((d) => ({ kind: 'detect', id: `cmd-opt-detect-${d.toolId}`, detection: d }));
+    const actions: PaletteEntry[] = matchedActions.map((a) => ({ kind: 'action', id: `cmd-opt-action-${a.id}`, action: a }));
+    const toolEntries: PaletteEntry[] = filteredTools.map((t) => ({ kind: 'tool', id: `cmd-opt-${t.id}`, tool: t }));
+    const actionSection = { key: 'actions', entries: actions };
+    const toolSection = { key: 'tools', entries: toolEntries };
+    return [
+      { key: 'detect', entries: detect },
+      ...(query.trim() ? [toolSection, actionSection] : [actionSection, toolSection]),
+    ].filter((sec) => sec.entries.length > 0);
+  }, [detections, matchedActions, filteredTools, query]);
+
+  const entries = React.useMemo(() => sections.flatMap((sec) => sec.entries), [sections]);
 
   React.useEffect(() => {
     setSelectedIndex(0);
@@ -72,9 +91,24 @@ export function CommandPalette() {
     close();
   };
 
+  const actionContext: PaletteActionContext = {
+    navigate: (href) => router.push(href),
+    toggleTheme,
+    openShortcuts: () => setShortcutsOpen(true),
+  };
+
+  const runAction = async (action: PaletteAction) => {
+    // Close first: clipboard calls can take a moment to resolve, and the click's user
+    // activation still covers them. Also stops the shortcuts modal stacking on ours.
+    close();
+    await action.run(actionContext);
+  };
+
   const handleSelectEntry = (entry: PaletteEntry) => {
     if (entry.kind === 'tool') {
       handleSelect(entry.tool.id);
+    } else if (entry.kind === 'action') {
+      void runAction(entry.action);
     } else {
       openDetection(entry.detection, router, addRecentTool);
       close();
@@ -108,7 +142,75 @@ export function CommandPalette() {
     el?.scrollIntoView({ block: 'nearest' });
   }, [selectedIndex]);
 
-  const toolOffset = detections.length;
+  const rowClass = (index: number) => cn(
+    'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors',
+    index === selectedIndex ? 'bg-bg-hover text-text-primary' : 'text-text-secondary hover:bg-bg-tertiary'
+  );
+
+  const renderEntry = (entry: PaletteEntry, index: number) => {
+    const common = {
+      id: entry.id,
+      'data-index': index,
+      role: 'option',
+      'aria-selected': index === selectedIndex,
+      onClick: () => handleSelectEntry(entry),
+      onMouseMove: () => { if (index !== selectedIndex) setSelectedIndex(index); },
+      className: rowClass(index),
+    } as const;
+
+    if (entry.kind === 'detect') {
+      const d = entry.detection;
+      const tool = toolsMap.get(d.toolId);
+      return (
+        <button key={entry.id} type="button" {...common}>
+          <ToolIcon toolId={d.toolId} size="sm" />
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm">{tool?.name ?? d.toolId}</p>
+            <p className="text-xs text-text-muted truncate">{d.reason}</p>
+          </div>
+          <span className="text-[10px] font-semibold text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full shrink-0">{d.label}</span>
+        </button>
+      );
+    }
+
+    if (entry.kind === 'action') {
+      const a = entry.action;
+      const Icon = a.icon;
+      return (
+        <button key={entry.id} type="button" {...common}>
+          <div className={cn('p-2 rounded-lg bg-gradient-to-br', a.color)}>
+            <Icon className="h-4 w-4 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm">{a.label}</p>
+            <p className="text-xs text-text-muted truncate">{a.description}</p>
+          </div>
+          <span className="text-[10px] text-text-muted bg-bg-tertiary px-2 py-0.5 rounded-full">Action</span>
+        </button>
+      );
+    }
+
+    const tool = entry.tool;
+    const Icon = tool.icon;
+    const isFav = !query && favorites.includes(tool.id);
+    const isRecent = !query && !isFav && recentTools.includes(tool.id);
+    return (
+      <button key={entry.id} type="button" {...common}>
+        <div className={cn('p-2 rounded-lg bg-gradient-to-br', tool.color)}>
+          <Icon className="h-4 w-4 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-sm">{tool.name}</p>
+            {isFav && <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" />}
+            {isRecent && <History className="h-3 w-3 text-blue-500 shrink-0" />}
+          </div>
+          <p className="text-xs text-text-muted truncate">{tool.description}</p>
+        </div>
+        <span className="text-[10px] text-text-muted bg-bg-tertiary px-2 py-0.5 rounded-full">{tool.category}</span>
+      </button>
+    );
+  };
 
   return (
     <Modal open={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)}>
@@ -120,8 +222,8 @@ export function CommandPalette() {
           aria-expanded={entries.length > 0}
           aria-controls="command-palette-listbox"
           aria-activedescendant={entries[selectedIndex]?.id}
-          aria-label="Search tools or paste data"
-          placeholder={`Search ${tools.length} tools or paste data…`}
+          aria-label="Search tools, actions, or paste data"
+          placeholder={`Search ${tools.length} tools, run an action, or paste data…`}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onPaste={handlePaste}
@@ -138,63 +240,36 @@ export function CommandPalette() {
         </button>
       </div>
 
-      <div ref={listRef} id="command-palette-listbox" role="listbox" aria-label="Tool results" className="mt-4 max-h-80 overflow-y-auto scrollbar-thin">
+      <div ref={listRef} id="command-palette-listbox" role="listbox" aria-label="Results" className="mt-4 max-h-80 overflow-y-auto scrollbar-thin">
         <AnimatePresence mode="wait">
           {entries.length === 0 ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-8 text-center text-text-muted">No tools found</motion.div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-8 text-center text-text-muted">No tools or actions found</motion.div>
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0.5">
-              {detections.length > 0 && (
-                <div role="group" aria-labelledby="cmd-group-detected" className="pb-2 mb-2 border-b border-border/60">
-                  <p id="cmd-group-detected" className="px-3 pb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                    <Wand2 className="h-3 w-3 text-accent" aria-hidden />
-                    Detected: open in…
-                  </p>
-                  {detections.map((d, i) => {
-                    const tool = toolsMap.get(d.toolId);
-                    if (!tool) return null;
-                    const entry = entries[i];
-                    return (
-                      <button key={entry.id} id={entry.id} data-index={i} role="option" aria-selected={i === selectedIndex} onClick={() => handleSelectEntry(entry)}
-                        className={cn(
-                          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors',
-                          i === selectedIndex ? 'bg-bg-hover text-text-primary' : 'text-text-secondary hover:bg-bg-tertiary'
-                        )}>
-                        <ToolIcon toolId={d.toolId} size="sm" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm">{tool.name}</p>
-                          <p className="text-xs text-text-muted truncate">{d.reason}</p>
-                        </div>
-                        <span className="text-[10px] font-semibold text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full shrink-0">{d.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {filteredTools.map((tool, toolIndex) => {
-                const index = toolIndex + toolOffset;
-                const Icon = tool.icon;
-                const isFav = !query && favorites.includes(tool.id);
-                const isRecent = !query && !isFav && recentTools.includes(tool.id);
-
+              {sections.map((section, sectionIndex) => {
+                const offset = sections.slice(0, sectionIndex).reduce((n, sec) => n + sec.entries.length, 0);
+                const isLast = sectionIndex === sections.length - 1;
+                const heading = section.key === 'detect'
+                  ? { icon: Wand2, text: 'Detected: open in…' }
+                  : section.key === 'actions'
+                    ? { icon: Zap, text: 'Quick actions' }
+                    : sections.length > 1 ? { icon: Search, text: 'Tools' } : null;
+                const HeadingIcon = heading?.icon;
                 return (
-                  <button key={tool.id} id={`cmd-opt-${tool.id}`} data-index={index} role="option" aria-selected={index === selectedIndex} onClick={() => handleSelect(tool.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                      index === selectedIndex ? 'bg-bg-hover text-text-primary' : 'text-text-secondary hover:bg-bg-tertiary'
-                    }`}>
-                    <div className={cn("p-2 rounded-lg bg-gradient-to-br", tool.color)}>
-                      <Icon className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm">{tool.name}</p>
-                        {isFav && <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" />}
-                        {isRecent && <History className="h-3 w-3 text-blue-500 shrink-0" />}
-                      </div>
-                      <p className="text-xs text-text-muted truncate">{tool.description}</p>
-                    </div>
-                    <span className="text-[10px] text-text-muted bg-bg-tertiary px-2 py-0.5 rounded-full">{tool.category}</span>
-                  </button>
+                  <div
+                    key={section.key}
+                    role="group"
+                    aria-labelledby={heading ? `cmd-group-${section.key}` : undefined}
+                    className={cn(!isLast && 'pb-2 mb-2 border-b border-border/60')}
+                  >
+                    {heading && HeadingIcon && (
+                      <p id={`cmd-group-${section.key}`} className="px-3 pb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                        <HeadingIcon className="h-3 w-3 text-accent" aria-hidden />
+                        {heading.text}
+                      </p>
+                    )}
+                    {section.entries.map((entry, i) => renderEntry(entry, offset + i))}
+                  </div>
                 );
               })}
             </motion.div>
