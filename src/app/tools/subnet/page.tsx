@@ -6,13 +6,23 @@ import { Network, Copy, Check, Info, Layers } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { cn } from '@/lib/utils';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+
+const examples = [
+  { label: 'Home LAN', hint: '/24', ip: '192.168.1.1', cidr: 24 },
+  { label: 'Corporate', hint: '/16', ip: '10.20.0.0', cidr: 16 },
+  { label: 'AWS VPC', hint: '/20', ip: '172.31.0.0', cidr: 20 },
+  { label: 'Point-to-point', hint: '/30', ip: '203.0.113.4', cidr: 30 },
+];
 
 export default function SubnetCalculatorPage() {
+  const [activeExample, setActiveExample] = React.useState(0);
   const [ipAddress, setIpAddress] = React.useState('192.168.1.1');
   const [cidr, setCidr] = React.useState(24);
   const [targetSplitCidr, setTargetSplitCidr] = React.useState(26);
 
   useToolPrefill('subnet', ({ input }) => {
+    setActiveExample(-1);
     const parsed = parseCidrInput(input);
     if (!parsed.success) {
       // Show the raw value so the page's own validation explains what's wrong
@@ -79,13 +89,25 @@ export default function SubnetCalculatorPage() {
         <div className="space-y-4 md:col-span-1">
           <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
             <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wide">Network Configurations</h2>
+
+            <ExamplePills
+              examples={examples}
+              activeIndex={activeExample}
+              onSelect={(i) => {
+                const ex = examples[i];
+                setActiveExample(i);
+                setIpAddress(ex.ip);
+                setCidr(ex.cidr);
+                setTargetSplitCidr((t) => (t <= ex.cidr ? Math.min(32, ex.cidr + 2) : t));
+              }}
+            />
             
             <div>
               <label className="block text-xs font-semibold text-text-muted mb-1 uppercase">IP Address</label>
               <input
                 type="text"
                 value={ipAddress}
-                onChange={(e) => setIpAddress(e.target.value)}
+                onChange={(e) => { setIpAddress(e.target.value); setActiveExample(-1); }}
                 placeholder="e.g. 192.168.1.1"
                 className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2 text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-primary text-sm"
               />
@@ -101,6 +123,7 @@ export default function SubnetCalculatorPage() {
                 onChange={(e) => {
                   const val = parseInt(e.target.value, 10);
                   setCidr(val);
+                  setActiveExample(-1);
                   if (targetSplitCidr <= val) setTargetSplitCidr(Math.min(32, val + 1));
                 }}
                 className="w-full h-2 rounded-lg bg-bg-tertiary appearance-none cursor-pointer accent-accent border border-border"

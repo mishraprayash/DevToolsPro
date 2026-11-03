@@ -52,6 +52,9 @@ import {
 import { Plus, Download, Maximize2, Minimize2, Trash2, LayoutGrid, Sparkles } from 'lucide-react';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
+import { toast } from '@/components/ui/Toast';
 
 const nodeTypes = {
   tableNode: TableNode,
@@ -344,6 +347,23 @@ function FlowDesigner() {
     }
   });
 
+  // Dropping a .sql file imports its DDL into a fresh diagram (same path as the prefill above)
+  const { isDragging, dropProps } = useTextFileDrop((text) => {
+    try {
+      const { nodes: newNodes, edges: newEdges } = parseSqlToNodes(text, []);
+      if (newNodes.length === 0) {
+        toast({ type: 'error', message: 'No CREATE TABLE statements found in the dropped file.' });
+        return;
+      }
+      visualChangePending.current = true;
+      setExportFormat('sql');
+      setNodes(newNodes);
+      setEdges(newEdges);
+    } catch {
+      toast({ type: 'error', message: 'Could not parse the dropped SQL file.' });
+    }
+  });
+
   // Handle typing in editor
   const handleEditorChange = React.useCallback(
     (value: string | undefined) => {
@@ -525,7 +545,8 @@ function FlowDesigner() {
           </div>
         </div>
 
-        <div className={`flex-1 rounded-xl border border-border ${editorBg} overflow-hidden shadow-inner`}>
+        <div className={`relative flex-1 rounded-xl border border-border ${editorBg} overflow-hidden shadow-inner`} {...dropProps}>
+          <TextFileDropOverlay show={isDragging} />
           <Editor
             height="100%"
             defaultLanguage={exportFormat === 'typescript' ? 'typescript' : 'sql'}

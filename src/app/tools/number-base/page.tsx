@@ -13,6 +13,7 @@ import {
   type NumberBase
 } from '@/tools/number-base/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { ExamplePills } from '@/components/ui/ExamplePills';
 
 const examples = [
   { label: 'Decimal 255', value: '255', base: 'decimal' as NumberBase },
@@ -33,8 +34,15 @@ export default function Page() {
   const [input, setInput] = React.useState(examples[0].value);
   const [from, setFrom] = React.useState<NumberBase>('decimal');
   const [customBase, setCustomBase] = React.useState<number>(12); // Base 12 Duodecimal by default
+  const [activeExample, setActiveExample] = React.useState(0);
 
-  useToolPrefill('number-base', ({ input }) => setInput(input.trim()));
+  useToolPrefill('number-base', ({ input }) => { setInput(input.trim()); setActiveExample(-1); });
+
+  const applyExample = (i: number) => {
+    setActiveExample(i);
+    setInput(examples[i].value);
+    setFrom(examples[i].base);
+  };
 
   const result = React.useMemo(() => {
     return convertNumber(input, from, customBase);
@@ -44,6 +52,7 @@ export default function Page() {
 
   const handleClear = () => {
     setInput('');
+    setActiveExample(-1);
   };
 
   const hint = useShortcutHint();
@@ -57,13 +66,14 @@ export default function Page() {
       description="Convert arbitrarily large values between bases 2 to 36 with custom radix control" 
       category="Encoding"
     >
+      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Side Inputs */}
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">Input Sizing Value</h2>
-            <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
+            <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Reset', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
               Reset
             </Button>
           </div>
@@ -73,7 +83,7 @@ export default function Page() {
               <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase">Source Sizing Input</label>
               <Input 
                 value={input} 
-                 onChange={(e) => { setInput(e.target.value); }}
+                 onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }}
                 placeholder={from === 'decimal' ? '255' : from === 'hex' ? 'FF' : from === 'binary' ? '11111111' : '377'}
                 monospace 
               />

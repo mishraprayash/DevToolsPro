@@ -14,6 +14,8 @@ import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
+import { ExamplePills } from '@/components/ui/ExamplePills';
 
 interface Example { 
   label: string; 
@@ -82,7 +84,14 @@ export default function Page() {
     matches: [], 
     isValid: true 
   });
-  const [activeExample] = React.useState(0);
+  const [activeExample, setActiveExample] = React.useState(0);
+
+  const applyExample = (i: number) => {
+    setActiveExample(i);
+    setPattern(examples[i].pattern);
+    setFlags(examples[i].flags);
+    setTestString(examples[i].testString);
+  };
 
   // Run matching + replacement in a background worker with a hard timeout so a
   // catastrophically backtracking pattern can be killed instead of freezing the tab.
@@ -94,6 +103,7 @@ export default function Page() {
   useToolPrefill('regex', (data) => {
     setTestString(data.input);
     if (typeof data.pattern === 'string') setPattern(data.pattern);
+    setActiveExample(-1);
   });
 
   React.useEffect(() => {
@@ -116,6 +126,7 @@ export default function Page() {
     setPattern('');
     setTestString('');
     setReplacement('');
+    setActiveExample(-1);
   };
 
   const toggleFlag = (f: string) => {
@@ -153,6 +164,7 @@ export default function Page() {
     setPattern(item.pattern);
     setTestString(item.test);
     setFlags('g');
+    setActiveExample(-1);
     toast({ type: 'success', message: `Injected ${item.name} pattern!` });
   };
 
@@ -161,6 +173,7 @@ export default function Page() {
   const hint = useShortcutHint();
   useToolShortcuts({
     onCopy: () => void copyText(replacedOutput, 'Replaced text'),
+    onDownload: () => downloadOutput(replacedOutput, 'replaced.txt'),
     onClear: handleClear,
   });
 
@@ -170,7 +183,9 @@ export default function Page() {
       description="Validate regular expressions with live highlights, browse the pattern cheat sheet, and test String replacements in real-time" 
       category="Text"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
+
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Input Column */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -185,7 +200,7 @@ export default function Page() {
             <input
               type="text"
               value={pattern}
-              onChange={(e) => { setPattern(e.target.value); }}
+              onChange={(e) => { setPattern(e.target.value); setActiveExample(-1); }}
               placeholder="[a-zA-Z0-9]+..."
               className={cn(
                 'w-full h-11 pl-7 pr-24 rounded-lg bg-bg-tertiary border text-sm font-mono text-text-primary focus:outline-none transition-all',
@@ -234,8 +249,9 @@ export default function Page() {
             <label className="text-xs text-text-muted mb-1.5 block font-semibold">Test Source Text</label>
             <Input 
               value={testString} 
-              onChange={(e) => { setTestString(e.target.value); }} 
-              placeholder="Paste test string here..." 
+              onChange={(e) => { setTestString(e.target.value); setActiveExample(-1); }} 
+              onDropText={(text) => { setTestString(text); setActiveExample(-1); }}
+              placeholder="Paste test string here or drop a file..." 
               className="min-h-[140px]"
               monospace 
             />
@@ -354,7 +370,7 @@ export default function Page() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-text-muted font-semibold">Simulated Replacement Output</span>
-                  <CopyButton shortcut="copy" value={replacedOutput} disabled={!replacedOutput} />
+                  <OutputActions value={replacedOutput} filename="replaced.txt" />
                 </div>
                 
                 <div className="p-5 rounded-xl bg-bg-tertiary border border-border text-sm font-mono whitespace-pre-wrap min-h-[180px] leading-relaxed shadow-inner">

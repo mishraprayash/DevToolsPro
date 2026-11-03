@@ -12,7 +12,6 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { formatSql, minifySql, analyzeSql, type SqlFormatterOptions, type SqlKeywordCase, type SqlDialect } from '@/tools/sql-prettify/utils';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
@@ -21,6 +20,10 @@ import { inputTarget } from '@/lib/utils/openInTargets';
 import { hasCreateTable } from '@/tools/sql-to-orm/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
 
 const dialectOptions = [
   { value: 'sql', label: 'Standard SQL' },
@@ -35,15 +38,41 @@ const dialectOptions = [
   { value: 'redshift', label: 'Amazon Redshift' },
 ];
 
+const examples = [
+  {
+    label: 'Join query',
+    hint: 'SELECT • JOIN',
+    value: 'select id, name, created_at from users left join orders on users.id = orders.user_id where active=1 order by created_at desc;',
+  },
+  {
+    label: 'CREATE TABLE',
+    hint: 'DDL',
+    value: 'create table posts (id serial primary key, author_id int not null references users(id), title varchar(200) not null, body text, published_at timestamptz default now());',
+  },
+  {
+    label: 'CTE + window',
+    hint: 'WITH • OVER',
+    value: "with monthly as (select user_id, date_trunc('month', created_at) as month, sum(total) as revenue from orders group by 1, 2) select user_id, month, revenue, rank() over (partition by month order by revenue desc) as rnk from monthly where revenue > 100;",
+  },
+  {
+    label: 'Upsert',
+    hint: 'INSERT … ON CONFLICT',
+    value: "insert into settings (user_id, key, value) values (42, 'theme', 'dark'), (42, 'lang', 'en') on conflict (user_id, key) do update set value = excluded.value;",
+  },
+];
+
 export default function Page() {
+  const [activeExample, setActiveExample] = React.useState(0);
   const { theme } = useAppStore();
   const monacoTheme = theme === 'dark' ? 'app-dark' : 'app-light';
   const editorBg = theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white';
-  const [input, setInput] = React.useState('select id, name, created_at from users left join orders on users.id = orders.user_id where active=1 order by created_at desc;');
+  const [input, setInput] = React.useState(examples[0].value);
   const [output, setOutput] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
 
-  useToolPrefill('sql-prettify', ({ input }) => setInput(input));
+  useToolPrefill('sql-prettify', ({ input }) => { setInput(input); setActiveExample(-1); });
+  const { isDragging, dropProps } = useTextFileDrop((text) => { setInput(text); setActiveExample(-1); });
+  const clearInput = () => { setInput(''); setActiveExample(-1); };
 
   const [options, setOptions] = React.useState<SqlFormatterOptions>({
     language: 'sql',
@@ -81,7 +110,9 @@ export default function Page() {
   const hint = useShortcutHint();
   useToolShortcuts({
     onRun: () => void handleFormat(),
-    onCopy: () => void copyText(output, 'SQL'),
+    onCopy: () => void copyText(error ? '' : output, 'SQL'),
+    onDownload: () => downloadOutput(error ? '' : output, 'query.sql'),
+    onClear: clearInput,
   });
 
   return (
@@ -91,6 +122,12 @@ export default function Page() {
       category="Formatting"
     >
       <div className="flex flex-col space-y-4">
+        <ExamplePills
+          examples={examples}
+          activeIndex={activeExample}
+          onSelect={(i) => { setActiveExample(i); setInput(examples[i].value); }}
+        />
+
         {/* Controls */}
         <div className="p-4 rounded-xl border border-border bg-bg-secondary grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
           <Select
@@ -159,16 +196,17 @@ export default function Page() {
               <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
                 <Database className="h-4 w-4 text-blue-500" /> Input Query
               </h2>
-              <Button variant="ghost" size="sm" onClick={() => setInput('')} className="h-8 text-xs">Clear</Button>
+              <Button variant="ghost" size="sm" onClick={clearInput} title={hint('Clear', 'clear')} className="h-8 text-xs">Clear</Button>
             </div>
-            <div className={`flex-1 rounded-xl border border-border ${editorBg} overflow-hidden`}>
+            <div className={`relative flex-1 rounded-xl border border-border ${editorBg} overflow-hidden`} {...dropProps}>
+              <TextFileDropOverlay show={isDragging} />
               <Editor
                 height="100%"
                 defaultLanguage="sql"
                 theme={monacoTheme}
                 beforeMount={defineEditorThemes}
                 value={input}
-                onChange={(val) => setInput(val || '')}
+                onChange={(val) => { setInput(val || ''); setActiveExample(-1); }}
                 options={{ 
                   minimap: { enabled: false }, 
                   fontSize: 14, 
@@ -194,7 +232,7 @@ export default function Page() {
                     ]}
                   />
                 )}
-                <CopyButton shortcut="copy" value={output} />
+                <OutputActions value={error ? '' : output} filename="query.sql" />
               </div>
             </div>
             <div className={`flex-1 relative rounded-xl border border-border ${editorBg} overflow-hidden`}>

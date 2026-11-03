@@ -10,6 +10,8 @@ import { useToolPrefill, readToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { parseUserAgent } from '@/tools/user-agent/utils';
 import { toast } from '@/components/ui/Toast';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
 
 const examples = [
   { label: 'Chrome (macOS)', value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
@@ -21,6 +23,7 @@ const examples = [
 export default function Page() {
   const [input, setInput] = React.useState('');
   const [activeExample, setActiveExample] = React.useState(-1);
+  const { isDragging, dropProps } = useTextFileDrop((text) => { setInput(text.trim()); setActiveExample(-1); });
   const [mounted, setMounted] = React.useState(false);
 
   // Client-side hardware inspector states
@@ -105,12 +108,15 @@ export default function Page() {
             </div>
           </div>
 
-          <textarea
-            value={input}
-            onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }}
-            placeholder="Paste a browser User-Agent string here..."
-            className="w-full h-[180px] p-4 rounded-xl bg-bg-tertiary border border-border text-sm font-mono text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all shadow-inner"
-          />
+          <div className="relative" {...dropProps}>
+            <textarea
+              value={input}
+              onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }}
+              placeholder="Paste a browser User-Agent string here..."
+              className="w-full h-[180px] p-4 rounded-xl bg-bg-tertiary border border-border text-sm font-mono text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all shadow-inner"
+            />
+            <TextFileDropOverlay show={isDragging} />
+          </div>
 
           {/* Client Device Details card */}
           {mounted && (

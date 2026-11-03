@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { RotateCcw, Settings, Globe, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
@@ -18,6 +17,7 @@ import { inputTarget, jsonToolTarget } from '@/lib/utils/openInTargets';
 import { extractCurlUrl, extractCurlJsonBody } from '@/tools/curl-converter/request';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
 
 const languageOptions = [
   { value: 'javascript-fetch', label: 'JavaScript (Fetch)' },
@@ -32,6 +32,20 @@ const languageOptions = [
   { value: 'java', label: 'Java (HttpClient)' },
   { value: 'ruby', label: 'Ruby (net/http)' },
 ];
+
+const fileExtension: Record<string, string> = {
+  'javascript-fetch': 'js',
+  'javascript-axios': 'js',
+  'javascript-xhr': 'js',
+  python: 'py',
+  'python-httpx': 'py',
+  go: 'go',
+  rust: 'rs',
+  csharp: 'cs',
+  php: 'php',
+  java: 'java',
+  ruby: 'rb',
+};
 
 const examples = [
   {
@@ -114,9 +128,11 @@ export default function Page() {
   };
 
   const hint = useShortcutHint();
+  const outputFile = `request.${fileExtension[targetLang] ?? 'txt'}`;
   useToolShortcuts({
     onRun: () => void handleProcess(),
     onCopy: () => void copyText(output),
+    onDownload: () => downloadOutput(output, outputFile),
     onClear: handleClear,
   });
 
@@ -205,7 +221,7 @@ export default function Page() {
               </span>
             </h2>
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <CopyButton shortcut="copy" value={output} disabled={!output} />
+              <OutputActions value={output} filename={outputFile} />
               <OpenInMenu
                 targets={[
                   inputTarget('url-parser', extractCurlUrl(input), 'From cURL', { label: 'URL Parser', hint: 'Inspect the request URL' }),

@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { AlignLeft, Search, Link2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ToolLayout } from '@/components/tool/ToolLayout';
@@ -12,6 +11,10 @@ import { cn } from '@/lib/utils';
 import { generateParagraphs, generateSentences, generateWords, analyzeText, transformText, type TextStats } from '@/tools/string-utils/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
 
 type LoremType = 'paragraphs' | 'sentences' | 'words';
 
@@ -20,6 +23,15 @@ function generateLorem(type: LoremType, count: number): string {
   if (type === 'sentences') return generateSentences(count);
   return generateWords(count);
 }
+
+type TransformType = 'slug' | 'upper' | 'lower' | 'title' | 'trim';
+
+const transformExamples: { label: string; hint: string; value: string; type: TransformType }[] = [
+  { label: 'Blog title', hint: 'slugify', value: '10 Tips for Writing Clean TypeScript — 2026 Edition!', type: 'slug' },
+  { label: 'Headline', hint: 'Title Case', value: 'the quick brown fox jumps over the lazy dog', type: 'title' },
+  { label: 'Constant', hint: 'UPPERCASE', value: 'max_retry_count', type: 'upper' },
+  { label: 'Messy spacing', hint: 'trim', value: '   lots   of    extra   spaces   here   ', type: 'trim' },
+];
 
 export default function Page() {
   const [activeTab, setActiveTab] = React.useState<'analyzer' | 'generator' | 'transformer'>('analyzer');
@@ -54,6 +66,9 @@ export default function Page() {
   const [transformInput, setTransformInput] = React.useState('Transform this text into URL-friendly Slugs, UPPERCASE, lowercase, or Title Case.');
   const [transformType, setTransformType] = React.useState<'slug' | 'upper' | 'lower' | 'title' | 'trim'>('slug');
   const [transformOutput, setTransformOutput] = React.useState('');
+  const [activeTransformExample, setActiveTransformExample] = React.useState(-1);
+  const analyzeDrop = useTextFileDrop(setAnalyzeInput);
+  const transformDrop = useTextFileDrop((text) => { setTransformInput(text); setActiveTransformExample(-1); });
 
   React.useEffect(() => {
     setTransformOutput(transformText(transformInput, transformType));
@@ -63,6 +78,7 @@ export default function Page() {
   useToolShortcuts({
     onRun: () => { if (activeTab === 'generator') handleGenerate(); },
     onCopy: () => { if (activeTab === 'generator') void copyText(genOutput); else if (activeTab === 'transformer') void copyText(transformOutput, 'Result'); },
+    onDownload: () => { if (activeTab === 'generator') downloadOutput(genOutput, 'lorem-ipsum.txt'); else if (activeTab === 'transformer') downloadOutput(transformOutput, 'transformed.txt'); },
     onClear: () => { if (activeTab === 'analyzer') setAnalyzeInput(''); },
   });
 
@@ -120,12 +136,15 @@ export default function Page() {
                 <h2 className="text-base font-semibold text-text-primary">Source Text</h2>
                 <Button variant="ghost" size="sm" onClick={() => setAnalyzeInput('')} title={hint('Clear', 'clear')}>Clear</Button>
               </div>
-              <textarea
-                value={analyzeInput}
-                onChange={(e) => setAnalyzeInput(e.target.value)}
-                placeholder="Type or paste text to analyze..."
-                className="w-full min-h-[300px] p-4 rounded-xl bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent resize-y"
-              />
+              <div className="relative" {...analyzeDrop.dropProps}>
+                <textarea
+                  value={analyzeInput}
+                  onChange={(e) => setAnalyzeInput(e.target.value)}
+                  placeholder="Type or paste text to analyze, or drop a text file..."
+                  className="w-full min-h-[300px] p-4 rounded-xl bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent resize-y"
+                />
+                <TextFileDropOverlay show={analyzeDrop.isDragging} />
+              </div>
             </div>
 
             <div className="space-y-6">
@@ -209,7 +228,7 @@ export default function Page() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-text-primary font-outfit">Lorem Ipsum Output</h2>
-                {genOutput && <CopyButton shortcut="copy" value={genOutput} label="Copy Output" />}
+                <OutputActions value={genOutput} copyLabel="Copy Output" filename="lorem-ipsum.txt" />
               </div>
               <GradientBox value={genOutput} className="min-h-[280px] text-sm leading-relaxed" />
             </div>
@@ -221,12 +240,24 @@ export default function Page() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
             <div className="space-y-4">
               <h2 className="text-base font-semibold text-text-primary">String Input</h2>
-              <textarea
-                value={transformInput}
-                onChange={(e) => setTransformInput(e.target.value)}
-                placeholder="Type text to transform..."
-                className="w-full min-h-[160px] p-4 rounded-xl bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent resize-y"
+              <ExamplePills
+                examples={transformExamples}
+                activeIndex={activeTransformExample}
+                onSelect={(i) => {
+                  setActiveTransformExample(i);
+                  setTransformInput(transformExamples[i].value);
+                  setTransformType(transformExamples[i].type);
+                }}
               />
+              <div className="relative" {...transformDrop.dropProps}>
+                <textarea
+                  value={transformInput}
+                  onChange={(e) => { setTransformInput(e.target.value); setActiveTransformExample(-1); }}
+                  placeholder="Type text to transform..."
+                  className="w-full min-h-[160px] p-4 rounded-xl bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent resize-y"
+                />
+                <TextFileDropOverlay show={transformDrop.isDragging} />
+              </div>
 
               <div className="p-4 rounded-xl border border-border bg-bg-secondary shadow-sm">
                 <Select
@@ -239,7 +270,7 @@ export default function Page() {
                     { value: 'trim', label: 'Trim Whitespaces' }
                   ]}
                   value={transformType}
-                  onChange={(e) => setTransformType(e.target.value as 'slug' | 'upper' | 'lower' | 'title' | 'trim')}
+                  onChange={(e) => setTransformType(e.target.value as TransformType)}
                 />
               </div>
             </div>
@@ -247,7 +278,7 @@ export default function Page() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-text-primary">Transformed Result</h2>
-                {transformOutput && <CopyButton shortcut="copy" value={transformOutput} label="Copy Result" />}
+                <OutputActions value={transformOutput} copyLabel="Copy Result" filename="transformed.txt" />
               </div>
               <GradientBox value={transformOutput} className="min-h-[220px] text-sm font-mono leading-relaxed" />
             </div>

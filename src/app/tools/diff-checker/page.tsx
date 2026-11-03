@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { RotateCcw, Columns, AlignJustify, ArrowLeftRight, Check, Navigation, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
@@ -17,6 +16,7 @@ import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
 import { SplitPanesView } from '@/components/ui/SplitPanesView';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
 
 const examples = [
   {
@@ -312,7 +312,7 @@ export default function Page() {
           </button>
         </div>
 
-        <CopyButton shortcut="copy" value={getDiffText()} label="Copy Diff" disabled={!state.hasChanges} />
+        <OutputActions value={state.hasChanges ? getDiffText() : ''} copyLabel="Copy Diff" filename="changes.diff" />
       </div>
     </div>
   );
@@ -556,6 +556,7 @@ export default function Page() {
 
   useToolShortcuts({
     onCopy: () => void copyText(state.hasChanges ? getDiffText() : '', 'Diff'),
+    onDownload: () => downloadOutput(state.hasChanges ? getDiffText() : '', 'changes.diff'),
     onClear: handleClear,
     onNewTab: addWorkspace,
   });

@@ -10,6 +10,10 @@ import { cn } from '@/lib/utils';
 import { RotateCcw, Monitor, Smartphone, Tablet, Terminal, Settings } from 'lucide-react';
 import { toast } from '@/components/ui/Toast';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
+import { copyText } from '@/lib/utils/copyText';
 
 interface Example { 
   label: string; 
@@ -211,7 +215,10 @@ export default function Page() {
   };
 
   const hint = useShortcutHint();
+  const { isDragging, dropProps } = useTextFileDrop((text) => { setInput(text); setActiveExample(-1); });
   useToolShortcuts({
+    onCopy: () => void copyText(input, 'HTML'),
+    onDownload: () => downloadOutput(input, 'index.html'),
     onClear: handleClear,
   });
 
@@ -235,9 +242,11 @@ export default function Page() {
               <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
                 Clear
               </Button>
+              <OutputActions value={input} copyLabel="Copy HTML" filename="index.html" />
             </div>
           </div>
 
+          <div className="relative" {...dropProps}>
           <textarea 
             value={input} 
             onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }}
@@ -257,6 +266,8 @@ export default function Page() {
             className="w-full h-[360px] p-4 rounded-xl bg-bg-tertiary border border-border text-sm font-mono text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all shadow-inner"
             spellCheck={false} 
           />
+          <TextFileDropOverlay show={isDragging} />
+          </div>
 
           {/* CDNs Libraries Injection Options */}
           <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-3.5 shadow-sm">

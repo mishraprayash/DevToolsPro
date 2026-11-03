@@ -4,7 +4,6 @@ import * as React from 'react';
 import { processAES } from '@/tools/aes/utils';
 import { Settings, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ToolLayout } from '@/components/tool/ToolLayout';
@@ -13,8 +12,17 @@ import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+
+const examples: { label: string; hint: string; mode: 'CBC' | 'CTR' | 'GCM'; input: string; key: string; keyFormat: 'utf8' | 'hex'; iv: string; ivFormat: 'utf8' | 'hex' }[] = [
+  { label: 'CBC text', hint: 'AES-CBC • UTF-8 key', mode: 'CBC', input: 'DevTools Pro AES Sandbox', key: 'my-secret-key-32', keyFormat: 'utf8', iv: 'my-init-vector-16', ivFormat: 'utf8' },
+  { label: 'GCM JSON', hint: 'AES-GCM • authenticated', mode: 'GCM', input: '{"userId":42,"role":"admin","exp":1767225600}', key: 'gcm-demo-key-0123456789abcdef!!', keyFormat: 'utf8', iv: 'unique-nonce', ivFormat: 'utf8' },
+  { label: 'CTR hex key', hint: 'AES-CTR • 128-bit hex', mode: 'CTR', input: 'Stream ciphers need a fresh counter per message.', key: '000102030405060708090a0b0c0d0e0f', keyFormat: 'hex', iv: 'f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff', ivFormat: 'hex' },
+];
 
 export default function AESCryptoPage() {
+  const [activeExample, setActiveExample] = React.useState(0);
   const [action, setAction] = React.useState<'encrypt' | 'decrypt'>('encrypt');
   const [mode, setMode] = React.useState<'CBC' | 'CTR' | 'GCM'>('CBC');
   const [input, setInput] = React.useState('DevTools Pro AES Sandbox');
@@ -81,11 +89,27 @@ export default function AESCryptoPage() {
     setInput('');
     setOutput('');
     setError('');
+    setActiveExample(-1);
   };
+
+  const applyExample = (i: number) => {
+    const ex = examples[i];
+    setActiveExample(i);
+    setAction('encrypt');
+    setMode(ex.mode);
+    setInput(ex.input);
+    setKey(ex.key);
+    setKeyFormat(ex.keyFormat);
+    setIv(ex.iv);
+    setIvFormat(ex.ivFormat);
+  };
+
+  const outputFile = action === 'encrypt' ? 'ciphertext.txt' : 'plaintext.txt';
 
   const hint = useShortcutHint();
   useToolShortcuts({
     onCopy: () => void copyText(error ? '' : output),
+    onDownload: () => downloadOutput(error ? '' : output, outputFile),
     onClear: handleClear,
   });
 
@@ -117,6 +141,7 @@ export default function AESCryptoPage() {
             Decrypt
           </button>
         </div>
+        <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
@@ -130,7 +155,8 @@ export default function AESCryptoPage() {
           </div>
           <Input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }}
+            onDropText={(text) => { setInput(text); setActiveExample(-1); }}
             className="h-[200px]"
             placeholder={action === 'encrypt' ? 'Enter text to encrypt...' : 'Enter ciphertext to decrypt...'}
             monospace
@@ -224,7 +250,7 @@ export default function AESCryptoPage() {
             </h2>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={handleSwap} disabled={!output || !!error} icon={<Copy className="h-3.5 w-3.5" />}>Swap</Button>
-              {output && !error && <CopyButton shortcut="copy" value={output} label="Copy Output" />}
+              <OutputActions value={error ? '' : output} copyLabel="Copy Output" filename={outputFile} />
             </div>
           </div>
           <div className="relative">

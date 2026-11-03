@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { RotateCcw, Copy, RefreshCw } from 'lucide-react';
+import { RotateCcw, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
@@ -9,6 +9,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { generateBulkUuids, type UuidOptions } from '@/tools/uuid/utils';
 import { cn } from '@/lib/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
+import { copyText } from '@/lib/utils/copyText';
 
 const versionOptions = [
   { value: '4', label: 'UUID v4 (Cryptographically Random)' },
@@ -54,16 +56,14 @@ export default function Page() {
     setNoHyphens(false);
   };
 
-  const handleCopyAll = () => {
-    if (uuids.length === 0) return;
-    navigator.clipboard.writeText(uuids.join('\n'));
-  };
+  const uuidList = uuids.join('\n');
 
 
   const hint = useShortcutHint();
   useToolShortcuts({
     onRun: handleGenerate,
-    onCopy: handleCopyAll,
+    onCopy: () => void copyText(uuidList, 'UUIDs'),
+    onDownload: () => downloadOutput(uuidList, 'uuids.txt'),
     onClear: handleClear,
   });
 
@@ -176,11 +176,7 @@ export default function Page() {
               Generated Identifiers <span className="text-xs text-text-muted font-mono">({uuids.length})</span>
             </h2>
             
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleCopyAll} title={hint('Copy all', 'copy')} icon={<Copy className="h-4 w-4" />}>
-                Copy All
-              </Button>
-            </div>
+            <OutputActions value={uuidList} copyLabel="Copy All" filename="uuids.txt" />
           </div>
 
           <div className="border border-border rounded-xl bg-bg-tertiary overflow-hidden shadow-sm">
