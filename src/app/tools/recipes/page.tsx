@@ -374,7 +374,11 @@ function OperationPicker({ onPick, onClose }: OperationPickerProps) {
 
 export default function Page() {
   const [input, setInput] = React.useState(exampleRecipes[0].input);
-  const [steps, setSteps] = React.useState<RecipeStep[]>(() => stepsFromExample(0));
+  // Stable uids for the server-rendered initial recipe: createStep's time-based uids
+  // would differ between server and client and cause a hydration mismatch.
+  const [steps, setSteps] = React.useState<RecipeStep[]>(() =>
+    stepsFromExample(0).map((step, i) => ({ ...step, uid: `initial-${i}` }))
+  );
   const [recipeName, setRecipeName] = React.useState(exampleRecipes[0].recipe.name ?? '');
   const [activeExample, setActiveExample] = React.useState(0);
   const [run, setRun] = React.useState<RecipeRunResult | null>(null);
