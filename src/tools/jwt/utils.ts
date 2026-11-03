@@ -280,3 +280,27 @@ export function decodeJwtParts(token: string): {
     return { success: false, error: 'Unable to parse JSON in header/payload' };
   }
 }
+
+// ── Cross-tool helpers ──────────────────────────────────────────
+
+export interface TimestampClaim {
+  claim: 'exp' | 'iat' | 'nbf';
+  seconds: number;
+}
+
+const TIMESTAMP_CLAIMS: TimestampClaim['claim'][] = ['exp', 'iat', 'nbf'];
+
+// Registered NumericDate claims (RFC 7519 §4.1) present in a decoded payload,
+// in exp → iat → nbf order. Non-numeric or non-finite values are skipped.
+export function extractTimestampClaims(payload: unknown): TimestampClaim[] {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return [];
+  const record = payload as Record<string, unknown>;
+  const out: TimestampClaim[] = [];
+  for (const claim of TIMESTAMP_CLAIMS) {
+    const value = record[claim];
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+      out.push({ claim, seconds: Math.floor(value) });
+    }
+  }
+  return out;
+}

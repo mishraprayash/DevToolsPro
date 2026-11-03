@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { Button } from '@/components/ui/Button';
 import { wrapHtmlDocument, formatHtml } from '@/tools/html-preview/utils';
 import { cn } from '@/lib/utils';
@@ -148,6 +149,8 @@ export default function Page() {
   
   // Console simulator logs state
   const [logs, setLogs] = React.useState<LogItem[]>([]);
+
+  useToolPrefill('html-preview', ({ input }) => { setInput(input); setActiveExample(-1); setLogs([]); });
 
   // Build document with console injection + CDN injections
   const srcdoc = React.useMemo(() => {

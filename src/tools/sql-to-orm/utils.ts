@@ -245,3 +245,11 @@ export function generateOrmEntities(tableName: string, columns: ColumnDef[]): Ge
 
   return { prisma, typeorm, mongoose };
 }
+
+// True when the SQL contains at least one CREATE TABLE statement (comments ignored).
+// Decides whether schema-oriented tools (designer, ORM generator) are worth offering.
+export function hasCreateTable(sql: string): boolean {
+  if (typeof sql !== 'string' || !sql) return false;
+  const stripped = sql.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/--[^\n]*/g, ' ');
+  return /\bcreate\s+(?:or\s+replace\s+)?(?:(?:global|local)\s+)?(?:(?:temporary|temp|unlogged)\s+)?table\b/i.test(stripped);
+}

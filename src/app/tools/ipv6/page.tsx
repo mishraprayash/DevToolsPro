@@ -4,9 +4,12 @@ import * as React from 'react';
 import { processIpv6 } from '@/tools/ipv6/utils';
 import { Shield, Eye, Copy, Check, CheckCircle } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 
 export default function Ipv6HelperPage() {
   const [ipInput, setIpInput] = React.useState('2001:db8::1');
+
+  useToolPrefill('ipv6', ({ input }) => setIpInput(input.trim()));
   const [copiedType, setCopiedType] = React.useState<string | null>(null);
 
   const result = React.useMemo(() => {

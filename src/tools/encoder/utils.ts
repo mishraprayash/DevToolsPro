@@ -199,3 +199,63 @@ export function decodeEntities(input: string): string {
   const r = decodeEntitiesResult(input);
   return r.success ? r.data : input;
 }
+
+// ── Image detection (Base64 → Image tool handoff) ───────────────
+
+export type ImageMime = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
+
+// Sniff an image MIME type from leading magic bytes. Returns null for anything else.
+export function detectImageMime(bytes: ArrayLike<number>): ImageMime | null {
+  const at = (i: number) => (i < bytes.length ? bytes[i] : -1);
+  if (at(0) === 0x89 && at(1) === 0x50 && at(2) === 0x4e && at(3) === 0x47 && at(4) === 0x0d && at(5) === 0x0a && at(6) === 0x1a && at(7) === 0x0a) {
+    return 'image/png';
+  }
+  if (at(0) === 0xff && at(1) === 0xd8 && at(2) === 0xff) return 'image/jpeg';
+  if (at(0) === 0x47 && at(1) === 0x49 && at(2) === 0x46 && at(3) === 0x38 && (at(4) === 0x37 || at(4) === 0x39) && at(5) === 0x61) {
+    return 'image/gif';
+  }
+  if (
+    at(0) === 0x52 && at(1) === 0x49 && at(2) === 0x46 && at(3) === 0x46 &&
+    at(8) === 0x57 && at(9) === 0x45 && at(10) === 0x42 && at(11) === 0x50
+  ) {
+    return 'image/webp';
+  }
+  return null;
+}
+
+// Normalise Base64 / Base64URL text (optionally a data: URL) to a standard, padded Base64 body.
+function normalizeBase64Body(input: string): string | null {
+  if (typeof input !== 'string') return null;
+  let body = input.trim();
+  const dataUrl = /^data:[^,]*;base64,/i.exec(body);
+  if (dataUrl) body = body.slice(dataUrl[0].length);
+  body = body.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/').replace(/=+$/, '');
+  if (!body || !/^[A-Za-z0-9+/]+$/.test(body) || body.length % 4 === 1) return null;
+  return body + '='.repeat((4 - (body.length % 4)) % 4);
+}
+
+// MIME type of the image encoded in a Base64 string, or null if it isn't a PNG/JPEG/GIF/WebP.
+export function detectBase64ImageMime(input: string): ImageMime | null {
+  const body = normalizeBase64Body(input);
+  if (!body) return null;
+  try {
+    // 16 Base64 chars decode to 12 bytes: enough for every signature above.
+    const head = atob(body.slice(0, 16));
+    return detectImageMime(Array.from(head, (c) => c.charCodeAt(0)));
+  } catch {
+    return null;
+  }
+}
+
+// data: URL for a Base64-encoded image, or null when the bytes aren't a recognised image.
+export function base64ToImageDataUrl(input: string): string | null {
+  const mime = detectBase64ImageMime(input);
+  const body = mime ? normalizeBase64Body(input) : null;
+  if (!mime || !body) return null;
+  try {
+    atob(body); // the whole payload must decode, not just the header
+  } catch {
+    return null;
+  }
+  return `data:${mime};base64,${body}`;
+}
