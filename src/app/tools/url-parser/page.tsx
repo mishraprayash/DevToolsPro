@@ -16,6 +16,9 @@ import { parseUrlString, constructUrl, encodeUrlComponentSafe, decodeUrlComponen
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
 
 const DEFAULT_URL =
   'https://api.example.com:8443/v1/users/search?query=developers&role=admin&active=true&tags=typescript&tags=react#results-header';
@@ -31,8 +34,10 @@ export default function UrlParserPage() {
   const [inputUrl, setInputUrl] = React.useState<string>(DEFAULT_URL);
   const [parsed, setParsed] = React.useState<ParsedUrlData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [activeExample, setActiveExample] = React.useState(() => SAMPLE_URLS.findIndex((s) => s.value === DEFAULT_URL));
+  const { isDragging, dropProps } = useTextFileDrop((text) => { setInputUrl(text.trim()); setActiveExample(-1); });
 
-  useToolPrefill('url-parser', ({ input }) => setInputUrl(input.trim()));
+  useToolPrefill('url-parser', ({ input }) => { setInputUrl(input.trim()); setActiveExample(-1); });
 
   // Sync parsing when input changes
   React.useEffect(() => {
@@ -91,6 +96,7 @@ export default function UrlParserPage() {
     );
     if (res.success) {
       setInputUrl(res.data);
+      setActiveExample(-1);
     }
   };
 
@@ -98,6 +104,7 @@ export default function UrlParserPage() {
     setInputUrl('');
     setParsed(null);
     setError(null);
+    setActiveExample(-1);
     toast({ type: 'info', message: 'Cleared URL input.' });
   };
 
@@ -153,18 +160,11 @@ export default function UrlParserPage() {
     >
       <div className="space-y-6">
         {/* Sample Pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-text-muted">Presets:</span>
-          {SAMPLE_URLS.map((sample) => (
-            <button
-              key={sample.label}
-              onClick={() => setInputUrl(sample.value)}
-              className="px-2.5 py-1 text-xs rounded-lg bg-bg-tertiary border border-border hover:border-accent/40 hover:text-accent transition-all cursor-pointer font-medium"
-            >
-              {sample.label}
-            </button>
-          ))}
-        </div>
+        <ExamplePills
+          examples={SAMPLE_URLS}
+          activeIndex={activeExample}
+          onSelect={(i) => { setActiveExample(i); setInputUrl(SAMPLE_URLS[i].value); }}
+        />
 
         {/* Input Bar */}
         <div className="p-4 rounded-2xl bg-bg-secondary border border-border shadow-sm space-y-3">
@@ -186,11 +186,12 @@ export default function UrlParserPage() {
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative" {...dropProps}>
+            <TextFileDropOverlay show={isDragging} />
             <textarea
               rows={3}
               value={inputUrl}
-              onChange={(e) => setInputUrl(e.target.value)}
+              onChange={(e) => { setInputUrl(e.target.value); setActiveExample(-1); }}
               placeholder="Paste or enter a URL (e.g. https://api.site.com/v1/search?q=test)..."
               className="w-full p-3.5 rounded-xl bg-bg-tertiary border border-border font-mono text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all resize-y"
             />

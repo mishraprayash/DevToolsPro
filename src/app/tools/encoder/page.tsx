@@ -4,7 +4,6 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, Link2, FileCode, Copy, Braces, ArrowRight, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ToolLayout } from '@/components/tool/ToolLayout';
@@ -17,8 +16,12 @@ import { sendToTool } from '@/lib/utils/toolHandoff';
 import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
 import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
 import { SplitPanesView } from '@/components/ui/SplitPanesView';
-import { useToolShortcuts } from '@/lib/hooks/useToolShortcuts';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
 
 interface EncoderState {
   encodingMode: 'base64' | 'url' | 'entities';
@@ -30,7 +33,31 @@ interface EncoderState {
   urlMode: 'component' | 'uri' | 'strict';
   entMode: 'named' | 'decimal' | 'hex';
   entScope: 'markup' | 'all';
+  activeExample?: number;
 }
+
+const examples: { label: string; hint: string; state: Partial<EncoderState> }[] = [
+  {
+    label: 'Base64 JSON',
+    hint: 'decode',
+    state: { encodingMode: 'base64', direction: 'decode', b64Mode: 'utf8', b64UrlSafe: false, input: 'eyJ1c2VyIjoiYWxpY2UiLCJyb2xlcyI6WyJhZG1pbiIsImVkaXRvciJdLCJhY3RpdmUiOnRydWV9' },
+  },
+  {
+    label: 'Base64 text',
+    hint: 'encode • UTF-8',
+    state: { encodingMode: 'base64', direction: 'encode', b64Mode: 'utf8', b64UrlSafe: false, input: 'Hello, DevTools Pro! Ünïcödé ✓' },
+  },
+  {
+    label: 'URL query',
+    hint: 'encode component',
+    state: { encodingMode: 'url', direction: 'encode', urlMode: 'component', input: 'q=hello world&lang=en-US&next=https://example.com/a?b=c' },
+  },
+  {
+    label: 'HTML entities',
+    hint: 'encode markup',
+    state: { encodingMode: 'entities', direction: 'encode', entMode: 'named', entScope: 'markup', input: '<a href="/search?q=tom&jerry">Tom & Jerry\'s</a>' },
+  },
+];
 
 const defaultState: EncoderState = {
   encodingMode: 'base64',
@@ -41,10 +68,12 @@ const defaultState: EncoderState = {
   b64UrlSafe: false,
   urlMode: 'component',
   entMode: 'named',
-  entScope: 'markup'
+  entScope: 'markup',
+  activeExample: -1,
 };
 
 export default function Page() {
+  const hint = useShortcutHint();
   const {
     workspaces,
     activeWorkspaceId,
@@ -59,6 +88,10 @@ export default function Page() {
 
   const { state } = activeWorkspace;
   const router = useRouter();
+  const { isDragging, dropProps } = useTextFileDrop((text) => updateActiveWorkspace({ input: text, activeExample: -1 }));
+  const outputFile = state.direction === 'encode' ? 'encoded.txt' : 'decoded.txt';
+
+  const applyExample = (i: number) => updateActiveWorkspace({ ...examples[i].state, activeExample: i });
 
   const decodedIsJson = React.useMemo(
     () => state.encodingMode === 'base64' && state.direction === 'decode' && isJsonCompatible(state.output),
@@ -186,14 +219,17 @@ export default function Page() {
     <div className="flex flex-col h-full space-y-4 min-h-0">
       <div className="flex items-center justify-between shrink-0">
         <h2 className="text-base font-semibold text-text-primary">Source Input</h2>
-        <Button variant="ghost" size="sm" onClick={() => updateActiveWorkspace({ input: '' })}>Clear</Button>
+        <Button variant="ghost" size="sm" onClick={() => updateActiveWorkspace({ input: '', activeExample: -1 })} title={hint('Clear', 'clear')}>Clear</Button>
       </div>
-      <textarea
-        value={state.input}
-        onChange={(e) => updateActiveWorkspace({ input: e.target.value })}
-        className="w-full flex-1 p-4 rounded-xl bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent resize-none font-mono overflow-y-auto min-h-[200px]"
-        placeholder="Type values here..."
-      />
+      <div className="relative flex-1 flex flex-col min-h-[200px]" {...dropProps}>
+        <textarea
+          value={state.input}
+          onChange={(e) => updateActiveWorkspace({ input: e.target.value, activeExample: -1 })}
+          className="w-full flex-1 p-4 rounded-xl bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent resize-none font-mono overflow-y-auto min-h-[200px]"
+          placeholder="Type values here..."
+        />
+        <TextFileDropOverlay show={isDragging} />
+      </div>
 
       {/* Configs Panel based on active tab */}
       <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-4 shadow-sm shrink-0">
@@ -271,7 +307,7 @@ export default function Page() {
         <h2 className="text-base font-semibold text-text-primary">Converted Output</h2>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={handleSwap} disabled={!state.output} icon={<Copy className="h-3.5 w-3.5" />}>Swap</Button>
-          {state.output && <CopyButton shortcut="copy" value={state.output} label="Copy Output" />}
+          <OutputActions value={state.output} copyLabel="Copy Output" filename={outputFile} />
         </div>
       </div>
       <div className="flex-1 min-h-[200px] h-full">
@@ -310,6 +346,8 @@ export default function Page() {
   useToolShortcuts({
     onRun: handleProcess,
     onCopy: () => void copyText(state.output),
+    onDownload: () => downloadOutput(state.output, outputFile),
+    onClear: () => updateActiveWorkspace({ input: '', activeExample: -1 }),
     onNewTab: addWorkspace,
   });
 
@@ -328,11 +366,16 @@ export default function Page() {
         onRename={renameWorkspace}
         onShare={copyShareLink}
       />
-      <SplitPanesView
-        toolbarContent={toolbarContent}
-        leftPane={leftPane}
-        rightPane={rightPane}
-      />
+
+      <ExamplePills examples={examples} activeIndex={state.activeExample ?? -1} onSelect={applyExample} />
+
+      <div className="mt-4">
+        <SplitPanesView
+          toolbarContent={toolbarContent}
+          leftPane={leftPane}
+          rightPane={rightPane}
+        />
+      </div>
     </ToolLayout>
   );
 }

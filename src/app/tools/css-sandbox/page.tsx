@@ -9,6 +9,7 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { cn } from '@/lib/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
 
 interface ItemConfig {
   id: number;
@@ -264,6 +265,7 @@ export default function Page() {
   const hint = useShortcutHint();
   useToolShortcuts({
     onCopy: () => void copyText(cssCode, 'CSS'),
+    onDownload: () => downloadOutput(cssCode, 'layout.css'),
     onClear: handleReset,
   });
 
@@ -579,7 +581,7 @@ export default function Page() {
                 <span className="text-xs font-semibold text-text-muted uppercase tracking-wider flex items-center gap-1">
                   <Code className="h-3.5 w-3.5" /> Native CSS Syntax
                 </span>
-                <CopyButton shortcut="copy" value={cssCode} size="sm" />
+                <OutputActions value={cssCode} filename="layout.css" />
               </div>
               <pre className="p-3.5 rounded-xl border border-border bg-bg-secondary text-xs font-mono font-bold text-text-primary overflow-x-auto shadow-inner leading-normal select-all">
                 {cssCode}

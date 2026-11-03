@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { RotateCcw, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
@@ -15,6 +14,7 @@ import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { jsonToTs, type JsonToTsOptions } from '@/tools/json-to-ts/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
 
 const outputOptions = [
   { value: 'interface', label: 'Interface' },
@@ -158,6 +158,7 @@ export default function Page() {
   useToolShortcuts({
     onRun: handleProcess,
     onCopy: () => void copyText(output, 'Types'),
+    onDownload: () => downloadOutput(output, 'types.ts'),
     onClear: handleClear,
   });
 
@@ -265,7 +266,7 @@ export default function Page() {
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">TypeScript Definitions</h2>
             <div className="flex items-center gap-2">
-              <CopyButton shortcut="copy" value={output} label="Copy" disabled={!output} />
+              <OutputActions value={output} filename="types.ts" />
             </div>
           </div>
 

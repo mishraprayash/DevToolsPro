@@ -10,6 +10,7 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { generateQrCode, type QrResult } from '@/tools/qr-code/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { ExamplePills } from '@/components/ui/ExamplePills';
 
 const examples = [
   { label: 'URL', value: 'https://example.com' },
@@ -24,6 +25,7 @@ export default function Page() {
   const [errorLevel, setErrorLevel] = React.useState<'L' | 'M' | 'Q' | 'H'>('M');
   const [result, setResult] = React.useState<QrResult | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [activeExample, setActiveExample] = React.useState(0);
 
   const handleGenerate = React.useCallback(async () => {
     setLoading(true);
@@ -37,8 +39,9 @@ export default function Page() {
     return () => clearTimeout(timer);
   }, [handleGenerate]);
 
-  const applyExample = React.useCallback((value: string) => {
-    setInput(value);
+  const applyExample = React.useCallback((i: number) => {
+    setActiveExample(i);
+    setInput(examples[i].value);
   }, []);
 
   const handleDownload = React.useCallback(() => {
@@ -52,6 +55,7 @@ export default function Page() {
   const handleReset = React.useCallback(() => {
     setInput('');
     setResult(null);
+    setActiveExample(-1);
   }, []);
 
   const hint = useShortcutHint();
@@ -70,20 +74,14 @@ export default function Page() {
             <label className="text-xs text-text-muted mb-1.5 block">Content</label>
             <Input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }}
+              onDropText={(text) => { setInput(text); setActiveExample(-1); }}
               placeholder="Enter text, URL, or any data..."
               monospace
             />
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
-            {examples.map((ex) => (
-              <button key={ex.label} onClick={() => applyExample(ex.value)}
-                className="px-2.5 py-1 rounded-full text-xs bg-bg-tertiary border border-border hover:border-accent hover:text-accent transition-colors">
-                {ex.label}
-              </button>
-            ))}
-          </div>
+          <ExamplePills examples={examples} activeIndex={activeExample} onSelect={applyExample} />
 
           <div className="grid grid-cols-2 gap-4">
             <div>

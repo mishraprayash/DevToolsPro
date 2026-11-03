@@ -20,6 +20,8 @@ import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
 import { SplitPanesView } from '@/components/ui/SplitPanesView';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
 
 const SAMPLE_JWT =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
@@ -329,6 +331,8 @@ export default function Page() {
   } = useWorkspaces<JwtState>(defaultState, 'JWT', 'jwt');
 
   const { state } = activeWorkspace;
+  const { isDragging, dropProps } = useTextFileDrop((text) => updateActiveWorkspace({ input: text.trim(), activeExample: -1 }));
+  const clearToken = () => updateActiveWorkspace({ input: '', activeExample: -1, signatureStatus: 'unknown', signatureMessage: null });
 
   const decoded = React.useMemo((): JWTPayload | null => {
     if (!state.input.trim()) return null;
@@ -472,19 +476,23 @@ export default function Page() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => updateActiveWorkspace({ input: '', activeExample: -1, signatureStatus: 'unknown', signatureMessage: null })}
+            onClick={clearToken}
+            title={hint('Clear', 'clear')}
             icon={<RotateCcw className="h-4 w-4" />}
           >
             Clear
           </Button>
         </div>
 
-        <textarea
-          value={state.input}
-          onChange={(e) => updateActiveWorkspace({ input: e.target.value, activeExample: -1 })}
-          placeholder="Paste JWT token (header.payload.signature)..."
-          className="w-full flex-1 min-h-[140px] px-4 py-3 rounded-xl bg-bg-tertiary border border-border text-text-primary placeholder:text-text-muted font-mono text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all duration-200 resize-none shadow-inner"
-        />
+        <div className="relative flex-1 flex flex-col min-h-[140px]" {...dropProps}>
+          <textarea
+            value={state.input}
+            onChange={(e) => updateActiveWorkspace({ input: e.target.value, activeExample: -1 })}
+            placeholder="Paste JWT token (header.payload.signature) or drop a file..."
+            className="w-full flex-1 min-h-[140px] px-4 py-3 rounded-xl bg-bg-tertiary border border-border text-text-primary placeholder:text-text-muted font-mono text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all duration-200 resize-none shadow-inner"
+          />
+          <TextFileDropOverlay show={isDragging} />
+        </div>
 
         {decoded && (
           <div className="p-4 rounded-xl border border-border bg-bg-secondary space-y-3 shrink-0">
@@ -745,6 +753,7 @@ export default function Page() {
   useToolShortcuts({
     onRun: () => void (state.activeMode === 'sign' ? handleSign() : handleVerify()),
     onCopy: () => void (state.activeMode === 'sign' ? copyText(state.signedToken, 'Token') : copyText(decoded ? JSON.stringify(decoded.payload, null, 2) : '', 'Payload')),
+    onClear: () => { if (state.activeMode === 'decode') clearToken(); },
     onNewTab: addWorkspace,
   });
 

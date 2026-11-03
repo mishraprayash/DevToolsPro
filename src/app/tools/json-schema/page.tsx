@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { RotateCcw, Settings, AlertTriangle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { GradientBox } from '@/components/ui/GradientBox';
@@ -17,6 +16,7 @@ import { useHeavyTask } from '@/lib/workers/useHeavyTask';
 import { shouldOffloadSchema } from '@/lib/workers/thresholds';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
 
 const draftOptions = [
   { value: 'draft-07', label: 'JSON Schema Draft-07 (Widely Compatible)' },
@@ -135,6 +135,7 @@ export default function Page() {
   const hint = useShortcutHint();
   useToolShortcuts({
     onCopy: () => void copyText(output, 'Schema'),
+    onDownload: () => downloadOutput(output, 'schema.json'),
     onClear: handleClear,
   });
 
@@ -162,6 +163,7 @@ export default function Page() {
           <Input
             value={input}
             onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }}
+            onDropText={(text) => { setInput(text); setActiveExample(-1); }}
             placeholder='{"user": "alice", "roles": ["admin"]}'
             className="min-h-[260px]"
             monospace
@@ -215,7 +217,7 @@ export default function Page() {
             
             <div className="flex items-center gap-2">
               {isInferring && <span className="text-xs text-text-muted" role="status">Inferring schema…</span>}
-              <CopyButton shortcut="copy" value={output} disabled={!output} />
+              <OutputActions value={output} filename="schema.json" />
             </div>
           </div>
 

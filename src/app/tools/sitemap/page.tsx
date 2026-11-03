@@ -177,6 +177,10 @@ export default function Page() {
                     setPaths(e.target.value);
                     setActiveExample(-1);
                   }}
+                  onDropText={(text) => {
+                    setPaths(text);
+                    setActiveExample(-1);
+                  }}
                   placeholder={'/\n/about\n/blog'}
                   monospace
                   className="w-full h-full"

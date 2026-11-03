@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { signPayloadRsa, verifySignatureRsa, type GeneratedKeypair } from '@/tools/rsa-sandbox/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
 
 const keySizeOptions = [
   { value: '1024', label: '1024 bits (Weak - Testing only)' },
@@ -37,6 +39,7 @@ export default function Page() {
 
   // --- Sign Tab States ---
   const [privateKey, setPrivateKey] = React.useState('');
+  const privateKeyDrop = useTextFileDrop((text) => setPrivateKey(text.trim()));
   const [signPayload, setSignPayload] = React.useState('Hello World! Sign this payload using RSA.');
   const [signHash, setSignHash] = React.useState<'SHA-256' | 'SHA-384' | 'SHA-512'>('SHA-256');
   const [signatureOutput, setSignatureOutput] = React.useState('');
@@ -45,6 +48,7 @@ export default function Page() {
 
   // --- Verify Tab States ---
   const [publicKey, setPublicKey] = React.useState('');
+  const publicKeyDrop = useTextFileDrop((text) => setPublicKey(text.trim()));
   const [verifyPayload, setVerifyPayload] = React.useState('Hello World! Sign this payload using RSA.');
   const [verifySignature, setVerifySignature] = React.useState('');
   const [verifyHash, setVerifyHash] = React.useState<'SHA-256' | 'SHA-384' | 'SHA-512'>('SHA-256');
@@ -327,12 +331,15 @@ export default function Page() {
               <div className="space-y-4 p-5 rounded-xl border border-border bg-bg-secondary shadow-sm">
                 <div>
                   <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Private Key (PEM format)</label>
-                  <textarea
-                    value={privateKey}
-                    onChange={(e) => setPrivateKey(e.target.value)}
-                    placeholder="-----BEGIN PRIVATE KEY-----&#10;..."
-                    className="w-full min-h-[160px] p-3 rounded-lg bg-bg-tertiary border border-border text-xs text-text-primary font-mono focus:outline-none focus:border-accent"
-                  />
+                  <div className="relative" {...privateKeyDrop.dropProps}>
+                    <textarea
+                      value={privateKey}
+                      onChange={(e) => setPrivateKey(e.target.value)}
+                      placeholder="-----BEGIN PRIVATE KEY-----&#10;... (or drop a .pem file)"
+                      className="w-full min-h-[160px] p-3 rounded-lg bg-bg-tertiary border border-border text-xs text-text-primary font-mono focus:outline-none focus:border-accent"
+                    />
+                    <TextFileDropOverlay show={privateKeyDrop.isDragging} />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Message Payload to Sign</label>
@@ -408,12 +415,15 @@ export default function Page() {
               <div className="space-y-4 p-5 rounded-xl border border-border bg-bg-secondary shadow-sm">
                 <div>
                   <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Public Key (PEM format)</label>
-                  <textarea
-                    value={publicKey}
-                    onChange={(e) => setPublicKey(e.target.value)}
-                    placeholder="-----BEGIN PUBLIC KEY-----&#10;..."
-                    className="w-full min-h-[140px] p-3 rounded-lg bg-bg-tertiary border border-border text-xs text-text-primary font-mono focus:outline-none focus:border-accent"
-                  />
+                  <div className="relative" {...publicKeyDrop.dropProps}>
+                    <textarea
+                      value={publicKey}
+                      onChange={(e) => setPublicKey(e.target.value)}
+                      placeholder="-----BEGIN PUBLIC KEY-----&#10;... (or drop a .pem file)"
+                      className="w-full min-h-[140px] p-3 rounded-lg bg-bg-tertiary border border-border text-xs text-text-primary font-mono focus:outline-none focus:border-accent"
+                    />
+                    <TextFileDropOverlay show={publicKeyDrop.isDragging} />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Original Message Payload</label>

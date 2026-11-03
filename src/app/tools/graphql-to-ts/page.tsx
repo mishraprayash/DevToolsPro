@@ -4,10 +4,13 @@ import * as React from 'react';
 import { Code } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { gqlToTs } from '@/tools/graphql-to-ts/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
 
 const DEFAULT_GQL = `type User {
   id: ID!
@@ -38,8 +41,64 @@ input CreateUserInput {
 }
 `;
 
+const examples = [
+  { label: 'Blog schema', hint: 'types • enum • input', value: DEFAULT_GQL },
+  {
+    label: 'E-commerce',
+    hint: 'nested lists',
+    value: `enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  CANCELLED
+}
+
+type Product {
+  id: ID!
+  name: String!
+  priceCents: Int!
+  tags: [String!]
+}
+
+type OrderLine {
+  product: Product!
+  quantity: Int!
+}
+
+type Order {
+  id: ID!
+  status: OrderStatus!
+  lines: [OrderLine!]!
+  total: Float
+}
+`,
+  },
+  {
+    label: 'Interface',
+    hint: 'interface • input',
+    value: `interface Node {
+  id: ID!
+}
+
+type Comment {
+  id: ID!
+  body: String!
+  createdAt: String!
+  edited: Boolean
+}
+
+input UpdateCommentInput {
+  id: ID!
+  body: String
+}
+`,
+  },
+];
+
 export default function Page() {
   const [input, setInput] = React.useState(DEFAULT_GQL);
+  const [activeExample, setActiveExample] = React.useState(0);
+  const { isDragging, dropProps } = useTextFileDrop((text) => { setInput(text); setActiveExample(-1); });
   const [output, setOutput] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
 
@@ -54,9 +113,11 @@ export default function Page() {
   }, [input]);
 
   const hint = useShortcutHint();
+  const clearInput = () => { setInput(''); setActiveExample(-1); };
   useToolShortcuts({
     onCopy: () => void copyText(error ? '' : output),
-    onClear: () => setInput(''),
+    onDownload: () => downloadOutput(error ? '' : output, 'graphql-types.ts'),
+    onClear: clearInput,
   });
 
   return (
@@ -65,7 +126,13 @@ export default function Page() {
       description="Paste a GraphQL schema or query, and instantly generate strict TypeScript interfaces and enums."
       category="Formatting"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+      <ExamplePills
+        examples={examples}
+        activeIndex={activeExample}
+        onSelect={(i) => { setActiveExample(i); setInput(examples[i].value); }}
+      />
+
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
         
         {/* Left Input */}
         <div className="flex flex-col space-y-3 h-[600px]">
@@ -73,16 +140,17 @@ export default function Page() {
             <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
               <Code className="h-4 w-4 text-pink-500" /> GraphQL Schema
             </h2>
-            <Button variant="ghost" size="sm" onClick={() => setInput('')} title={hint('Clear', 'clear')} className="h-8">Clear</Button>
+            <Button variant="ghost" size="sm" onClick={clearInput} title={hint('Clear', 'clear')} className="h-8">Clear</Button>
           </div>
-          <div className="flex-1 relative rounded-xl border border-border bg-bg-secondary overflow-hidden focus-within:border-pink-500 transition-colors">
+          <div className="flex-1 relative rounded-xl border border-border bg-bg-secondary overflow-hidden focus-within:border-pink-500 transition-colors" {...dropProps}>
             <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Paste your GraphQL type definitions here..."
+              onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }}
+              placeholder="Paste your GraphQL type definitions here or drop a .graphql file..."
               className="absolute inset-0 w-full h-full p-4 bg-transparent text-text-primary font-mono text-sm focus:outline-none resize-none custom-scrollbar"
               spellCheck={false}
             />
+            <TextFileDropOverlay show={isDragging} />
           </div>
         </div>
 
@@ -92,7 +160,7 @@ export default function Page() {
             <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
               <Code className="h-4 w-4 text-blue-500" /> TypeScript Output
             </h2>
-            <CopyButton shortcut="copy" value={output} />
+            <OutputActions value={error ? '' : output} filename="graphql-types.ts" />
           </div>
           <div className="flex-1 relative rounded-xl border border-border bg-bg-secondary overflow-hidden">
             {error ? (

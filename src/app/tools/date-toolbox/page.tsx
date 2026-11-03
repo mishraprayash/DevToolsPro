@@ -22,8 +22,17 @@ import {
 } from '@/tools/date-toolbox/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+
+const epochExamples = [
+  { label: 'Epoch seconds', hint: '10 digits', value: '1717282800' },
+  { label: 'Epoch millis', hint: '13 digits', value: '1717282800123' },
+  { label: 'ISO 8601', hint: 'UTC', value: '2026-06-01T09:30:00Z' },
+  { label: 'With offset', hint: '+05:45', value: '2026-06-01T15:15:00+05:45' },
+];
 
 export default function Page() {
+  const [activeEpochExample, setActiveEpochExample] = React.useState(-1);
   const [activeTab, setActiveTab] = React.useState<'converter' | 'calculator'>('converter');
 
   // --- Converter States ---
@@ -61,6 +70,7 @@ export default function Page() {
 
   const loadLiveEpoch = () => {
     setEpochInput(String(liveEpoch));
+    setActiveEpochExample(-1);
     toast({ type: 'success', message: 'Current epoch timestamp loaded!' });
   };
 
@@ -159,10 +169,17 @@ export default function Page() {
                   <input
                     type="text"
                     value={epochInput}
-                    onChange={(e) => setEpochInput(e.target.value)}
+                    onChange={(e) => { setEpochInput(e.target.value); setActiveEpochExample(-1); }}
                     placeholder="e.g. 1717282800 or 2026-06-01T00:00:00Z"
                     className="w-full h-10 px-4 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent font-mono"
                   />
+                  <div className="mt-3">
+                    <ExamplePills
+                      examples={epochExamples}
+                      activeIndex={activeEpochExample}
+                      onSelect={(i) => { setActiveEpochExample(i); setEpochInput(epochExamples[i].value); }}
+                    />
+                  </div>
                 </div>
 
                 <Select

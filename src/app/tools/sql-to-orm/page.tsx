@@ -11,7 +11,6 @@ import { Database, Code } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { Button } from '@/components/ui/Button';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { parseSqlCreate, generateOrmEntities, hasCreateTable } from '@/tools/sql-to-orm/utils';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
@@ -19,6 +18,10 @@ import { OpenInMenu } from '@/components/tool/OpenInMenu';
 import { inputTarget } from '@/lib/utils/openInTargets';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
 
 const DEFAULT_SQL = `CREATE TABLE users (
   id SERIAL PRIMARY KEY,
@@ -29,7 +32,38 @@ const DEFAULT_SQL = `CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );`;
 
+const examples = [
+  { label: 'Users', hint: 'defaults • unique', value: DEFAULT_SQL },
+  {
+    label: 'Orders',
+    hint: 'foreign key',
+    value: `CREATE TABLE orders (
+  id BIGSERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id),
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  total_cents INT NOT NULL,
+  notes TEXT,
+  placed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);`,
+  },
+  {
+    label: 'Products',
+    hint: 'decimal • nullable',
+    value: `CREATE TABLE products (
+  sku VARCHAR(32) PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  stock INT DEFAULT 0,
+  discontinued BOOLEAN DEFAULT false,
+  description TEXT
+);`,
+  },
+];
+
+const ormFilename = { prisma: 'schema.prisma', typeorm: 'entity.ts', mongoose: 'model.ts' } as const;
+
 export default function Page() {
+  const [activeExample, setActiveExample] = React.useState(0);
   const { theme } = useAppStore();
   const monacoTheme = theme === 'dark' ? 'app-dark' : 'app-light';
   const editorBg = theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white';
@@ -38,7 +72,9 @@ export default function Page() {
   const [output, setOutput] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
 
-  useToolPrefill('sql-to-orm', ({ input }) => setInput(input));
+  useToolPrefill('sql-to-orm', ({ input }) => { setInput(input); setActiveExample(-1); });
+  const { isDragging, dropProps } = useTextFileDrop((text) => { setInput(text); setActiveExample(-1); });
+  const clearInput = () => { setInput(''); setActiveExample(-1); };
 
   React.useEffect(() => {
     const parseRes = parseSqlCreate(input);
@@ -54,7 +90,8 @@ export default function Page() {
   const hint = useShortcutHint();
   useToolShortcuts({
     onCopy: () => void copyText(error ? '' : output, 'Schema'),
-    onClear: () => setInput(''),
+    onDownload: () => downloadOutput(error ? '' : output, ormFilename[orm]),
+    onClear: clearInput,
   });
 
   return (
@@ -63,7 +100,13 @@ export default function Page() {
       description="Convert raw SQL CREATE TABLE statements into fully-typed models for Prisma, TypeORM, or Mongoose."
       category="Formatting"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[650px]">
+      <ExamplePills
+        examples={examples}
+        activeIndex={activeExample}
+        onSelect={(i) => { setActiveExample(i); setInput(examples[i].value); }}
+      />
+
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-8 h-[650px]">
         
         {/* Left Input */}
         <div className="flex flex-col space-y-3 h-full">
@@ -78,17 +121,18 @@ export default function Page() {
                   inputTarget('sql-prettify', input, 'From SQL to ORM', { label: 'SQL Formatter', hint: 'Format this SQL' }),
                 ]}
               />
-              <Button variant="ghost" size="sm" onClick={() => setInput('')} title={hint('Clear', 'clear')} className="h-8">Clear</Button>
+              <Button variant="ghost" size="sm" onClick={clearInput} title={hint('Clear', 'clear')} className="h-8">Clear</Button>
             </div>
           </div>
-          <div className={`flex-1 rounded-xl border border-border ${editorBg} overflow-hidden`}>
+          <div className={`relative flex-1 rounded-xl border border-border ${editorBg} overflow-hidden`} {...dropProps}>
+            <TextFileDropOverlay show={isDragging} />
             <Editor
               height="100%"
               defaultLanguage="sql"
               theme={monacoTheme}
               beforeMount={defineEditorThemes}
               value={input}
-              onChange={(val) => setInput(val || '')}
+              onChange={(val) => { setInput(val || ''); setActiveExample(-1); }}
               options={{ minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
             />
           </div>
@@ -117,7 +161,7 @@ export default function Page() {
                 ))}
               </div>
             </div>
-            <CopyButton shortcut="copy" value={output} />
+            <OutputActions value={error ? '' : output} filename={ormFilename[orm]} />
           </div>
           <div className={`flex-1 relative rounded-xl border border-border ${editorBg} overflow-hidden`}>
             {error ? (

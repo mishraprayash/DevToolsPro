@@ -7,11 +7,20 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { useToolShortcuts } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+
+const examples = [
+  { label: 'Documentation', hint: '2001:db8::/32', value: '2001:db8::1' },
+  { label: 'Expanded', hint: 'full form', value: '2001:0db8:0000:0000:0000:ff00:0042:8329' },
+  { label: 'Link-local', hint: 'fe80::/10', value: 'fe80::1ff:fe23:4567:890a' },
+  { label: 'Loopback', hint: '::1', value: '::1' },
+];
 
 export default function Ipv6HelperPage() {
+  const [activeExample, setActiveExample] = React.useState(0);
   const [ipInput, setIpInput] = React.useState('2001:db8::1');
 
-  useToolPrefill('ipv6', ({ input }) => setIpInput(input.trim()));
+  useToolPrefill('ipv6', ({ input }) => { setIpInput(input.trim()); setActiveExample(-1); });
   const [copiedType, setCopiedType] = React.useState<string | null>(null);
 
   const result = React.useMemo(() => {
@@ -44,7 +53,7 @@ export default function Ipv6HelperPage() {
               <input
                 type="text"
                 value={ipInput}
-                onChange={(e) => setIpInput(e.target.value)}
+                onChange={(e) => { setIpInput(e.target.value); setActiveExample(-1); }}
                 placeholder="e.g. 2001:0db8::0001"
                 className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2 text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-primary text-sm"
               />
@@ -52,6 +61,11 @@ export default function Ipv6HelperPage() {
             <p className="text-[10px] text-text-muted leading-relaxed">
               Accepts fully expanded, compressed notation with &quot;::&quot; gaps, and standard IPv6 networks.
             </p>
+            <ExamplePills
+              examples={examples}
+              activeIndex={activeExample}
+              onSelect={(i) => { setActiveExample(i); setIpInput(examples[i].value); }}
+            />
           </div>
         </div>
 

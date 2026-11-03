@@ -6,6 +6,10 @@ import { Search, Database, Globe, Layers } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { useToolShortcuts } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
 
 // Standard mock DNS Query: queries google.com for IN A record
 const MOCK_QUERY_HEX = 'abcd0100000100000000000006676f6f676c6503636f6d0000010001';
@@ -13,8 +17,17 @@ const MOCK_QUERY_HEX = 'abcd0100000100000000000006676f6f676c6503636f6d0000010001
 // Standard mock DNS Response: google.com response with A record
 const MOCK_RESPONSE_HEX = 'abcd8180000100010000000006676f6f676c6503636f6d0000010001c00c000100010000003c00048efb280e';
 
+const examples = [
+  { label: 'A response', hint: 'google.com', value: MOCK_RESPONSE_HEX },
+  { label: 'A query', hint: 'google.com', value: MOCK_QUERY_HEX },
+  { label: 'AAAA query', hint: 'example.com', value: '123401000001000000000000076578616d706c6503636f6d00001c0001' },
+  { label: 'MX query', hint: 'gmail.com', value: 'beef0100000100000000000005676d61696c03636f6d00000f0001' },
+];
+
 export default function DnsDecoderPage() {
   const [hexInput, setHexInput] = React.useState(MOCK_RESPONSE_HEX);
+  const [activeExample, setActiveExample] = React.useState(0);
+  const { isDragging, dropProps } = useTextFileDrop((text) => { setHexInput(text.trim()); setActiveExample(-1); });
   const [decoded, setDecoded] = React.useState<DnsPacketDecoded | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -38,9 +51,11 @@ export default function DnsDecoderPage() {
     handleDecode();
   }, [handleDecode]);
 
+  const decodedJson = decoded ? JSON.stringify(decoded, null, 2) : '';
   useToolShortcuts({
     onRun: handleDecode,
-    onCopy: () => void copyText(decoded ? JSON.stringify(decoded, null, 2) : '', 'Decoded packet'),
+    onCopy: () => void copyText(decodedJson, 'Decoded packet'),
+    onDownload: () => downloadOutput(decodedJson, 'dns-packet.json'),
   });
 
   return (
@@ -54,28 +69,23 @@ export default function DnsDecoderPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-text-primary">Hex Packet Payload</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setHexInput(MOCK_QUERY_HEX)}
-                className="text-[10px] bg-bg-secondary hover:bg-bg-hover text-text-secondary px-2 py-1 rounded border border-border cursor-pointer"
-              >
-                Mock Query
-              </button>
-              <button
-                onClick={() => setHexInput(MOCK_RESPONSE_HEX)}
-                className="text-[10px] bg-bg-secondary hover:bg-bg-hover text-text-secondary px-2 py-1 rounded border border-border cursor-pointer"
-              >
-                Mock Response
-              </button>
-            </div>
           </div>
 
-          <textarea
-            value={hexInput}
-            onChange={(e) => setHexInput(e.target.value)}
-            className="w-full min-h-[220px] p-4 rounded-xl bg-bg-tertiary border border-border text-xs text-text-primary focus:outline-none focus:border-accent resize-y font-mono"
-            placeholder="Paste raw DNS hex payload here..."
+          <ExamplePills
+            examples={examples}
+            activeIndex={activeExample}
+            onSelect={(i) => { setActiveExample(i); setHexInput(examples[i].value); }}
           />
+
+          <div className="relative" {...dropProps}>
+            <textarea
+              value={hexInput}
+              onChange={(e) => { setHexInput(e.target.value); setActiveExample(-1); }}
+              className="w-full min-h-[220px] p-4 rounded-xl bg-bg-tertiary border border-border text-xs text-text-primary focus:outline-none focus:border-accent resize-y font-mono"
+              placeholder="Paste raw DNS hex payload here or drop a file..."
+            />
+            <TextFileDropOverlay show={isDragging} />
+          </div>
 
           {error && (
             <div className="p-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded">
@@ -86,6 +96,10 @@ export default function DnsDecoderPage() {
 
         {/* Right Side: Decoded Results */}
         <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-base font-semibold text-text-primary">Decoded Packet</h2>
+            <OutputActions value={decodedJson} copyLabel="Copy JSON" filename="dns-packet.json" />
+          </div>
           {decoded ? (
             <div className="space-y-6 animate-fade-in">
               {/* Header Info */}

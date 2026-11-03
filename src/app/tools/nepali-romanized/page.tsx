@@ -3,14 +3,26 @@
 import * as React from 'react';
 import { Languages, Type } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { Button } from '@/components/ui/Button';
 import { convertToNepali } from '@/tools/nepali-romanized/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
+import { ExamplePills } from '@/components/ui/ExamplePills';
+import { useTextFileDrop } from '@/lib/hooks/useTextFileDrop';
+import { TextFileDropOverlay } from '@/components/ui/TextFileDropOverlay';
+
+const examples = [
+  { label: 'Greeting', hint: 'namaste', value: 'namaste' },
+  { label: 'Introduction', hint: 'sentence', value: 'mero naam ram ho. ma kathmandu ma baschhu.' },
+  { label: 'Question', hint: 'with ?', value: 'tapai lai kasto chha?' },
+  { label: 'Festival wish', hint: 'Dashain', value: 'dashain ko hardik shubhakamana' },
+];
 
 export default function Page() {
   const [input, setInput] = React.useState('namaste');
+  const [activeExample, setActiveExample] = React.useState(0);
+  const { isDragging, dropProps } = useTextFileDrop((text) => { setInput(text); setActiveExample(-1); });
   const [output, setOutput] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -37,20 +49,13 @@ export default function Page() {
     return () => clearTimeout(timer);
   }, [input]);
 
-  const handleDownload = () => {
-    const blob = new Blob([output], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'nepali.txt';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const clearInput = () => { setInput(''); setActiveExample(-1); };
 
   const hint = useShortcutHint();
   useToolShortcuts({
-    onCopy: () => void copyText(output),
-    onDownload: () => { if (output) handleDownload(); },
+    onCopy: () => void copyText(error ? '' : output),
+    onDownload: () => downloadOutput(error ? '' : output, 'nepali.txt'),
+    onClear: clearInput,
   });
 
   return (
@@ -59,19 +64,26 @@ export default function Page() {
       description="Type Romanized English text and instantly convert it into Nepali Unicode (Devanagari script)."
       category="Text"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full min-h-[500px]">
+      <ExamplePills
+        examples={examples}
+        activeIndex={activeExample}
+        onSelect={(i) => { setActiveExample(i); setInput(examples[i].value); }}
+      />
+
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-8 h-full min-h-[500px]">
         {/* Left Input */}
         <div className="flex flex-col space-y-3 h-full">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
               <Type className="h-4 w-4 text-orange-500" /> Romanized English
             </h2>
-            <Button variant="ghost" size="sm" onClick={() => setInput('')} className="h-8">Clear</Button>
+            <Button variant="ghost" size="sm" onClick={clearInput} title={hint('Clear', 'clear')} className="h-8">Clear</Button>
           </div>
-          <div className="flex-1 relative rounded-xl border border-border bg-bg-secondary overflow-hidden focus-within:border-orange-500 transition-colors shadow-inner">
+          <div className="flex-1 relative rounded-xl border border-border bg-bg-secondary overflow-hidden focus-within:border-orange-500 transition-colors shadow-inner" {...dropProps}>
+            <TextFileDropOverlay show={isDragging} />
             <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => { setInput(e.target.value); setActiveExample(-1); }}
               placeholder="Mero naam..."
               className="absolute inset-0 w-full h-full p-4 bg-transparent text-text-primary text-base focus:outline-none resize-none custom-scrollbar"
               spellCheck={false}
@@ -85,10 +97,7 @@ export default function Page() {
             <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
               <Languages className="h-4 w-4 text-red-500" /> Nepali Output
             </h2>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleDownload} title={hint('Download', 'download')} className="h-8">Download</Button>
-              <CopyButton shortcut="copy" value={output} />
-            </div>
+            <OutputActions value={error ? '' : output} filename="nepali.txt" />
           </div>
           <div className="flex-1 relative rounded-xl border border-border bg-bg-secondary overflow-hidden shadow-inner">
             {isLoading && (

@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { RotateCcw, Settings, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { CopyButton } from '@/components/ui/CopyButton';
 import { Input } from '@/components/ui/Input';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ExamplePills } from '@/components/ui/ExamplePills';
@@ -12,6 +11,7 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { svgToJsx, type SvgToJsxOptions } from '@/tools/svg-to-jsx/utils';
 import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 import { copyText } from '@/lib/utils/copyText';
+import { OutputActions, downloadOutput } from '@/components/tool/OutputActions';
 
 const dimensionOptions = [
   { value: 'props', label: 'Responsive ({...props})' },
@@ -116,9 +116,11 @@ export default function Page() {
 
 
   const hint = useShortcutHint();
+  const outputFile = `${componentName.trim() || 'SvgIcon'}.${language === 'ts' ? 'tsx' : 'jsx'}`;
   useToolShortcuts({
     onRun: handleProcess,
     onCopy: () => void copyText(output, 'JSX'),
+    onDownload: () => downloadOutput(output, outputFile),
     onClear: handleClear,
   });
 
@@ -145,7 +147,11 @@ export default function Page() {
               setInput(e.target.value);
               setActiveExample(-1);
             }}
-            placeholder="<svg>...</svg>"
+            onDropText={(text) => {
+              setInput(text);
+              setActiveExample(-1);
+            }}
+            placeholder="<svg>...</svg> — paste markup or drop an .svg file"
             className="min-h-[200px]"
             monospace
           />
@@ -228,7 +234,7 @@ export default function Page() {
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">Generated React Component</h2>
             <div className="flex items-center gap-2">
-              <CopyButton shortcut="copy" value={output} label="Copy" disabled={!output} />
+              <OutputActions value={output} filename={outputFile} />
             </div>
           </div>
 

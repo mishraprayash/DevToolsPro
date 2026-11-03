@@ -212,6 +212,10 @@ export default function Page() {
                 setInput(e.target.value);
                 setActiveExample(-1);
               }}
+              onDropText={(text) => {
+                setInput(text);
+                setActiveExample(-1);
+              }}
               placeholder={mode === 'csv-to-json' ? 'name,age,email\nAlice,30,...' : '[{"name": "Alice", "age": 30}]'}
               monospace
               className="w-full h-full"
