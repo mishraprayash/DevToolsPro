@@ -98,13 +98,10 @@ export function CommandPalette() {
   };
 
   const runAction = async (action: PaletteAction) => {
-    // Shortcuts open their own modal; close ours first so they don't stack.
-    if (action.id === 'open-shortcuts') close();
-    try {
-      await action.run(actionContext);
-    } finally {
-      close();
-    }
+    // Close first: clipboard calls can take a moment to resolve, and the click's user
+    // activation still covers them. Also stops the shortcuts modal stacking on ours.
+    close();
+    await action.run(actionContext);
   };
 
   const handleSelectEntry = (entry: PaletteEntry) => {
