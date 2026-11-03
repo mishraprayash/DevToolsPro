@@ -6,6 +6,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { Button } from '@/components/ui/Button';
 import { convertToNepali } from '@/tools/nepali-romanized/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 export default function Page() {
   const [input, setInput] = React.useState('namaste');
@@ -45,6 +47,12 @@ export default function Page() {
     URL.revokeObjectURL(url);
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(output),
+    onDownload: () => { if (output) handleDownload(); },
+  });
+
   return (
     <ToolLayout
       name="Romanized to Nepali"
@@ -78,8 +86,8 @@ export default function Page() {
               <Languages className="h-4 w-4 text-red-500" /> Nepali Output
             </h2>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleDownload} className="h-8">Download</Button>
-              <CopyButton value={output} />
+              <Button variant="ghost" size="sm" onClick={handleDownload} title={hint('Download', 'download')} className="h-8">Download</Button>
+              <CopyButton shortcut="copy" value={output} />
             </div>
           </div>
           <div className="flex-1 relative rounded-xl border border-border bg-bg-secondary overflow-hidden shadow-inner">

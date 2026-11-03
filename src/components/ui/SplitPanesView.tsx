@@ -72,6 +72,7 @@ export function SplitPanesView({ leftPane, rightPane, toolbarContent }: SplitPan
         role={isFullscreen ? 'dialog' : undefined}
         aria-modal={isFullscreen ? true : undefined}
         aria-label={isFullscreen ? 'Fullscreen editor' : undefined}
+        data-fullscreen-overlay={isFullscreen ? '' : undefined}
       >
         <div className={cn(
           "flex flex-col w-full",

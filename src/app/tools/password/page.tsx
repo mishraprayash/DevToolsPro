@@ -8,6 +8,8 @@ import { ExamplePills } from '@/components/ui/ExamplePills';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { generatePassword, calculateEntropy, type PasswordOptions } from '@/tools/password/utils';
 import { cn } from '@/lib/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const examples = [
   { label: 'Standard (16 chars)', mode: 'random' as const, len: 16, upper: true, lower: true, numbers: true, symbols: false, amb: false },
@@ -58,6 +60,12 @@ export default function Page() {
 
   const entropy = React.useMemo(() => calculateEntropy(input), [input]);
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: generate,
+    onCopy: () => void copyText(input, 'Password'),
+  });
+
   return (
     <ToolLayout
       name="Password & Passphrase Generator"
@@ -76,11 +84,12 @@ export default function Page() {
                 <button
                   onClick={generate}
                   className="p-2 text-text-muted hover:text-text-primary rounded-lg hover:bg-bg-tertiary transition-colors"
-                  title="Regenerate"
+                  title={hint('Regenerate', 'run')}
+                  aria-label="Regenerate"
                 >
                   <RefreshCw className="h-4 w-4" />
                 </button>
-                <CopyButton value={input} variant="ghost" size="sm" className="p-2" title="Copy" />
+                <CopyButton shortcut="copy" value={input} variant="ghost" size="sm" className="p-2" title="Copy" />
               </div>
             </div>
           </div>

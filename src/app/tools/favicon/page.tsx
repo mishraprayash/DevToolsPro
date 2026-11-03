@@ -13,6 +13,8 @@ import {
   DEFAULT_OPTIONS,
   type FaviconShape,
 } from '@/tools/favicon/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const shapeOptions: Array<{ value: FaviconShape; label: string }> = [
   { value: 'rounded', label: 'Rounded' },
@@ -101,6 +103,13 @@ export default function Page() {
     img.src = output.dataUri;
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(output?.svg, 'SVG'),
+    onDownload: () => { if (output) handleDownloadSvg(); },
+    onClear: handleReset,
+  });
+
   return (
     <ToolLayout
       name="Favicon Generator"
@@ -112,7 +121,7 @@ export default function Page() {
           <div className="p-6 rounded-xl border border-border bg-bg-secondary space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-text-primary font-outfit">Favicon Text</h2>
-              <Button variant="ghost" size="sm" onClick={handleReset} icon={<RotateCcw className="h-4 w-4" />}>
+              <Button variant="ghost" size="sm" onClick={handleReset} title={hint('Reset', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
                 Reset
               </Button>
             </div>
@@ -288,13 +297,13 @@ export default function Page() {
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <Button onClick={handleDownloadSvg} disabled={!output} icon={<Download className="h-4 w-4" />}>
+                <Button onClick={handleDownloadSvg} title={hint('Download SVG', 'download')} disabled={!output} icon={<Download className="h-4 w-4" />}>
                   Download SVG
                 </Button>
                 <Button onClick={handleDownloadPng} disabled={!output} variant="secondary" icon={<ImageIcon className="h-4 w-4" />}>
                   Download PNG
                 </Button>
-                {output && <CopyButton value={output.svg} label="Copy SVG" />}
+                {output && <CopyButton shortcut="copy" value={output.svg} label="Copy SVG" />}
               </div>
             </div>
           </div>

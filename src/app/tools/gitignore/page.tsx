@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { generateGitignore, gitignoreTemplates, type GitignoreTemplate } from '@/tools/gitignore/utils';
 import { cn } from '@/lib/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 export default function Page() {
   const [query, setQuery] = React.useState('');
@@ -52,6 +54,12 @@ export default function Page() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(output, '.gitignore'),
+    onDownload: () => { if (output) handleDownload(); },
+  });
 
   return (
     <ToolLayout
@@ -113,10 +121,10 @@ export default function Page() {
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-text-primary">Preview</h2>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleDownload} icon={<Download className="h-4 w-4" />} disabled={!output}>
+              <Button variant="ghost" size="sm" onClick={handleDownload} title={hint('Download', 'download')} icon={<Download className="h-4 w-4" />} disabled={!output}>
                 Download .gitignore
               </Button>
-              <CopyButton value={output} />
+              <CopyButton shortcut="copy" value={output} />
             </div>
           </div>
 

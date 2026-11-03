@@ -14,6 +14,8 @@ import { evaluateJsonPath } from '@/tools/jsonpath/utils';
 import { JsonTreeViewer } from '@/components/ui/JsonTreeViewer';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
+import { useToolShortcuts } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const DEFAULT_JSON = `{
   "store": {
@@ -68,6 +70,10 @@ export default function Page() {
     return () => { cancelled = true; };
   }, [jsonInput, path]);
 
+  useToolShortcuts({
+    onCopy: () => void copyText(output === null || error ? '' : JSON.stringify(output, null, 2), 'Result'),
+  });
+
   return (
     <ToolLayout
       name="JSONPath Playground"
@@ -121,7 +127,7 @@ export default function Page() {
               {!!output && (
                 <div className="flex items-center gap-2 text-xs text-text-muted">
                   <span>{Array.isArray(output) ? `${output.length} matches` : ''}</span>
-                  <CopyButton value={JSON.stringify(output, null, 2)} />
+                  <CopyButton shortcut="copy" value={JSON.stringify(output, null, 2)} />
                 </div>
               )}
             </div>

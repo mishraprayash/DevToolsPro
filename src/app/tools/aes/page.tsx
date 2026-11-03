@@ -11,6 +11,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Input } from '@/components/ui/Input';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 export default function AESCryptoPage() {
   const [action, setAction] = React.useState<'encrypt' | 'decrypt'>('encrypt');
@@ -81,6 +83,12 @@ export default function AESCryptoPage() {
     setError('');
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(error ? '' : output),
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout
       name="AES Encryption & Decryption"
@@ -118,7 +126,7 @@ export default function AESCryptoPage() {
             <h2 className="text-base font-semibold text-text-primary">
               {action === 'encrypt' ? 'Plaintext Input' : 'Ciphertext Input'}
             </h2>
-            <Button variant="ghost" size="sm" onClick={handleClear}>Clear</Button>
+            <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')}>Clear</Button>
           </div>
           <Input
             value={input}
@@ -216,7 +224,7 @@ export default function AESCryptoPage() {
             </h2>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={handleSwap} disabled={!output || !!error} icon={<Copy className="h-3.5 w-3.5" />}>Swap</Button>
-              {output && !error && <CopyButton value={output} label="Copy Output" />}
+              {output && !error && <CopyButton shortcut="copy" value={output} label="Copy Output" />}
             </div>
           </div>
           <div className="relative">

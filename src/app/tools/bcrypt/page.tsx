@@ -6,6 +6,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { generateBcryptHash, compareBcryptHash } from '@/tools/bcrypt/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 export default function Page() {
   const [password, setPassword] = React.useState('');
@@ -33,6 +35,12 @@ export default function Page() {
       setIsMatch(null);
     }
   };
+
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: () => { if (password) void handleGenerate(); },
+    onCopy: () => void copyText(hash, 'Hash'),
+  });
 
   return (
     <ToolLayout
@@ -73,14 +81,14 @@ export default function Page() {
             <p className="text-xs text-text-muted mt-1">Higher rounds = slower, more secure (Default: 10)</p>
           </div>
 
-          <Button onClick={handleGenerate} className="w-full" disabled={!password}>
+          <Button onClick={handleGenerate} title={hint('Generate hash', 'run')} className="w-full" disabled={!password}>
             Generate Bcrypt Hash
           </Button>
 
           {hash && (
             <div className="mt-4 p-3 rounded bg-bg-tertiary border border-border flex items-center justify-between gap-3 font-mono text-sm break-all">
               <span className="text-text-primary break-all">{hash}</span>
-              <CopyButton value={hash} />
+              <CopyButton shortcut="copy" value={hash} />
             </div>
           )}
         </div>

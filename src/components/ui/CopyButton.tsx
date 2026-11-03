@@ -5,6 +5,8 @@ import { Check, Copy } from 'lucide-react';
 import { Button } from './Button';
 import { toast } from './Toast';
 import { cn } from '@/lib/utils';
+import { useShortcutPlatform } from '@/lib/hooks/useToolShortcuts';
+import { withShortcut, type ToolShortcutAction } from '@/lib/utils/toolShortcuts';
 
 export interface CopyButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   value: string;
@@ -12,6 +14,8 @@ export interface CopyButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   variant?: 'primary' | 'secondary' | 'ghost';
+  /** Shows this tool shortcut in the tooltip, e.g. "Copy (⌘⇧↵)". The page binds the key via useToolShortcuts. */
+  shortcut?: ToolShortcutAction;
 }
 
 export function CopyButton({
@@ -22,9 +26,13 @@ export function CopyButton({
   variant = 'secondary',
   className,
   children,
+  shortcut,
+  title,
   ...props
 }: CopyButtonProps) {
   const [copied, setCopied] = React.useState(false);
+  const platform = useShortcutPlatform();
+  const resolvedTitle = shortcut ? withShortcut(title ?? label, shortcut, platform) : title;
 
   // Keyboard shortcut handler for instant output copying
   React.useEffect(() => {
@@ -71,6 +79,7 @@ export function CopyButton({
       disabled={disabled}
       className={cn(className, copied && variant === 'ghost' && 'text-success')}
       icon={copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+      title={resolvedTitle}
       {...props}
     >
       {children ?? (copied ? 'Copied!' : label)}

@@ -19,6 +19,8 @@ import { defineEditorThemes } from '@/tools/editor-theme';
 import { OpenInMenu } from '@/components/tool/OpenInMenu';
 import { inputTarget } from '@/lib/utils/openInTargets';
 import { hasCreateTable } from '@/tools/sql-to-orm/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const dialectOptions = [
   { value: 'sql', label: 'Standard SQL' },
@@ -76,6 +78,12 @@ export default function Page() {
 
   const stats = React.useMemo(() => analyzeSql(input), [input]);
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: () => void handleFormat(),
+    onCopy: () => void copyText(output, 'SQL'),
+  });
+
   return (
     <ToolLayout
       name="SQL Formatter & Prettifier"
@@ -111,7 +119,7 @@ export default function Page() {
             ]}
           />
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={handleFormat} icon={<RefreshCcw className="h-4 w-4" />} className="flex-1">
+            <Button variant="secondary" onClick={handleFormat} title={hint('Format', 'run')} icon={<RefreshCcw className="h-4 w-4" />} className="flex-1">
               Format
             </Button>
             <Button variant="secondary" onClick={handleMinify} icon={<Minimize2 className="h-4 w-4" />} className="flex-1">
@@ -186,7 +194,7 @@ export default function Page() {
                     ]}
                   />
                 )}
-                <CopyButton value={output} />
+                <CopyButton shortcut="copy" value={output} />
               </div>
             </div>
             <div className={`flex-1 relative rounded-xl border border-border ${editorBg} overflow-hidden`}>

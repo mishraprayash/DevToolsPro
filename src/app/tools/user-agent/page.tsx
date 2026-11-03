@@ -9,6 +9,7 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { useToolPrefill, readToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { parseUserAgent } from '@/tools/user-agent/utils';
 import { toast } from '@/components/ui/Toast';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 
 const examples = [
   { label: 'Chrome (macOS)', value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
@@ -76,6 +77,11 @@ export default function Page() {
     return <Laptop className="h-5 w-5 text-accent shrink-0 mt-0.5" />;
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout
       name="User-Agent Parser & Device Inspector"
@@ -93,7 +99,7 @@ export default function Page() {
               <Button variant="ghost" size="sm" onClick={detectMyBrowser}>
                 Detect Mine
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+              <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
                 Clear
               </Button>
             </div>

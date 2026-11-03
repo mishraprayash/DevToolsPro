@@ -10,6 +10,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { signPayloadRsa, verifySignatureRsa, type GeneratedKeypair } from '@/tools/rsa-sandbox/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const keySizeOptions = [
   { value: '1024', label: '1024 bits (Weak - Testing only)' },
@@ -157,6 +159,12 @@ export default function Page() {
     toast({ type: 'success', message: `Downloaded ${filename}` });
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: () => void (activeTab === 'generate' ? handleGenerate() : activeTab === 'sign' ? handleSign() : handleVerify()),
+    onCopy: () => void (activeTab === 'sign' ? copyText(signatureOutput, 'Signature') : copyText(keypair?.publicKey, 'Public key')),
+  });
+
   return (
     <ToolLayout
       name="RSA Cryptography Sandbox"
@@ -225,7 +233,7 @@ export default function Page() {
               </div>
 
               <Button
-                onClick={handleGenerate}
+                onClick={handleGenerate} title={hint('Generate keypair', 'run')}
                 disabled={generateLoading}
                 className="w-full h-12 text-sm font-semibold"
                 icon={generateLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
@@ -343,7 +351,7 @@ export default function Page() {
               </div>
 
               <Button
-                onClick={handleSign}
+                onClick={handleSign} title={hint('Sign', 'run')}
                 disabled={signLoading}
                 className="w-full h-11 text-sm font-semibold"
                 icon={signLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
@@ -355,7 +363,7 @@ export default function Page() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-text-primary">Base64 Signature Output</h2>
-                {signatureOutput && <CopyButton value={signatureOutput} label="Copy Signature" />}
+                {signatureOutput && <CopyButton shortcut="copy" value={signatureOutput} label="Copy Signature" />}
               </div>
 
               {signatureOutput ? (
@@ -433,7 +441,7 @@ export default function Page() {
               </div>
 
               <Button
-                onClick={handleVerify}
+                onClick={handleVerify} title={hint('Verify', 'run')}
                 disabled={verifyLoading}
                 className="w-full h-11 text-sm font-semibold"
                 icon={verifyLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}

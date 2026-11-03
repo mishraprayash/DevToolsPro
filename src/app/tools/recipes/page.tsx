@@ -35,6 +35,8 @@ import {
   type SavedRecipe,
   type OpCategory,
 } from '@/tools/recipes/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const STORAGE_KEY = 'devtools-pro:recipes:saved';
 const RUN_DEBOUNCE_MS = 250;
@@ -580,6 +582,13 @@ export default function Page() {
     }
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(failed ? '' : finalOutput),
+    onDownload: () => { if (finalOutput && !failed) downloadOutput(); },
+    onClear: clearAll,
+  });
+
   return (
     <ToolLayout
       name="Recipes (Transform Pipeline)"
@@ -593,7 +602,7 @@ export default function Page() {
             activeIndex={activeExample}
             onSelect={loadExample}
           />
-          <Button variant="ghost" size="sm" onClick={clearAll} icon={<RotateCcw className="h-4 w-4" />}>Clear</Button>
+          <Button variant="ghost" size="sm" onClick={clearAll} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>Clear</Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-4 items-start">
@@ -731,8 +740,8 @@ export default function Page() {
             <div className="flex items-center justify-between h-8 gap-2">
               <h2 id="recipe-output-heading" className="text-base font-medium text-text-secondary">Output</h2>
               <div className="flex items-center gap-2">
-                <CopyButton value={finalOutput} label="Output" disabled={!finalOutput || !!failed} />
-                <Button variant="secondary" size="sm" onClick={downloadOutput} disabled={!finalOutput || !!failed} icon={<Download className="h-3.5 w-3.5" />}>
+                <CopyButton shortcut="copy" value={finalOutput} label="Output" disabled={!finalOutput || !!failed} />
+                <Button variant="secondary" size="sm" onClick={downloadOutput} title={hint('Download output', 'download')} disabled={!finalOutput || !!failed} icon={<Download className="h-3.5 w-3.5" />}>
                   Download
                 </Button>
               </div>

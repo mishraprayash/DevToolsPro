@@ -10,6 +10,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { generateParagraphs, generateSentences, generateWords, analyzeText, transformText, type TextStats } from '@/tools/string-utils/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 type LoremType = 'paragraphs' | 'sentences' | 'words';
 
@@ -56,6 +58,13 @@ export default function Page() {
   React.useEffect(() => {
     setTransformOutput(transformText(transformInput, transformType));
   }, [transformInput, transformType]);
+
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: () => { if (activeTab === 'generator') handleGenerate(); },
+    onCopy: () => { if (activeTab === 'generator') void copyText(genOutput); else if (activeTab === 'transformer') void copyText(transformOutput, 'Result'); },
+    onClear: () => { if (activeTab === 'analyzer') setAnalyzeInput(''); },
+  });
 
   return (
     <ToolLayout
@@ -109,7 +118,7 @@ export default function Page() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-text-primary">Source Text</h2>
-                <Button variant="ghost" size="sm" onClick={() => setAnalyzeInput('')}>Clear</Button>
+                <Button variant="ghost" size="sm" onClick={() => setAnalyzeInput('')} title={hint('Clear', 'clear')}>Clear</Button>
               </div>
               <textarea
                 value={analyzeInput}
@@ -189,7 +198,7 @@ export default function Page() {
               </div>
 
               <Button
-                onClick={handleGenerate}
+                onClick={handleGenerate} title={hint('Generate', 'run')}
                 className="w-full h-11"
                 icon={<RefreshCw className="h-4 w-4" />}
               >
@@ -200,7 +209,7 @@ export default function Page() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-text-primary font-outfit">Lorem Ipsum Output</h2>
-                {genOutput && <CopyButton value={genOutput} label="Copy Output" />}
+                {genOutput && <CopyButton shortcut="copy" value={genOutput} label="Copy Output" />}
               </div>
               <GradientBox value={genOutput} className="min-h-[280px] text-sm leading-relaxed" />
             </div>
@@ -238,7 +247,7 @@ export default function Page() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-text-primary">Transformed Result</h2>
-                {transformOutput && <CopyButton value={transformOutput} label="Copy Result" />}
+                {transformOutput && <CopyButton shortcut="copy" value={transformOutput} label="Copy Result" />}
               </div>
               <GradientBox value={transformOutput} className="min-h-[220px] text-sm font-mono leading-relaxed" />
             </div>

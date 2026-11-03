@@ -17,6 +17,8 @@ import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
 import { OpenInMenu } from '@/components/tool/OpenInMenu';
 import { inputTarget } from '@/lib/utils/openInTargets';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const DEFAULT_SQL = `CREATE TABLE users (
   id SERIAL PRIMARY KEY,
@@ -49,6 +51,12 @@ export default function Page() {
     }
   }, [input, orm]);
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(error ? '' : output, 'Schema'),
+    onClear: () => setInput(''),
+  });
+
   return (
     <ToolLayout
       name="SQL to ORM Entity Generator"
@@ -70,7 +78,7 @@ export default function Page() {
                   inputTarget('sql-prettify', input, 'From SQL to ORM', { label: 'SQL Formatter', hint: 'Format this SQL' }),
                 ]}
               />
-              <Button variant="ghost" size="sm" onClick={() => setInput('')} className="h-8">Clear</Button>
+              <Button variant="ghost" size="sm" onClick={() => setInput('')} title={hint('Clear', 'clear')} className="h-8">Clear</Button>
             </div>
           </div>
           <div className={`flex-1 rounded-xl border border-border ${editorBg} overflow-hidden`}>
@@ -109,7 +117,7 @@ export default function Page() {
                 ))}
               </div>
             </div>
-            <CopyButton value={output} />
+            <CopyButton shortcut="copy" value={output} />
           </div>
           <div className={`flex-1 relative rounded-xl border border-border ${editorBg} overflow-hidden`}>
             {error ? (

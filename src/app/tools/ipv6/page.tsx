@@ -5,6 +5,8 @@ import { processIpv6 } from '@/tools/ipv6/utils';
 import { Shield, Eye, Copy, Check, CheckCircle } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
+import { useToolShortcuts } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 export default function Ipv6HelperPage() {
   const [ipInput, setIpInput] = React.useState('2001:db8::1');
@@ -21,6 +23,10 @@ export default function Ipv6HelperPage() {
     setCopiedType(type);
     setTimeout(() => setCopiedType(null), 2000);
   };
+
+  useToolShortcuts({
+    onCopy: () => void copyText(result.success ? result.data.expanded : '', 'Expanded address'),
+  });
 
   return (
     <ToolLayout

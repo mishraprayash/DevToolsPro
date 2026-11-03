@@ -3,10 +3,13 @@
 import * as React from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { useAppStore } from '@/lib/store/useStore';
-import { Keyboard, Command, SunMoon, Search, CornerDownLeft, Sparkles, X, Maximize2, Minimize2 } from 'lucide-react';
+import { Keyboard, Command, SunMoon, Search, CornerDownLeft, Sparkles, X, Maximize2, Minimize2, Play, Copy, Download, Eraser, Plus } from 'lucide-react';
+import { useShortcutPlatform } from '@/lib/hooks/useToolShortcuts';
+import { formatShortcut } from '@/lib/utils/toolShortcuts';
 
 export function ShortcutsModal() {
   const { shortcutsOpen, setShortcutsOpen, toggleTheme } = useAppStore();
+  const platform = useShortcutPlatform();
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -51,6 +54,16 @@ export function ShortcutsModal() {
         { key: '↑ / ↓', desc: 'Navigate up and down the tool list', icon: CornerDownLeft },
         { key: 'Enter ↵', desc: 'Launch the selected tool immediately', icon: Sparkles },
         { key: 'Esc', desc: 'Dismiss command palette', icon: X },
+      ],
+    },
+    {
+      title: 'Tool shortcuts',
+      shortcuts: [
+        { key: formatShortcut('run', platform), desc: 'Run / process / generate (works while typing)', icon: Play },
+        { key: formatShortcut('copy', platform), desc: 'Copy the main output', icon: Copy },
+        { key: formatShortcut('download', platform), desc: 'Download the output (tools with Download)', icon: Download },
+        { key: formatShortcut('clear', platform), desc: 'Clear the input (tools with Clear)', icon: Eraser },
+        { key: formatShortcut('newTab', platform), desc: 'New workspace tab (tabbed tools)', icon: Plus },
       ],
     },
     {

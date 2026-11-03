@@ -20,6 +20,8 @@ import {
   addSubtractDate,
   computeDateDifference
 } from '@/tools/date-toolbox/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 export default function Page() {
   const [activeTab, setActiveTab] = React.useState<'converter' | 'calculator'>('converter');
@@ -98,6 +100,12 @@ export default function Page() {
       toast({ type: 'error', message: `Calculation failed: ${(err as Error).message}` });
     }
   };
+
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: () => { if (activeTab === 'calculator') handleCalculate(); },
+    onCopy: () => void copyText(activeTab === 'calculator' ? calcResult : convResult ? convResult.date.toISOString() : '', activeTab === 'calculator' ? 'Results' : 'ISO date'),
+  });
 
   return (
     <ToolLayout
@@ -266,7 +274,7 @@ export default function Page() {
                 )}
               </div>
 
-              <Button onClick={handleCalculate} className="w-full h-11" icon={<Calendar className="h-4 w-4" />}>
+              <Button onClick={handleCalculate} title={hint('Calculate', 'run')} className="w-full h-11" icon={<Calendar className="h-4 w-4" />}>
                 Execute Date Calculation
               </Button>
             </div>
@@ -274,7 +282,7 @@ export default function Page() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-text-primary">Calculation Results</h2>
-                {calcResult && <CopyButton value={calcResult} label="Copy Results" />}
+                {calcResult && <CopyButton shortcut="copy" value={calcResult} label="Copy Results" />}
               </div>
               <GradientBox value={calcResult || ''} placeholder="Calculated results will appear here..." className="min-h-[220px] font-mono leading-relaxed" />
             </div>

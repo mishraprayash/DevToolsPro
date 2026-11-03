@@ -17,6 +17,8 @@ import { sendToTool } from '@/lib/utils/toolHandoff';
 import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
 import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
 import { SplitPanesView } from '@/components/ui/SplitPanesView';
+import { useToolShortcuts } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 interface EncoderState {
   encodingMode: 'base64' | 'url' | 'entities';
@@ -269,7 +271,7 @@ export default function Page() {
         <h2 className="text-base font-semibold text-text-primary">Converted Output</h2>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={handleSwap} disabled={!state.output} icon={<Copy className="h-3.5 w-3.5" />}>Swap</Button>
-          {state.output && <CopyButton value={state.output} label="Copy Output" />}
+          {state.output && <CopyButton shortcut="copy" value={state.output} label="Copy Output" />}
         </div>
       </div>
       <div className="flex-1 min-h-[200px] h-full">
@@ -304,6 +306,12 @@ export default function Page() {
       )}
     </div>
   );
+
+  useToolShortcuts({
+    onRun: handleProcess,
+    onCopy: () => void copyText(state.output),
+    onNewTab: addWorkspace,
+  });
 
   return (
     <ToolLayout

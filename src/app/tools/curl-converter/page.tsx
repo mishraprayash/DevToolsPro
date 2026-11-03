@@ -16,6 +16,8 @@ import { useAppStore, type HistoryItem } from '@/lib/store/useStore';
 import { OpenInMenu } from '@/components/tool/OpenInMenu';
 import { inputTarget, jsonToolTarget } from '@/lib/utils/openInTargets';
 import { extractCurlUrl, extractCurlJsonBody } from '@/tools/curl-converter/request';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const languageOptions = [
   { value: 'javascript-fetch', label: 'JavaScript (Fetch)' },
@@ -111,6 +113,13 @@ export default function Page() {
     }
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: () => void handleProcess(),
+    onCopy: () => void copyText(output),
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout 
       name="cURL Converter" 
@@ -125,7 +134,7 @@ export default function Page() {
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">cURL Command</h2>
-            <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+            <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
               Clear
             </Button>
           </div>
@@ -196,7 +205,7 @@ export default function Page() {
               </span>
             </h2>
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <CopyButton value={output} disabled={!output} />
+              <CopyButton shortcut="copy" value={output} disabled={!output} />
               <OpenInMenu
                 targets={[
                   inputTarget('url-parser', extractCurlUrl(input), 'From cURL', { label: 'URL Parser', hint: 'Inspect the request URL' }),

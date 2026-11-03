@@ -10,6 +10,8 @@ import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { ImageUp, Trash2, Settings2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 export default function Page() {
   const [result, setResult] = React.useState<FileReadResult | null>(null);
@@ -112,6 +114,13 @@ export default function Page() {
     ? base64Content.substring(0, 100_000) + `\n\n... [TRUNCATED FOR UI PERFORMANCE - ${formatFileSize(base64Content.length)} TOTAL].\nUSE 'COPY' OR 'DOWNLOAD' BUTTON TO GET THE FULL STRING.`
     : base64Content;
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(base64Content, 'Base64'),
+    onDownload: () => { if (result?.success) handleDownload(); },
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout name="Image to Base64" description="Convert images to base64 data URLs with optional compression to drastically reduce CSS/HTML bundle sizes" category="Encoding">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -151,7 +160,7 @@ export default function Page() {
                  <p className="text-sm font-medium truncate">{originalFile.name}</p>
                  <p className="text-xs text-text-muted">Original: {formatFileSize(originalFile.size)}</p>
                </div>
-               <Button variant="ghost" size="sm" onClick={handleClear} icon={<Trash2 className="h-4 w-4 text-error" />}>
+               <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<Trash2 className="h-4 w-4 text-error" />}>
                  Clear
                </Button>
             </div>
@@ -264,8 +273,8 @@ export default function Page() {
                     </div>
                     
                     <div className="flex gap-2">
-                      <CopyButton value={base64Content} label="Copy Base64" />
-                      <Button variant="secondary" size="sm" onClick={handleDownload} icon={<Download className="h-4 w-4" />}>
+                      <CopyButton shortcut="copy" value={base64Content} label="Copy Base64" />
+                      <Button variant="secondary" size="sm" onClick={handleDownload} title={hint('Download', 'download')} icon={<Download className="h-4 w-4" />}>
                         Download
                       </Button>
                     </div>

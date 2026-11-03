@@ -7,6 +7,8 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { Select } from '@/components/ui/Select';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { cn } from '@/lib/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 interface ItemConfig {
   id: number;
@@ -259,6 +261,12 @@ export default function Page() {
     gridAlign,
   ]);
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(cssCode, 'CSS'),
+    onClear: handleReset,
+  });
+
   return (
     <ToolLayout
       name="CSS Flexbox & Grid Visual Sandbox"
@@ -298,7 +306,7 @@ export default function Page() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">Flex &amp; Grid Controls</h2>
-            <Button variant="ghost" size="sm" onClick={handleReset} icon={<RotateCcw className="h-4 w-4" />}>
+            <Button variant="ghost" size="sm" onClick={handleReset} title={hint('Reset', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
               Reset
             </Button>
           </div>
@@ -571,7 +579,7 @@ export default function Page() {
                 <span className="text-xs font-semibold text-text-muted uppercase tracking-wider flex items-center gap-1">
                   <Code className="h-3.5 w-3.5" /> Native CSS Syntax
                 </span>
-                <CopyButton value={cssCode} size="sm" />
+                <CopyButton shortcut="copy" value={cssCode} size="sm" />
               </div>
               <pre className="p-3.5 rounded-xl border border-border bg-bg-secondary text-xs font-mono font-bold text-text-primary overflow-x-auto shadow-inner leading-normal select-all">
                 {cssCode}
