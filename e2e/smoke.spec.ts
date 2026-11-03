@@ -11,13 +11,7 @@ const BENIGN_CONSOLE_ERRORS: RegExp[] = [];
  * Tool pages with a known, real app bug. The test still asserts correct
  * behaviour but is marked fixme until the bug is fixed.
  */
-const KNOWN_BROKEN_TOOLS: Record<string, string> = {
-  // Hydration mismatch (React #418): the page is statically prerendered at build
-  // time, and src/app/tools/timezone/page.tsx seeds state during render with
-  // `new Date()` (dateStr) and a window-dependent LOCAL_TZ ('UTC' on the server),
-  // so the server HTML never matches the first client render.
-  timezone: 'hydration mismatch from Date/timezone read during render',
-};
+const KNOWN_BROKEN_TOOLS: Record<string, string> = {};
 
 type Fixtures = {
   /** Allow a console error matching `re` in the current test only. */
@@ -90,7 +84,9 @@ test.describe('tool pages', () => {
       expect(catRes.status(), `breadcrumb ${href}`).toBe(200);
 
       // Give client effects (workers, hydration-time effects) a moment to surface errors
-      await page.waitForLoadState('networkidle');
+      // Not 'networkidle': Monaco loads from a CDN, so idle can take arbitrarily long on slow networks
+      await page.waitForLoadState('load');
+      await page.waitForTimeout(1_000);
     });
   }
 });
@@ -245,7 +241,7 @@ test.describe('flows', () => {
 
   test('command palette opens with Ctrl/Meta+K', async ({ page }) => {
     await page.goto('/');
-    const combobox = page.getByRole('combobox', { name: /Search \d+ tools/ });
+    const combobox = page.getByRole('combobox', { name: /Search tools/ });
     // The server-rendered page is visible before the shortcut listener is attached
     // on hydration, so retry the key press until the palette opens.
     await expect(async () => {
@@ -255,7 +251,7 @@ test.describe('flows', () => {
     await expect(combobox).toBeFocused();
 
     await combobox.fill('base64');
-    const results = page.getByRole('listbox', { name: 'Tool results' });
+    const results = page.getByRole('listbox', { name: 'Results' });
     await expect(results.getByRole('option').first()).toContainText(/Encoder|Base64/i);
     await page.keyboard.press('Escape');
     await expect(combobox).toBeHidden();

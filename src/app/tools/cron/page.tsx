@@ -39,6 +39,9 @@ const examples = [
 export default function Page() {
   const [input, setInput] = React.useState(examples[1].value);
   const [activeExample, setActiveExample] = React.useState(1);
+  // Next runs depend on the current time and locale, so compute them only on the client
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
 
   useToolPrefill('cron', ({ input }) => { setInput(input); setActiveExample(-1); });
 
@@ -59,13 +62,13 @@ export default function Page() {
   }, [input]);
 
   const upcomingRuns = React.useMemo(() => {
-    if (!input.trim()) return null;
+    if (!mounted || !input.trim()) return null;
     const res = getNextRuns(input, 5);
     if (res.success) {
       return res.dates;
     }
     return null;
-  }, [input]);
+  }, [input, mounted]);
 
   // Sync quick builder changes to raw input
   const syncBuilderToRaw = React.useCallback(() => {
@@ -335,7 +338,7 @@ export default function Page() {
               </div>
             ) : (
               <div className="p-8 text-center border border-border border-dashed rounded-xl text-text-muted text-xs italic select-none">
-                No upcoming executions could be parsed. Verify the cron syntax above.
+                {mounted ? 'No upcoming executions could be parsed. Verify the cron syntax above.' : 'Calculating upcoming runs…'}
               </div>
             )}
           </div>
