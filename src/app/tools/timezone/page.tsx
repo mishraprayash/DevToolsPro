@@ -8,7 +8,9 @@ import { cn } from '@/lib/utils';
 import { convertTime, getCommonTimezones, getGroupedTimezones, getTimezoneOffsetStr, type TimezoneInfo } from '@/tools/timezone/utils';
 
 const commonTzs = getCommonTimezones();
-const LOCAL_TZ = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC';
+// Placeholder date for the server render; the real local zone and time are set after mount
+// so server HTML and the first client render match (no hydration mismatch).
+const INITIAL_DATE_STR = '2026-01-01T09:00';
 
 function formatLocalDateTime(date: Date): string {
   const y = date.getFullYear();
@@ -20,15 +22,16 @@ function formatLocalDateTime(date: Date): string {
 }
 
 export default function Page() {
-  const [fromTz, setFromTz] = React.useState(LOCAL_TZ);
+  const [fromTz, setFromTz] = React.useState('UTC');
   const [toTz, setToTz] = React.useState('UTC');
-  const [dateStr, setDateStr] = React.useState(() => formatLocalDateTime(new Date()));
+  const [dateStr, setDateStr] = React.useState(INITIAL_DATE_STR);
   const [resultIndex, setResultIndex] = React.useState(0);
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
     setFromTz(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setDateStr(formatLocalDateTime(new Date()));
   }, []);
 
   const grouped = React.useMemo(() => getGroupedTimezones(), []);
@@ -86,6 +89,11 @@ export default function Page() {
 
   return (
     <ToolLayout name="Time Zone Converter" description="Convert time between world zones and plan overlapping meetings visually" category="Date & Time">
+      {/* Times depend on the browser's zone and clock, so render only on the client (avoids a hydration mismatch) */}
+      {!mounted ? (
+        <div className="h-[28rem] rounded-xl border border-border bg-bg-secondary animate-pulse" aria-hidden="true" />
+      ) : (
+      <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -189,7 +197,7 @@ export default function Page() {
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {commonTzs.map((tz) => {
-                const c = convertTime(new Date(dateStr), LOCAL_TZ, tz.name);
+                const c = convertTime(new Date(dateStr), fromTz, tz.name);
                 if (!c.success) return null;
                 const shortName = tz.abbr || (tz.name.split('/').pop() ?? '');
                 return (
@@ -271,6 +279,8 @@ export default function Page() {
           })}
         </div>
       </div>
+      </>
+      )}
     </ToolLayout>
   );
 }

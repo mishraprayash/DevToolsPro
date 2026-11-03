@@ -34,5 +34,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Lint Code**: `npm run lint`
 - **Production Build**: `npm run build`
 - **Start Production**: `npm run start`
+- **Unit Tests (Vitest)**: `npm test` — `**/__tests__/*.test.ts` for pure logic in `src/`
+- **E2E Smoke Tests (Playwright)**: `npm run test:e2e` (or `npm run test:e2e:ui`) — specs in `e2e/`, config in `playwright.config.ts`. Builds and serves production on port 3100 (reuses a running server locally). First time: `npx playwright install chromium`.
 
-> **Note**: There is no test runner installed. DO NOT install or configure one unless explicitly requested.
+> **Note**: Vitest (unit) and Playwright (e2e) are the only test runners; do not add others. Vitest excludes `e2e/`. Every tool in `src/tools/registry.ts` is smoke-tested automatically (loads, `<h1>`, no console/page errors, valid breadcrumb category link), so a new tool needs no e2e changes unless it has a key flow worth covering.
