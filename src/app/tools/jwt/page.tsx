@@ -18,6 +18,8 @@ import { toast } from '@/components/ui/Toast';
 import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
 import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
 import { SplitPanesView } from '@/components/ui/SplitPanesView';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const SAMPLE_JWT =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
@@ -492,7 +494,7 @@ export default function Page() {
                 <span>Verify Signature (HMAC)</span>
               </div>
               <button
-                onClick={handleVerify}
+                onClick={handleVerify} title={hint('Verify signature', 'run')}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-bg-tertiary border border-border text-text-secondary hover:text-text-primary hover:border-border-hover transition-colors"
               >
                 <Timer className="h-3.5 w-3.5" />
@@ -721,7 +723,7 @@ export default function Page() {
               Generated Signed Token
             </span>
           </h2>
-          <CopyButton value={state.signedToken} disabled={!state.signedToken} />
+          <CopyButton shortcut="copy" value={state.signedToken} disabled={!state.signedToken} />
         </div>
 
         <GradientBox value={state.signedToken} placeholder="JWT Signed token will appear here..." className="flex-1 min-h-[200px] text-xs font-bold" />
@@ -738,6 +740,13 @@ export default function Page() {
 
     return <SplitPanesView toolbarContent={toolbarContent} leftPane={leftPane} rightPane={rightPane} />;
   };
+
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: () => void (state.activeMode === 'sign' ? handleSign() : handleVerify()),
+    onCopy: () => void (state.activeMode === 'sign' ? copyText(state.signedToken, 'Token') : copyText(decoded ? JSON.stringify(decoded.payload, null, 2) : '', 'Payload')),
+    onNewTab: addWorkspace,
+  });
 
   return (
     <ToolLayout name="JWT Decoder & Token Builder" description="Decode and inspect JWT header/payload structures, or sign new secure HMAC JSON Web Tokens instantly" category="Security">

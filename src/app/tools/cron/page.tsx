@@ -10,6 +10,8 @@ import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { translateCronToEnglish, getNextRuns } from '@/tools/cron/utils';
 import { getRelativeTime } from '@/tools/date-toolbox/utils';
 import { cn } from '@/lib/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const cronFields5 = [
   { name: 'minute', range: '0-59' },
@@ -106,6 +108,12 @@ export default function Page() {
     }
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(input.trim(), 'Cron expression'),
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout
       name="Cron Expression Parser"
@@ -120,7 +128,7 @@ export default function Page() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-medium text-text-secondary">Cron Expression Input</h2>
-              <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+              <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
                 Clear
               </Button>
             </div>

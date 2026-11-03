@@ -9,6 +9,7 @@ import { wrapHtmlDocument, formatHtml } from '@/tools/html-preview/utils';
 import { cn } from '@/lib/utils';
 import { RotateCcw, Monitor, Smartphone, Tablet, Terminal, Settings } from 'lucide-react';
 import { toast } from '@/components/ui/Toast';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 
 interface Example { 
   label: string; 
@@ -209,6 +210,11 @@ export default function Page() {
     setActiveExample(-1);
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout 
       name="HTML Live Sandbox & Previewer" 
@@ -226,7 +232,7 @@ export default function Page() {
               <Button variant="ghost" size="sm" onClick={handleFormat}>
                 Beautify
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+              <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
                 Clear
               </Button>
             </div>

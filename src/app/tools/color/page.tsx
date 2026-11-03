@@ -10,6 +10,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { convertColor, type HarmonyColor } from '@/tools/color/utils';
 import { toast } from '@/components/ui/Toast';
+import { useToolShortcuts } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const examples = [
   { label: 'Tomato Red', value: 'tomato' },
@@ -107,6 +109,10 @@ export default function Page() {
 
   const whiteChecks = result.success ? getWcagChecks(result.contrastOnWhite) : null;
   const blackChecks = result.success ? getWcagChecks(result.contrastOnBlack) : null;
+
+  useToolShortcuts({
+    onCopy: () => void copyText(result.success ? result.hex : '', 'HEX'),
+  });
 
   return (
     <ToolLayout 

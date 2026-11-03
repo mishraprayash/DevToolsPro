@@ -4,6 +4,8 @@ import * as React from 'react';
 import { decodeDnsPacket, type DnsPacketDecoded } from '@/tools/dns-decoder/utils';
 import { Search, Database, Globe, Layers } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolShortcuts } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 // Standard mock DNS Query: queries google.com for IN A record
 const MOCK_QUERY_HEX = 'abcd0100000100000000000006676f6f676c6503636f6d0000010001';
@@ -35,6 +37,11 @@ export default function DnsDecoderPage() {
   React.useEffect(() => {
     handleDecode();
   }, [handleDecode]);
+
+  useToolShortcuts({
+    onRun: handleDecode,
+    onCopy: () => void copyText(decoded ? JSON.stringify(decoded, null, 2) : '', 'Decoded packet'),
+  });
 
   return (
     <ToolLayout

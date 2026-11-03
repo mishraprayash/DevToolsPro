@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/Input';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { hashString, hashAlgorithms, HashAlgorithm } from '@/tools/hash/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 interface Example { label: string; algo: HashAlgorithm; input: string; }
 
 const examples: Example[] = [
@@ -32,12 +34,18 @@ export default function Page() {
   }, [input, algorithm]);
 
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(hash, 'Hash'),
+    onClear: () => { setInput(''); setHash(''); setError(null); },
+  });
+
   return (
     <ToolLayout name="Hash Generator" description="Generate SHA-256 & SHA-512 hashes securely via the Web Crypto API" category="Security">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-medium text-text-secondary">Input Text</h2>
-          <Button variant="ghost" size="sm" onClick={() => { setInput(''); setHash(''); setError(null); }}
+          <Button variant="ghost" size="sm" onClick={() => { setInput(''); setHash(''); setError(null); }} title={hint('Clear', 'clear')}
             icon={<RotateCcw className="h-4 w-4" />}>Clear</Button>
         </div>
 
@@ -76,7 +84,7 @@ export default function Page() {
             <h2 className="text-base font-medium text-text-secondary">Hash Output</h2>
             <div className="relative">
               <Input value={hash} readOnly className="font-mono text-sm pr-20" />
-              <CopyButton value={hash} label="Copy" className="absolute right-2 top-1/2 -translate-y-1/2" />
+              <CopyButton shortcut="copy" value={hash} label="Copy" className="absolute right-2 top-1/2 -translate-y-1/2" />
             </div>
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-success" />

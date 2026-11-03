@@ -40,6 +40,9 @@ import { useToolWorker } from '@/lib/workers/useToolWorker';
 import { sendToTool } from '@/lib/utils/toolHandoff';
 import { OpenInMenu } from '@/components/tool/OpenInMenu';
 import { jsonConsumerTargets } from '@/lib/utils/openInTargets';
+import { useToolShortcuts, useShortcutHint, useShortcutPlatform } from '@/lib/hooks/useToolShortcuts';
+import { formatShortcut } from '@/lib/utils/toolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const actions: { value: JsonAction; label: string }[] = [
   { value: 'beautify', label: 'Beautify' },
@@ -106,6 +109,8 @@ const defaultState: JsonState = {
 };
 
 export default function Page() {
+  const hint = useShortcutHint();
+  const platform = useShortcutPlatform();
   const {
     workspaces,
     activeWorkspaceId,
@@ -159,16 +164,6 @@ export default function Page() {
       updateActiveWorkspace({ error: (e as Error).message, output: '', parsedData: null });
     }
   }, [state.input, state.action, state.indent, addHistoryItem, updateActiveWorkspace, runWorker]);
-
-  // Keyboard: Cmd/Ctrl+Enter to re-format, Esc to clear
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); handleProcess(); }
-      if (e.key === 'Escape' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') { /* let modal handle */ }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [handleProcess]);
 
   React.useEffect(() => {
     const t = setTimeout(handleProcess, 100);
@@ -334,7 +329,7 @@ export default function Page() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleClear}
+          onClick={handleClear} title={hint('Clear', 'clear')}
           icon={<RotateCcw className="h-4 w-4" />}
         >
           Clear
@@ -367,7 +362,7 @@ export default function Page() {
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-[11px] text-text-muted">Tip: <kbd className="px-1 py-0.5 bg-bg-tertiary border border-border rounded">⌘+Enter</kbd> to format</p>
+              <p className="mt-2 text-[11px] text-text-muted">Tip: <kbd className="px-1 py-0.5 bg-bg-tertiary border border-border rounded">{formatShortcut('run', platform)}</kbd> to format</p>
             </div>
           </div>
         )}
@@ -396,7 +391,7 @@ export default function Page() {
             onChange={(e) => updateActiveWorkspace({ indent: e.target.value })}
           />
         )}
-        <span className="ml-auto hidden sm:inline text-[11px] text-text-muted">Auto-updates • <kbd className="px-1 py-0.5 bg-bg-tertiary border border-border rounded">⌘+Enter</kbd></span>
+        <span className="ml-auto hidden sm:inline text-[11px] text-text-muted">Auto-updates • <kbd className="px-1 py-0.5 bg-bg-tertiary border border-border rounded">{formatShortcut('run', platform)}</kbd></span>
       </div>
 
       {/* Smart Auto-Repair Section */}
@@ -451,7 +446,7 @@ export default function Page() {
           Output Viewer
         </h2>
         <div className="flex flex-wrap items-center gap-2">
-          <CopyButton value={state.output} label="Copy Output" disabled={!state.output} />
+          <CopyButton shortcut="copy" value={state.output} label="Copy Output" disabled={!state.output} />
           <Button
             variant="ghost"
             size="sm"
@@ -469,7 +464,7 @@ export default function Page() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleDownload}
+            onClick={handleDownload} title={hint('Download', 'download')}
             disabled={!state.output}
             icon={<Download className="h-4 w-4" />}
           >
@@ -484,7 +479,7 @@ export default function Page() {
           <div className="flex-1 min-h-[200px] border border-dashed border-border rounded-xl flex flex-col items-center justify-center p-6 text-center">
             <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center"><FileCode className="h-5 w-5 text-accent" /></div>
             <p className="mt-2 text-sm font-semibold">Output will appear here</p>
-            <p className="text-xs text-text-muted mt-1 max-w-xs">Paste JSON on the left and pick Beautify / Minify / Sort. Use <kbd className="px-1 py-0.5 bg-bg-tertiary border border-border rounded text-[10px]">⌘+Enter</kbd> to run.</p>
+            <p className="text-xs text-text-muted mt-1 max-w-xs">Paste JSON on the left and pick Beautify / Minify / Sort. Use <kbd className="px-1 py-0.5 bg-bg-tertiary border border-border rounded text-[10px]">{formatShortcut('run', platform)}</kbd> to run.</p>
           </div>
         ) : (
           <>
@@ -543,6 +538,14 @@ export default function Page() {
       )}
     </div>
   );
+
+  useToolShortcuts({
+    onRun: () => void handleProcess(),
+    onCopy: () => void copyText(state.output),
+    onDownload: () => { if (state.output) handleDownload(); },
+    onClear: handleClear,
+    onNewTab: addWorkspace,
+  });
 
   return (
     <ToolLayout

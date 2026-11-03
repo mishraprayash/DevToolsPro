@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { generateQrCode, type QrResult } from '@/tools/qr-code/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const examples = [
   { label: 'URL', value: 'https://example.com' },
@@ -51,6 +53,14 @@ export default function Page() {
     setInput('');
     setResult(null);
   }, []);
+
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: () => void handleGenerate(),
+    onCopy: () => void copyText(result?.success ? result.dataUrl : '', 'Data URL'),
+    onDownload: () => { if (result) handleDownload(); },
+    onClear: handleReset,
+  });
 
   return (
     <ToolLayout name="QR Code Generator" description="Generate QR codes from text, URLs, and more" category="Encoding">
@@ -96,7 +106,7 @@ export default function Page() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={handleReset} icon={<RotateCcw className="h-4 w-4" />}>
+            <Button variant="secondary" size="sm" onClick={handleReset} title={hint('Reset', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
               Clear
             </Button>
           </div>
@@ -133,10 +143,10 @@ export default function Page() {
 
           {result?.success && (
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={handleDownload} icon={<Download className="h-4 w-4" />}>
+              <Button variant="secondary" size="sm" onClick={handleDownload} title={hint('Download PNG', 'download')} icon={<Download className="h-4 w-4" />}>
                 Download PNG
               </Button>
-              <CopyButton value={result.dataUrl} label="Copy Data URL" />
+              <CopyButton shortcut="copy" value={result.dataUrl} label="Copy Data URL" />
             </div>
           )}
 

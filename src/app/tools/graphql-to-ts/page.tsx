@@ -6,6 +6,8 @@ import { ToolLayout } from '@/components/tool/ToolLayout';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { gqlToTs } from '@/tools/graphql-to-ts/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const DEFAULT_GQL = `type User {
   id: ID!
@@ -51,6 +53,12 @@ export default function Page() {
     }
   }, [input]);
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(error ? '' : output),
+    onClear: () => setInput(''),
+  });
+
   return (
     <ToolLayout
       name="GraphQL to TypeScript"
@@ -65,7 +73,7 @@ export default function Page() {
             <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
               <Code className="h-4 w-4 text-pink-500" /> GraphQL Schema
             </h2>
-            <Button variant="ghost" size="sm" onClick={() => setInput('')} className="h-8">Clear</Button>
+            <Button variant="ghost" size="sm" onClick={() => setInput('')} title={hint('Clear', 'clear')} className="h-8">Clear</Button>
           </div>
           <div className="flex-1 relative rounded-xl border border-border bg-bg-secondary overflow-hidden focus-within:border-pink-500 transition-colors">
             <textarea
@@ -84,7 +92,7 @@ export default function Page() {
             <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
               <Code className="h-4 w-4 text-blue-500" /> TypeScript Output
             </h2>
-            <CopyButton value={output} />
+            <CopyButton shortcut="copy" value={output} />
           </div>
           <div className="flex-1 relative rounded-xl border border-border bg-bg-secondary overflow-hidden">
             {error ? (

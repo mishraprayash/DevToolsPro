@@ -10,6 +10,8 @@ import { ExamplePills } from '@/components/ui/ExamplePills';
 import { Select } from '@/components/ui/Select';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { svgToJsx, type SvgToJsxOptions } from '@/tools/svg-to-jsx/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const dimensionOptions = [
   { value: 'props', label: 'Responsive ({...props})' },
@@ -113,6 +115,13 @@ export default function Page() {
   };
 
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: handleProcess,
+    onCopy: () => void copyText(output, 'JSX'),
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout
       name="SVG to JSX/React Converter"
@@ -125,7 +134,7 @@ export default function Page() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">Input Raw SVG</h2>
-            <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+            <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
               Clear
             </Button>
           </div>
@@ -219,7 +228,7 @@ export default function Page() {
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">Generated React Component</h2>
             <div className="flex items-center gap-2">
-              <CopyButton value={output} label="Copy" disabled={!output} />
+              <CopyButton shortcut="copy" value={output} label="Copy" disabled={!output} />
             </div>
           </div>
 

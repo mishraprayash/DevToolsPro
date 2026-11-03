@@ -12,6 +12,7 @@ import {
   convertNumber,
   type NumberBase
 } from '@/tools/number-base/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 
 const examples = [
   { label: 'Decimal 255', value: '255', base: 'decimal' as NumberBase },
@@ -45,6 +46,11 @@ export default function Page() {
     setInput('');
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout 
       name="Number Base Converter" 
@@ -57,7 +63,7 @@ export default function Page() {
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">Input Sizing Value</h2>
-            <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+            <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
               Reset
             </Button>
           </div>

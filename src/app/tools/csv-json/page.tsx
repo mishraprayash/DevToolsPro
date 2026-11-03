@@ -18,6 +18,8 @@ import {
   formatJson,
   DELIMITERS,
 } from '@/tools/csv-json/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 type Mode = 'csv-to-json' | 'json-to-csv';
 
@@ -155,6 +157,14 @@ export default function Page() {
     return `${rows.toLocaleString()} line${rows === 1 ? '' : 's'} · ${chars.toLocaleString()} characters`;
   }, [output]);
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: process,
+    onCopy: () => void copyText(error ? '' : output),
+    onDownload: () => { if (output && !error) handleDownload(); },
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout
       name="CSV ↔ JSON Converter"
@@ -190,7 +200,7 @@ export default function Page() {
             <h2 className="text-sm font-semibold text-text-secondary">
               {mode === 'csv-to-json' ? 'CSV Input' : 'JSON Input'}
             </h2>
-            <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+            <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
               Clear
             </Button>
           </div>
@@ -270,11 +280,11 @@ export default function Page() {
               >
                 Swap
               </Button>
-              <CopyButton value={output} disabled={!output || !!error} />
+              <CopyButton shortcut="copy" value={output} disabled={!output || !!error} />
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleDownload}
+                onClick={handleDownload} title={hint('Download', 'download')}
                 disabled={!output || !!error}
                 icon={<Download className="h-4 w-4" />}
               >

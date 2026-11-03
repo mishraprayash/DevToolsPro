@@ -3,6 +3,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useShortcutPlatform } from '@/lib/hooks/useToolShortcuts';
+import { formatShortcut } from '@/lib/utils/toolShortcuts';
 import { ChevronRight, Home, Star, AlertTriangle, RefreshCw, HelpCircle, ArrowRight, Sparkles, FileJson, FileCode, FileSpreadsheet, ListTree, Braces, Code } from 'lucide-react';
 import { useAppStore } from '@/lib/store/useStore';
 import { toast } from '@/components/ui/Toast';
@@ -91,6 +93,7 @@ export function ToolLayout({ name, description, category: categoryProp, children
   const pathname = usePathname();
   const { favorites, toggleFavorite, addRecentTool } = useAppStore();
   const [helpOpen, setHelpOpen] = React.useState(false);
+  const platform = useShortcutPlatform();
   
   const toolId = React.useMemo(() => {
     if (!pathname) return '';
@@ -215,7 +218,7 @@ export function ToolLayout({ name, description, category: categoryProp, children
               <p className="font-semibold">How to use {name}</p>
               <ol className="mt-1.5 list-decimal list-inside text-xs text-text-secondary space-y-1 leading-relaxed">
                 <li>Paste or drop input — try an <span className="font-semibold text-text-primary">Example</span> below to see it in action.</li>
-                <li>Pick an action (e.g., Beautify / Minify) — output updates instantly. Use <kbd className="px-1.5 py-0.5 bg-bg-tertiary border border-border rounded text-[10px]">⌘+Enter</kbd> to re-run.</li>
+                <li>Pick an action (e.g., Beautify / Minify) — output updates instantly. Use <kbd className="px-1.5 py-0.5 bg-bg-tertiary border border-border rounded text-[10px]">{formatShortcut('run', platform)}</kbd> to re-run, <kbd className="px-1.5 py-0.5 bg-bg-tertiary border border-border rounded text-[10px]">{formatShortcut('copy', platform)}</kbd> to copy the output.</li>
                 <li>Copy, download, or <span className="font-semibold">Share</span> the tab — works offline, 100% client-side.</li>
               </ol>
               <div className="mt-2 flex gap-2">

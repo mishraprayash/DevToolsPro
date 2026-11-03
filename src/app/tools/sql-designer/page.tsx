@@ -50,6 +50,8 @@ import {
   ExportFormat 
 } from '@/tools/sql-designer/utils';
 import { Plus, Download, Maximize2, Minimize2, Trash2, LayoutGrid, Sparkles } from 'lucide-react';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const nodeTypes = {
   tableNode: TableNode,
@@ -391,6 +393,13 @@ function FlowDesigner() {
     }));
   }, [nodes, dialect, onTableNameChange, onColumnAdd, onColumnChange, onColumnDelete, onDeleteNode, onDuplicateNode]);
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(outputCode, 'Code'),
+    onDownload: handleDownload,
+    onClear: handleClear,
+  });
+
   if (!isLoaded) return null;
 
   return (
@@ -411,7 +420,7 @@ function FlowDesigner() {
           <Button variant="secondary" size="sm" onClick={handleAutoLayout} icon={<LayoutGrid className="w-4 h-4" />} className="shadow-lg bg-bg-elevated border border-border">
             Auto Layout
           </Button>
-          <Button variant="danger" size="sm" onClick={handleClear} icon={<Trash2 className="w-4 h-4" />} className="shadow-lg">
+          <Button variant="danger" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<Trash2 className="w-4 h-4" />} className="shadow-lg">
             Clear
           </Button>
           <Button
@@ -475,10 +484,10 @@ function FlowDesigner() {
               <Sparkles className="w-4 h-4 text-accent" /> Export Code
             </h2>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleDownload} className="h-8 text-xs">
+              <Button variant="ghost" size="sm" onClick={handleDownload} title={hint('Download', 'download')} className="h-8 text-xs">
                 <Download className="w-3.5 h-3.5 mr-1" /> Export
               </Button>
-              <CopyButton value={outputCode} />
+              <CopyButton shortcut="copy" value={outputCode} />
             </div>
           </div>
 

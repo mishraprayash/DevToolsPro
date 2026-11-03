@@ -10,6 +10,8 @@ import {
 } from '@/tools/chmod/utils';
 import { Copy, Terminal, Check, RefreshCw } from 'lucide-react';
 import { ToolLayout } from '@/components/tool/ToolLayout';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const INITIAL_STATE: ChmodState = {
   owner: { read: true, write: true, execute: true },
@@ -107,6 +109,12 @@ export default function ChmodCalculatorPage() {
     setError(null);
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(`chmod ${derived.octal} file`, 'Command'),
+    onClear: handleReset,
+  });
+
   return (
     <ToolLayout
       name="Chmod Calculator"
@@ -120,7 +128,7 @@ export default function ChmodCalculatorPage() {
             <h2 className="text-lg font-semibold mb-4 text-foreground flex items-center justify-between">
               <span>Standard Permissions</span>
               <button 
-                onClick={handleReset}
+                onClick={handleReset} title={hint('Reset', 'clear')}
                 className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />

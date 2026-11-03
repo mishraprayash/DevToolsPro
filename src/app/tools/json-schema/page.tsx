@@ -15,6 +15,8 @@ import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { generateJsonSchema, type SchemaResult } from '@/tools/json-schema/utils';
 import { useHeavyTask } from '@/lib/workers/useHeavyTask';
 import { shouldOffloadSchema } from '@/lib/workers/thresholds';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const draftOptions = [
   { value: 'draft-07', label: 'JSON Schema Draft-07 (Widely Compatible)' },
@@ -130,6 +132,12 @@ export default function Page() {
   };
 
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(output, 'Schema'),
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout
       name="JSON Schema Generator"
@@ -145,7 +153,7 @@ export default function Page() {
             <h2 className="text-base font-medium text-text-secondary">Input JSON Payloads</h2>
             <div className="flex items-center gap-2">
               <OpenInMenu targets={[jsonToolTarget(input, 'From JSON Schema', 'Beautify / validate')]} />
-              <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+              <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
                 Clear
               </Button>
             </div>
@@ -207,7 +215,7 @@ export default function Page() {
             
             <div className="flex items-center gap-2">
               {isInferring && <span className="text-xs text-text-muted" role="status">Inferring schema…</span>}
-              <CopyButton value={output} disabled={!output} />
+              <CopyButton shortcut="copy" value={output} disabled={!output} />
             </div>
           </div>
 

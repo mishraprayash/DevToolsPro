@@ -7,6 +7,8 @@ import { Select } from '@/components/ui/Select';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { generateGitCommand, type GitCommandType, type GitCommandState } from '@/tools/git-generator/utils';
 import { cn } from '@/lib/utils';
+import { useToolShortcuts } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const commandTypes: { id: GitCommandType; label: string; icon: React.ElementType }[] = [
   { id: 'commit', label: 'Commit', icon: GitCommit },
@@ -31,6 +33,10 @@ export default function Page() {
   };
 
   const result = React.useMemo(() => generateGitCommand(state), [state]);
+
+  useToolShortcuts({
+    onCopy: () => void copyText(result.success ? result.data.command : '', 'Command'),
+  });
 
   return (
     <ToolLayout
@@ -223,7 +229,7 @@ export default function Page() {
                 <code className="text-green-400 font-mono text-sm break-all">
                   {result.data.command}
                 </code>
-                <CopyButton value={result.data.command} />
+                <CopyButton shortcut="copy" value={result.data.command} />
               </div>
               <p className="text-sm text-text-secondary leading-relaxed bg-blue-500/10 text-blue-500 border border-blue-500/20 p-3 rounded-lg">
                 <span className="font-bold">Explanation:</span> {result.data.explanation}

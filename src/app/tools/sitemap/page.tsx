@@ -17,6 +17,8 @@ import {
   CHANGEFREQ_VALUES,
   type Changefreq,
 } from '@/tools/sitemap/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 type OutputMode = 'sitemap' | 'robots';
 
@@ -110,6 +112,13 @@ export default function Page() {
     URL.revokeObjectURL(url);
     toast({ type: 'success', message: `Downloaded ${filename}` });
   };
+
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(output),
+    onDownload: () => { if (output) handleDownload(); },
+    onClear: handleClear,
+  });
 
   return (
     <ToolLayout
@@ -232,14 +241,14 @@ export default function Page() {
               {mode === 'sitemap' ? 'XML Output' : 'Text Output'}
             </h2>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+              <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
                 Clear
               </Button>
-              <CopyButton value={output ?? ''} disabled={!output} />
+              <CopyButton shortcut="copy" value={output ?? ''} disabled={!output} />
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleDownload}
+                onClick={handleDownload} title={hint('Download', 'download')}
                 disabled={!output}
                 icon={<Download className="h-4 w-4" />}
               >

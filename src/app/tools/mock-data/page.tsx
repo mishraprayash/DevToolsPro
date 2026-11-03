@@ -9,6 +9,8 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { generateMockData, type MockSchema, type MockFieldType } from '@/tools/mock-data/utils';
 import { useHeavyTask } from '@/lib/workers/useHeavyTask';
 import { shouldOffloadMockData } from '@/lib/workers/thresholds';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const fieldTypes: { label: string; value: MockFieldType }[] = [
   { label: 'Auto-increment ID', value: 'id' },
@@ -75,6 +77,13 @@ export default function Page() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: handleGenerate,
+    onCopy: () => void copyText(output),
+    onDownload: () => { if (output) handleDownload(); },
+  });
 
   return (
     <ToolLayout
@@ -149,7 +158,7 @@ export default function Page() {
             </div>
           </div>
 
-          <Button onClick={handleGenerate} className="w-full h-12 text-sm font-bold" aria-busy={isGenerating}>
+          <Button onClick={handleGenerate} title={hint('Generate', 'run')} className="w-full h-12 text-sm font-bold" aria-busy={isGenerating}>
             {isGenerating ? 'Generating…' : 'Generate Data'}
           </Button>
         </div>
@@ -159,10 +168,10 @@ export default function Page() {
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-text-primary">Output</h2>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleDownload} icon={<Download className="h-4 w-4" />} disabled={!output}>
+              <Button variant="ghost" size="sm" onClick={handleDownload} title={hint('Download', 'download')} icon={<Download className="h-4 w-4" />} disabled={!output}>
                 Download
               </Button>
-              <CopyButton value={output} />
+              <CopyButton shortcut="copy" value={output} />
             </div>
           </div>
 

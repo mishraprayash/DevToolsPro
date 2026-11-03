@@ -14,6 +14,8 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { dockerRunToCompose, dockerComposeToRun } from '@/tools/docker-converter/utils';
 import { useAppStore } from '@/lib/store/useStore';
 import { defineEditorThemes } from '@/tools/editor-theme';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const DEFAULT_RUN = `docker run -d \\
   --name web-app \\
@@ -82,6 +84,12 @@ export default function Page() {
     }
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(error ? '' : output),
+    onClear: () => setInput(''),
+  });
+
   return (
     <ToolLayout
       name="Docker Run ↔ Compose Converter"
@@ -109,7 +117,7 @@ export default function Page() {
               <h2 className="text-sm font-bold text-text-primary">
                 {mode === 'run-to-compose' ? 'Docker Run Command' : 'docker-compose.yml'}
               </h2>
-              <Button variant="ghost" size="sm" onClick={() => setInput('')} className="h-8">Clear</Button>
+              <Button variant="ghost" size="sm" onClick={() => setInput('')} title={hint('Clear', 'clear')} className="h-8">Clear</Button>
             </div>
             <div className={`flex-1 rounded-xl border border-border ${editorBg} overflow-hidden`}>
               <Editor
@@ -130,7 +138,7 @@ export default function Page() {
               <h2 className="text-sm font-bold text-text-primary">
                 {mode === 'run-to-compose' ? 'docker-compose.yml' : 'Docker Run Command'}
               </h2>
-              <CopyButton value={output} />
+              <CopyButton shortcut="copy" value={output} />
             </div>
             <div className={`flex-1 relative rounded-xl border border-border ${editorBg} overflow-hidden`}>
               {error ? (

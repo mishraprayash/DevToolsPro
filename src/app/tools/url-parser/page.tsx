@@ -15,6 +15,7 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { parseUrlString, constructUrl, encodeUrlComponentSafe, decodeUrlComponentSafe, type QueryParam, type ParsedUrlData } from '@/tools/url-parser/utils';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 
 const DEFAULT_URL =
   'https://api.example.com:8443/v1/users/search?query=developers&role=admin&active=true&tags=typescript&tags=react#results-header';
@@ -138,6 +139,12 @@ export default function UrlParserPage() {
     toast({ type: 'success', message: 'Copied URL structure as JSON.' });
   };
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: handleCopyCleanUrl,
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout
       name="URL & Query Parameter Inspector"
@@ -169,7 +176,7 @@ export default function UrlParserPage() {
             <div className="flex items-center gap-2">
               {inputUrl && (
                 <button
-                  onClick={handleClear}
+                  onClick={handleClear} title={hint('Clear', 'clear')}
                   className="text-xs text-text-muted hover:text-text-primary transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <RotateCcw className="w-3 h-3" /> Clear
@@ -233,7 +240,7 @@ export default function UrlParserPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={handleCopyCleanUrl}
+                  onClick={handleCopyCleanUrl} title={hint('Copy base URL', 'copy')}
                   className="px-3 py-1.5 rounded-lg bg-bg-tertiary border border-border text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
                 >
                   Copy Base URL

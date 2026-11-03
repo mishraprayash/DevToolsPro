@@ -13,6 +13,8 @@ import { OpenInMenu } from '@/components/tool/OpenInMenu';
 import { jsonToolTarget } from '@/lib/utils/openInTargets';
 import { useToolPrefill } from '@/lib/hooks/useToolPrefill';
 import { jsonToTs, type JsonToTsOptions } from '@/tools/json-to-ts/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const outputOptions = [
   { value: 'interface', label: 'Interface' },
@@ -152,6 +154,13 @@ export default function Page() {
   };
 
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: handleProcess,
+    onCopy: () => void copyText(output, 'Types'),
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout
       name="JSON to TypeScript Converter"
@@ -166,7 +175,7 @@ export default function Page() {
             <h2 className="text-base font-medium text-text-secondary">Input JSON</h2>
             <div className="flex items-center gap-2">
               <OpenInMenu targets={[jsonToolTarget(input, 'From JSON to TS', 'Beautify / validate')]} />
-              <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+              <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
                 Clear
               </Button>
             </div>
@@ -256,7 +265,7 @@ export default function Page() {
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">TypeScript Definitions</h2>
             <div className="flex items-center gap-2">
-              <CopyButton value={output} label="Copy" disabled={!output} />
+              <CopyButton shortcut="copy" value={output} label="Copy" disabled={!output} />
             </div>
           </div>
 

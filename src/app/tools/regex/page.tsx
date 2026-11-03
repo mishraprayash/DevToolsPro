@@ -12,6 +12,8 @@ import { useHeavyTask } from '@/lib/workers/useHeavyTask';
 import { REGEX_TIMEOUT_MS, REGEX_TIMEOUT_MESSAGE } from '@/lib/workers/thresholds';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 interface Example { 
   label: string; 
@@ -156,6 +158,12 @@ export default function Page() {
 
   const currentDesc = examples[activeExample]?.description;
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onCopy: () => void copyText(replacedOutput, 'Replaced text'),
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout 
       name="Regex Tester" 
@@ -167,7 +175,7 @@ export default function Page() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">Regex Pattern</h2>
-            <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+            <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
               Clear
             </Button>
           </div>
@@ -346,7 +354,7 @@ export default function Page() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-text-muted font-semibold">Simulated Replacement Output</span>
-                  <CopyButton value={replacedOutput} disabled={!replacedOutput} />
+                  <CopyButton shortcut="copy" value={replacedOutput} disabled={!replacedOutput} />
                 </div>
                 
                 <div className="p-5 rounded-xl bg-bg-tertiary border border-border text-sm font-mono whitespace-pre-wrap min-h-[180px] leading-relaxed shadow-inner">

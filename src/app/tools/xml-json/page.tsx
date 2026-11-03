@@ -24,6 +24,8 @@ import { useAppStore, type HistoryItem } from '@/lib/store/useStore';
 import { useWorkspaces } from '@/lib/hooks/useWorkspaces';
 import { WorkspaceTabs } from '@/components/ui/WorkspaceTabs';
 import { SplitPanesView } from '@/components/ui/SplitPanesView';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
+import { copyText } from '@/lib/utils/copyText';
 
 const indentOptions = [
   { value: '2', label: '2 Spaces' },
@@ -126,6 +128,7 @@ const defaultState: XmlJsonState = {
 };
 
 export default function Page() {
+  const hint = useShortcutHint();
   const {
     workspaces,
     activeWorkspaceId,
@@ -277,7 +280,7 @@ export default function Page() {
             {state.mode === 'xml' ? 'XML' : 'JSON'}
           </span>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+        <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
           Clear
         </Button>
       </div>
@@ -400,11 +403,11 @@ export default function Page() {
           >
             Swap
           </Button>
-          <CopyButton value={state.output} disabled={!state.output || state.output.startsWith('Invalid') || state.output.startsWith('Error')} />
+          <CopyButton shortcut="copy" value={state.output} disabled={!state.output || state.output.startsWith('Invalid') || state.output.startsWith('Error')} />
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleDownload}
+            onClick={handleDownload} title={hint('Download', 'download')}
             disabled={!state.output || state.output.startsWith('Invalid') || state.output.startsWith('Error')}
             icon={<Download className="h-4 w-4" />}
           >
@@ -430,6 +433,14 @@ export default function Page() {
       )}
     </div>
   );
+
+  useToolShortcuts({
+    onRun: () => void handleProcess(),
+    onCopy: () => void copyText(state.output.startsWith('Invalid') || state.output.startsWith('Error') ? '' : state.output),
+    onDownload: () => { if (state.output) handleDownload(); },
+    onClear: handleClear,
+    onNewTab: addWorkspace,
+  });
 
   return (
     <ToolLayout 

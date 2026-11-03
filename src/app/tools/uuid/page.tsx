@@ -8,6 +8,7 @@ import { Select } from '@/components/ui/Select';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { generateBulkUuids, type UuidOptions } from '@/tools/uuid/utils';
 import { cn } from '@/lib/utils';
+import { useToolShortcuts, useShortcutHint } from '@/lib/hooks/useToolShortcuts';
 
 const versionOptions = [
   { value: '4', label: 'UUID v4 (Cryptographically Random)' },
@@ -59,6 +60,13 @@ export default function Page() {
   };
 
 
+  const hint = useShortcutHint();
+  useToolShortcuts({
+    onRun: handleGenerate,
+    onCopy: handleCopyAll,
+    onClear: handleClear,
+  });
+
   return (
     <ToolLayout
       name="UUID / GUID Generator"
@@ -70,7 +78,7 @@ export default function Page() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium text-text-secondary">Generator Options</h2>
-            <Button variant="ghost" size="sm" onClick={handleClear} icon={<RotateCcw className="h-4 w-4" />}>
+            <Button variant="ghost" size="sm" onClick={handleClear} title={hint('Clear', 'clear')} icon={<RotateCcw className="h-4 w-4" />}>
               Reset
             </Button>
           </div>
@@ -156,7 +164,7 @@ export default function Page() {
             </div>
           </div>
 
-          <Button onClick={handleGenerate} className="w-full h-12 text-sm font-semibold" icon={<RefreshCw className="h-4 w-4" />}>
+          <Button onClick={handleGenerate} title={hint('Generate', 'run')} className="w-full h-12 text-sm font-semibold" icon={<RefreshCw className="h-4 w-4" />}>
             Generate Brand New Bulk UUIDs
           </Button>
         </div>
@@ -169,7 +177,7 @@ export default function Page() {
             </h2>
             
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleCopyAll} icon={<Copy className="h-4 w-4" />}>
+              <Button variant="ghost" size="sm" onClick={handleCopyAll} title={hint('Copy all', 'copy')} icon={<Copy className="h-4 w-4" />}>
                 Copy All
               </Button>
             </div>
