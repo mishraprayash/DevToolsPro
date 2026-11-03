@@ -1,16 +1,25 @@
 {
+  "id": "/",
   "name": "DevTools Pro",
   "short_name": "DevTools",
-  "description": "Professional developer tools for daily engineering tasks.",
+  "description": "Offline-first developer utilities: JSON, encoders, JWT, hashing, regex and more. Runs entirely in your browser.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#09090b",
-  "theme_color": "#09090b",
+  "orientation": "any",
+  "background_color": "#07070a",
+  "theme_color": "#07070a",
+  "categories": ["developer", "productivity", "utilities"],
   "icons": [
-    {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "JSON Beautifier", "url": "/tools/json", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "JWT Decoder", "url": "/tools/jwt", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Encoder & Decoder", "url": "/tools/encoder", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "All tools", "url": "/tools", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }
