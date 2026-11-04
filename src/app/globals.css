@@ -178,6 +178,8 @@ html.light,
   .card-highlight::before {
     content: '';
     @apply absolute inset-0 opacity-0 transition-opacity duration-300 rounded-xl;
+    /* Decorative only — must not swallow clicks/focus meant for inputs and buttons underneath. */
+    pointer-events: none;
     background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(34, 211, 238, 0.04), transparent 60%);
   }
 

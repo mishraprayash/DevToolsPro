@@ -220,6 +220,23 @@ export default function Page() {
     toast({ type: 'success', message: 'Swapped conversion direction and input data!' });
   };
 
+  // Switching direction must never leave input in the wrong format: carry a valid
+  // result over as the new input, otherwise replace an untouched example with one
+  // for the new direction. Hand-typed input is kept as-is.
+  const changeMode = (next: 'xml' | 'json') => {
+    if (next === state.mode) return;
+    if (state.output && !state.output.startsWith('Invalid') && !state.output.startsWith('Error')) {
+      handleSwap();
+      return;
+    }
+    if (!state.input.trim() || state.activeExample >= 0) {
+      const i = examples.findIndex((ex) => ex.mode === next);
+      updateActiveWorkspace({ mode: next, input: examples[i].input, activeExample: i });
+    } else {
+      updateActiveWorkspace({ mode: next });
+    }
+  };
+
   const handleDownload = () => {
     if (!state.output || state.output.startsWith('Invalid') || state.output.startsWith('Error')) return;
     const isTargetXml = state.mode === 'json';
@@ -245,7 +262,7 @@ export default function Page() {
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
       <div className="flex items-center gap-1.5 p-1 rounded-xl bg-bg-secondary border border-border shrink-0">
         <button
-          onClick={() => updateActiveWorkspace({ mode: 'xml' })}
+          onClick={() => changeMode('xml')}
           className={cn(
             'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
             state.mode === 'xml' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'
@@ -254,7 +271,7 @@ export default function Page() {
           XML to JSON
         </button>
         <button
-          onClick={() => updateActiveWorkspace({ mode: 'json' })}
+          onClick={() => changeMode('json')}
           className={cn(
             'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
             state.mode === 'json' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'

@@ -141,3 +141,15 @@ export async function processAES(
     return { success: false, error: msg || "Crypto operation failed. Bad key, IV, or corrupted data." };
   }
 }
+
+/** Re-encode ciphertext between Base64 and hex so changing the format keeps the same bytes. */
+export function convertCipherText(input: string, from: 'base64' | 'hex', to: 'base64' | 'hex'): Result {
+  try {
+    const trimmed = input.trim();
+    if (from === to || !trimmed) return { success: true, data: input };
+    const bytes = from === 'hex' ? hexToUint8Array(trimmed) : base64ToUint8Array(trimmed.replace(/\s+/g, ''));
+    return { success: true, data: to === 'hex' ? uint8ArrayToHex(bytes) : uint8ArrayToBase64(bytes) };
+  } catch (e) {
+    return { success: false, error: (e as Error).message || 'Could not convert ciphertext' };
+  }
+}
