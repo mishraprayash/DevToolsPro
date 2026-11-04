@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { processAES } from '@/tools/aes/utils';
+import { processAES, convertCipherText } from '@/tools/aes/utils';
 import { Settings, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
@@ -81,8 +81,30 @@ export default function AESCryptoPage() {
     if (output && !error) {
       setInput(output);
       setAction(a => a === 'encrypt' ? 'decrypt' : 'encrypt');
+      setActiveExample(-1);
       toast({ type: 'success', message: 'Swapped input and output direction!' });
     }
+  };
+
+  // Switching direction must never leave input in the wrong format: carry a valid
+  // result over as the new input. Hand-typed input is kept as-is.
+  const changeAction = (next: 'encrypt' | 'decrypt') => {
+    if (next === action) return;
+    if (output && !error) {
+      handleSwap();
+      return;
+    }
+    setAction(next);
+    setActiveExample(-1);
+  };
+
+  // Ciphertext being decrypted is re-encoded so the bytes stay the same.
+  const changeCipherFormat = (next: 'base64' | 'hex') => {
+    if (action === 'decrypt' && input.trim()) {
+      const converted = convertCipherText(input, cipherFormat, next);
+      if (converted.success) setInput(converted.data);
+    }
+    setCipherFormat(next);
   };
 
   const handleClear = () => {
@@ -123,7 +145,7 @@ export default function AESCryptoPage() {
         {/* Direction Selector */}
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-bg-secondary border border-border">
           <button
-            onClick={() => setAction('encrypt')}
+            onClick={() => changeAction('encrypt')}
             className={cn(
               'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
               action === 'encrypt' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'
@@ -132,7 +154,7 @@ export default function AESCryptoPage() {
             Encrypt
           </button>
           <button
-            onClick={() => setAction('decrypt')}
+            onClick={() => changeAction('decrypt')}
             className={cn(
               'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
               action === 'decrypt' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'
@@ -178,7 +200,7 @@ export default function AESCryptoPage() {
                   { value: 'GCM', label: 'AES-GCM (Authenticated)' }
                 ]}
                 value={mode}
-                onChange={(e) => setMode(e.target.value as 'CBC' | 'CTR' | 'GCM')}
+                onChange={(e) => { setMode(e.target.value as 'CBC' | 'CTR' | 'GCM'); setActiveExample(-1); }}
               />
 
               <Select
@@ -188,7 +210,7 @@ export default function AESCryptoPage() {
                   { value: 'hex', label: 'Hexadecimal Bytes' }
                 ]}
                 value={cipherFormat}
-                onChange={(e) => setCipherFormat(e.target.value as 'base64' | 'hex')}
+                onChange={(e) => changeCipherFormat(e.target.value as 'base64' | 'hex')}
               />
             </div>
 
@@ -199,13 +221,13 @@ export default function AESCryptoPage() {
                   <input
                     type="text"
                     value={key}
-                    onChange={(e) => setKey(e.target.value)}
+                    onChange={(e) => { setKey(e.target.value); setActiveExample(-1); }}
                     placeholder="Enter key"
                     className="flex-1 h-10 px-3 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 font-mono"
                   />
                   <select
                     value={keyFormat}
-                    onChange={(e) => setKeyFormat(e.target.value as 'utf8' | 'hex')}
+                    onChange={(e) => { setKeyFormat(e.target.value as 'utf8' | 'hex'); setActiveExample(-1); }}
                     className="w-24 h-10 px-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent cursor-pointer"
                   >
                     <option value="utf8">UTF-8</option>
@@ -221,13 +243,13 @@ export default function AESCryptoPage() {
                   <input
                     type="text"
                     value={iv}
-                    onChange={(e) => setIv(e.target.value)}
+                    onChange={(e) => { setIv(e.target.value); setActiveExample(-1); }}
                     placeholder="Enter IV"
                     className="flex-1 h-10 px-3 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 font-mono"
                   />
                   <select
                     value={ivFormat}
-                    onChange={(e) => setIvFormat(e.target.value as 'utf8' | 'hex')}
+                    onChange={(e) => { setIvFormat(e.target.value as 'utf8' | 'hex'); setActiveExample(-1); }}
                     className="w-24 h-10 px-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent cursor-pointer"
                   >
                     <option value="utf8">UTF-8</option>

@@ -2,14 +2,14 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, Link2, FileCode, Copy, Braces, ArrowRight, ImageIcon } from 'lucide-react';
+import { Lock, Link2, FileCode, Copy, Braces, ArrowRight, ImageIcon, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { GradientBox } from '@/components/ui/GradientBox';
 import { ToolLayout } from '@/components/tool/ToolLayout';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
-import { encodeBase64, decodeBase64, encodeUrlStr, decodeUrlStr, encodeEntities, decodeEntities, isJsonCompatible, base64ToImageDataUrl } from '@/tools/encoder/utils';
+import { encodeBase64Result, decodeBase64Result, encodeUrlStrResult, decodeUrlStrResult, encodeEntitiesResult, decodeEntitiesResult, isJsonCompatible, base64ToImageDataUrl } from '@/tools/encoder/utils';
 import { OpenInMenu } from '@/components/tool/OpenInMenu';
 import { inputTarget } from '@/lib/utils/openInTargets';
 import { sendToTool } from '@/lib/utils/toolHandoff';
@@ -28,6 +28,7 @@ interface EncoderState {
   direction: 'encode' | 'decode';
   input: string;
   output: string;
+  error?: string | null;
   b64Mode: 'utf8' | 'hex' | 'binary';
   b64UrlSafe: boolean;
   urlMode: 'component' | 'uri' | 'strict';
@@ -114,25 +115,26 @@ export default function Page() {
 
   const handleProcess = React.useCallback(() => {
     if (!state.input) {
-      if (state.output !== '') updateActiveWorkspace({ output: '' });
+      if (state.output !== '' || state.error) updateActiveWorkspace({ output: '', error: null });
       return;
     }
-    let res = '';
-    if (state.encodingMode === 'base64') {
-      res = state.direction === 'encode' 
-        ? encodeBase64(state.input, state.b64Mode, state.b64UrlSafe)
-        : decodeBase64(state.input, state.b64Mode, state.b64UrlSafe);
-    } else if (state.encodingMode === 'url') {
-      res = state.direction === 'encode'
-        ? encodeUrlStr(state.input, state.urlMode)
-        : decodeUrlStr(state.input, state.urlMode);
-    } else if (state.encodingMode === 'entities') {
-      res = state.direction === 'encode'
-        ? encodeEntities(state.input, { mode: state.entMode, scope: state.entScope })
-        : decodeEntities(state.input);
-    }
-    if (res !== state.output) {
-      updateActiveWorkspace({ output: res });
+    const res =
+      state.encodingMode === 'base64'
+        ? state.direction === 'encode'
+          ? encodeBase64Result(state.input, state.b64Mode, state.b64UrlSafe)
+          : decodeBase64Result(state.input, state.b64Mode, state.b64UrlSafe)
+        : state.encodingMode === 'url'
+          ? state.direction === 'encode'
+            ? encodeUrlStrResult(state.input, state.urlMode)
+            : decodeUrlStrResult(state.input, state.urlMode)
+          : state.direction === 'encode'
+            ? encodeEntitiesResult(state.input, { mode: state.entMode, scope: state.entScope })
+            : decodeEntitiesResult(state.input);
+    // Surface failures instead of a silently empty output.
+    const output = res.success ? res.data : '';
+    const error = res.success ? null : res.error;
+    if (output !== state.output || error !== (state.error ?? null)) {
+      updateActiveWorkspace({ output, error });
     }
   }, [state, updateActiveWorkspace]);
 
@@ -142,11 +144,38 @@ export default function Page() {
   }, [handleProcess]);
 
   const handleSwap = () => {
+    if (!state.output || state.error) return;
     updateActiveWorkspace({
       input: state.output,
-      direction: state.direction === 'encode' ? 'decode' : 'encode'
+      output: '',
+      error: null,
+      direction: state.direction === 'encode' ? 'decode' : 'encode',
+      activeExample: -1
     });
     toast({ type: 'success', message: 'Swapped input and output direction!' });
+  };
+
+  // Switching direction or encoding must never leave input in the wrong format:
+  // carry a valid result over as the new input, otherwise replace an untouched
+  // example with a matching one. Hand-typed input is kept as-is.
+  const isPristineInput = !state.input.trim() || (state.activeExample ?? -1) >= 0;
+
+  const changeDirection = (direction: EncoderState['direction']) => {
+    if (direction === state.direction) return;
+    if (state.output && !state.error) {
+      handleSwap();
+      return;
+    }
+    const i = examples.findIndex((ex) => ex.state.encodingMode === state.encodingMode && ex.state.direction === direction);
+    if (isPristineInput && i >= 0) applyExample(i);
+    else updateActiveWorkspace({ direction, activeExample: -1 });
+  };
+
+  const changeEncoding = (encodingMode: EncoderState['encodingMode']) => {
+    if (encodingMode === state.encodingMode) return;
+    const i = examples.findIndex((ex) => ex.state.encodingMode === encodingMode);
+    if (isPristineInput && i >= 0) applyExample(i);
+    else updateActiveWorkspace({ encodingMode, activeExample: -1 });
   };
 
   const toolbarContent = (
@@ -154,7 +183,7 @@ export default function Page() {
       {/* Navigation tabs */}
       <div className="flex items-center gap-1.5 p-1 rounded-xl bg-bg-secondary border border-border overflow-x-auto scrollbar-hide">
         <button
-          onClick={() => updateActiveWorkspace({ encodingMode: 'base64' })}
+          onClick={() => changeEncoding('base64')}
           className={cn(
             'flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap',
             state.encodingMode === 'base64'
@@ -166,7 +195,7 @@ export default function Page() {
           Base64 Converter
         </button>
         <button
-          onClick={() => updateActiveWorkspace({ encodingMode: 'url' })}
+          onClick={() => changeEncoding('url')}
           className={cn(
             'flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap',
             state.encodingMode === 'url'
@@ -178,7 +207,7 @@ export default function Page() {
           URL Encoder
         </button>
         <button
-          onClick={() => updateActiveWorkspace({ encodingMode: 'entities' })}
+          onClick={() => changeEncoding('entities')}
           className={cn(
             'flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap',
             state.encodingMode === 'entities'
@@ -194,7 +223,7 @@ export default function Page() {
       {/* Direction Selector */}
       <div className="flex items-center gap-1.5 p-1 rounded-xl bg-bg-secondary border border-border shrink-0">
         <button
-          onClick={() => updateActiveWorkspace({ direction: 'encode' })}
+          onClick={() => changeDirection('encode')}
           className={cn(
             'px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
             state.direction === 'encode' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'
@@ -203,7 +232,7 @@ export default function Page() {
           Encode
         </button>
         <button
-          onClick={() => updateActiveWorkspace({ direction: 'decode' })}
+          onClick={() => changeDirection('decode')}
           className={cn(
             'px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
             state.direction === 'decode' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'
@@ -245,13 +274,13 @@ export default function Page() {
                 { value: 'binary', label: 'Raw Binary Bits' }
               ]}
               value={state.b64Mode}
-              onChange={(e) => updateActiveWorkspace({ b64Mode: e.target.value as 'utf8' | 'hex' | 'binary' })}
+              onChange={(e) => updateActiveWorkspace({ b64Mode: e.target.value as 'utf8' | 'hex' | 'binary', activeExample: -1 })}
             />
             <label className="flex items-center gap-2.5 cursor-pointer select-none pt-7">
               <input
                 type="checkbox"
                 checked={state.b64UrlSafe}
-                onChange={(e) => updateActiveWorkspace({ b64UrlSafe: e.target.checked })}
+                onChange={(e) => updateActiveWorkspace({ b64UrlSafe: e.target.checked, activeExample: -1 })}
                 className="rounded border-border text-accent focus:ring-accent bg-bg-tertiary h-4 w-4"
               />
               <span className="text-xs text-text-secondary font-medium">URL-Safe (+/ to -_)</span>
@@ -268,7 +297,7 @@ export default function Page() {
               { value: 'strict', label: 'Strict RFC-3986 (Includes all symbols)' }
             ]}
             value={state.urlMode}
-            onChange={(e) => updateActiveWorkspace({ urlMode: e.target.value as 'component' | 'uri' | 'strict' })}
+            onChange={(e) => updateActiveWorkspace({ urlMode: e.target.value as 'component' | 'uri' | 'strict', activeExample: -1 })}
           />
         )}
 
@@ -306,10 +335,19 @@ export default function Page() {
       <div className="flex items-center justify-between shrink-0">
         <h2 className="text-base font-semibold text-text-primary">Converted Output</h2>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={handleSwap} disabled={!state.output} icon={<Copy className="h-3.5 w-3.5" />}>Swap</Button>
+          <Button variant="ghost" size="sm" onClick={handleSwap} disabled={!state.output || !!state.error} icon={<Copy className="h-3.5 w-3.5" />}>Swap</Button>
           <OutputActions value={state.output} copyLabel="Copy Output" filename={outputFile} />
         </div>
       </div>
+      {state.error && (
+        <div role="alert" className="flex items-start gap-2 px-4 py-3 rounded-xl border border-error/20 bg-error/10 text-sm text-error shrink-0">
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>
+            Couldn&apos;t {state.direction} this input: {state.error.replace(/\.$/, '')}.
+            {state.direction === 'decode' && ' If this is plain text, switch to Encode.'}
+          </span>
+        </div>
+      )}
       <div className="flex-1 min-h-[200px] h-full">
         <GradientBox value={state.output} placeholder="Conversion output will appear here..." className="h-full w-full font-mono leading-relaxed overflow-y-auto" />
       </div>

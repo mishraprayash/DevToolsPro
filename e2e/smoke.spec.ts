@@ -137,6 +137,24 @@ test.describe('pages', () => {
 // ── Key flows ──────────────────────────────────────────────────────────────────
 
 test.describe('flows', () => {
+  test('home smart paste textarea is clickable and detects input', async ({ page }) => {
+    await page.goto('/');
+    const input = page.getByRole('textbox', { name: 'Paste anything' });
+    // A real click (not fill) — fails if a decorative overlay intercepts pointer events.
+    await input.click();
+    await expect(input).toBeFocused();
+    await page.keyboard.type('*/15 9-17 * * MON-FRI');
+    await expect(page.getByRole('list', { name: 'Suggested tools' })).toContainText('Cron');
+  });
+
+  test('CSV ↔ JSON: switching direction carries the result over instead of erroring', async ({ page }) => {
+    await page.goto('/tools/csv-json');
+    await expect(page.getByText('"name": "Alice Smith"').first()).toBeVisible();
+    await page.getByRole('button', { name: 'JSON to CSV' }).click();
+    await expect(page.getByText('Alice Smith,30,alice@example.com,true')).toBeVisible();
+    await expect(page.getByText(/Invalid JSON/)).toHaveCount(0);
+  });
+
   test('JSON tool beautifies input', async ({ page }) => {
     await page.goto('/tools/json');
     await waitForWorkspaces(page, 'json');

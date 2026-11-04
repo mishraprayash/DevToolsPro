@@ -172,6 +172,23 @@ export default function Page() {
     toast({ type: 'success', message: 'Swapped inputs and conversion direction!' });
   };
 
+  // Switching direction must never leave input in the wrong format: carry a valid
+  // result over as the new input, otherwise replace an untouched example with one
+  // for the new direction. Hand-typed input is kept as-is.
+  const changeMode = (next: 'json' | 'yaml') => {
+    if (next === state.mode) return;
+    if (state.output && !state.error) {
+      handleSwap();
+      return;
+    }
+    if (!state.input.trim() || state.activeExample >= 0) {
+      const i = examples.findIndex((ex) => ex.mode === next);
+      updateActiveWorkspace({ mode: next, error: null, input: examples[i].input, activeExample: i });
+    } else {
+      updateActiveWorkspace({ mode: next, error: null });
+    }
+  };
+
   const handleDownload = () => {
     if (!state.output || state.error) return;
     const isTargetYaml = state.mode === 'json';
@@ -197,7 +214,7 @@ export default function Page() {
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
       <div className="flex items-center gap-1.5 p-1 rounded-xl bg-bg-secondary border border-border shrink-0">
         <button
-          onClick={() => updateActiveWorkspace({ mode: 'json' })}
+          onClick={() => changeMode('json')}
           className={cn(
             'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
             state.mode === 'json' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'
@@ -206,7 +223,7 @@ export default function Page() {
           JSON to YAML
         </button>
         <button
-          onClick={() => updateActiveWorkspace({ mode: 'yaml' })}
+          onClick={() => changeMode('yaml')}
           className={cn(
             'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
             state.mode === 'yaml' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'

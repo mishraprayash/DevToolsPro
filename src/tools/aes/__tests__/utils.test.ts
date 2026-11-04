@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { processAES } from '../utils';
+import { processAES, convertCipherText } from '../utils';
 
 describe('AES Utilities', () => {
   const secretKey = 'mysecretkey12345'; // 16 bytes
@@ -100,5 +100,22 @@ describe('AES Utilities', () => {
       expect(decBadCipherHex.success).toBe(false);
       expect(!decBadCipherHex.success && decBadCipherHex.error).toContain('Invalid ciphertext format');
     });
+  });
+});
+
+describe('convertCipherText', () => {
+  it('round-trips between base64 and hex', () => {
+    const hex = convertCipherText('SGVsbG8=', 'base64', 'hex');
+    expect(hex).toEqual({ success: true, data: '48656c6c6f' });
+    expect(convertCipherText('48656c6c6f', 'hex', 'base64')).toEqual({ success: true, data: 'SGVsbG8=' });
+  });
+
+  it('leaves input untouched when formats match or input is empty', () => {
+    expect(convertCipherText('abc', 'hex', 'hex')).toEqual({ success: true, data: 'abc' });
+    expect(convertCipherText('  ', 'hex', 'base64')).toEqual({ success: true, data: '  ' });
+  });
+
+  it('returns an error instead of throwing on malformed hex', () => {
+    expect(convertCipherText('abc', 'hex', 'base64').success).toBe(false);
   });
 });

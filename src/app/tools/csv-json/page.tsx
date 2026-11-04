@@ -137,6 +137,24 @@ export default function Page() {
     toast({ type: 'success', message: 'Swapped input and conversion direction.' });
   };
 
+  // Switching direction must never leave input in the wrong format: carry a valid
+  // result over as the new input, otherwise replace an untouched example with one
+  // for the new direction. Hand-typed input is kept as-is.
+  const changeMode = (next: Mode) => {
+    if (next === mode) return;
+    if (output && !error) {
+      handleSwap();
+      return;
+    }
+    setMode(next);
+    setError(null);
+    if (!input.trim() || activeExample >= 0) {
+      const i = examples.findIndex((ex) => ex.mode === next);
+      setInput(examples[i].input);
+      setActiveExample(i);
+    }
+  };
+
   const handleDownload = () => {
     if (!output || error) return;
     const isCsv = mode === 'json-to-csv';
@@ -173,7 +191,7 @@ export default function Page() {
     >
       <div className="flex items-center gap-1.5 p-1 rounded-xl bg-bg-secondary border border-border w-fit mb-4">
         <button
-          onClick={() => setMode('csv-to-json')}
+          onClick={() => changeMode('csv-to-json')}
           className={cn(
             'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5',
             mode === 'csv-to-json' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'
@@ -182,7 +200,7 @@ export default function Page() {
           <FileSpreadsheet className="h-3.5 w-3.5" /> CSV to JSON
         </button>
         <button
-          onClick={() => setMode('json-to-csv')}
+          onClick={() => changeMode('json-to-csv')}
           className={cn(
             'px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5',
             mode === 'json-to-csv' ? 'bg-accent text-bg-primary' : 'text-text-secondary hover:text-text-primary'

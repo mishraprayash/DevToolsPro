@@ -50,6 +50,17 @@ export default function Page() {
 
 
 
+  // Changing the source base keeps the same number: re-express the input in the
+  // new base instead of re-reading its digits (e.g. FF would be invalid decimal).
+  const changeBase = (next: NumberBase) => {
+    if (next === from) return;
+    if (result.success && input.trim()) {
+      setInput(result[next].replace(/^(-?)0[xbo]/i, '$1'));
+    }
+    setFrom(next);
+    setActiveExample(-1);
+  };
+
   const handleClear = () => {
     setInput('');
     setActiveExample(-1);
@@ -93,7 +104,7 @@ export default function Page() {
               label="Source Base"
               options={basesOptions}
               value={from}
-              onChange={(e) => setFrom(e.target.value as NumberBase)}
+              onChange={(e) => changeBase(e.target.value as NumberBase)}
             />
           </div>
 
